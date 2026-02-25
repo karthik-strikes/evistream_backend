@@ -1,0 +1,79 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+.eggs/
+.installed.cfg
+MANIFEST
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Environment & secrets ──────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Database ───────────────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+dump.rdb
+
+# ── Logs & runtime output ──────────────────────────────────────────────────────
+*.log
+logs/
+output/
+
+# ── Caches ────────────────────────────────────────────────────────────────────
+cache/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.semantic_cache/
+.evaluation_cache/
+__pycache__/
+
+# ── Testing & coverage ────────────────────────────────────────────────────────
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+nosetests.xml
+pytest.xml
+
+# ── Celery ────────────────────────────────────────────────────────────────────
+celerybeat-schedule
+celerybeat.pid
+
+# ── IDE & OS ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Claude Code ───────────────────────────────────────────────────────────────
+.claude/
+
+# ── Uploads & generated files ─────────────────────────────────────────────────
+storage/uploads/
+storage/processed/
+dspy_components/tasks/dynamic_*/
+dspy_components/tasks/task_*/

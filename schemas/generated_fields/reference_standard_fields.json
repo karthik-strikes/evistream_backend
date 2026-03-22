@@ -1,0 +1,53 @@
+{
+  "required_fields": [
+    "reference_standard_type.biopsy_and_histopathological_assessment.selected",
+    "reference_standard_type.biopsy_and_histopathological_assessment.comment",
+    "reference_standard_type.other.selected",
+    "reference_standard_type.other.comment",
+    "site_of_biopsy",
+    "site_of_biopsy_full_description",
+    "num_patients_received_reference_standard",
+    "num_patients_analyzed_reference_standard",
+    "num_lesions_received_reference_standard",
+    "num_lesions_analyzed_reference_standard",
+    "positivity_threshold.oral_cavity_cancer.selected",
+    "positivity_threshold.oral_cavity_cancer.comment",
+    "positivity_threshold.potentially_malignant_disorder.selected",
+    "positivity_threshold.potentially_malignant_disorder.comment",
+    "positivity_threshold.squamous_cell_carcinoma.selected",
+    "positivity_threshold.squamous_cell_carcinoma.comment",
+    "positivity_threshold.other.selected",
+    "positivity_threshold.other.comment",
+    "positivity_threshold_summary",
+    "final_diagnosis_categories",
+    "training_calibration_reference_standard_examiners",
+    "blinding_reference_standard_examiners_to_index_test"
+  ],
+  "semantic_fields": [
+    "reference_standard_type.biopsy_and_histopathological_assessment.comment",
+    "reference_standard_type.other.comment",
+    "site_of_biopsy",
+    "site_of_biopsy_full_description",
+    "positivity_threshold.oral_cavity_cancer.comment",
+    "positivity_threshold.potentially_malignant_disorder.comment",
+    "positivity_threshold.squamous_cell_carcinoma.comment",
+    "positivity_threshold.other.comment",
+    "positivity_threshold_summary",
+    "final_diagnosis_categories",
+    "training_calibration_reference_standard_examiners",
+    "blinding_reference_standard_examiners_to_index_test"
+  ],
+  "exact_fields": [
+    "reference_standard_type.biopsy_and_histopathological_assessment.selected",
+    "reference_standard_type.other.selected",
+    "num_patients_received_reference_standard",
+    "num_patients_analyzed_reference_standard",
+    "num_lesions_received_reference_standard",
+    "num_lesions_analyzed_reference_standard",
+    "positivity_threshold.oral_cavity_cancer.selected",
+    "positivity_threshold.potentially_malignant_disorder.selected",
+    "positivity_threshold.squamous_cell_carcinoma.selected",
+    "positivity_threshold.other.selected"
+  ],
+  "groupable_patterns": {}
+}

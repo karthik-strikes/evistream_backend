@@ -150,8 +150,8 @@ class ConnectionManager:
                     if msg:
                         try:
                             messages.append(json.loads(msg.decode('utf-8')))
-                        except:
-                            pass
+                        except Exception:
+                            logger.debug("Failed to decode cached WebSocket message", exc_info=True)
             return list(reversed(messages))  # Return in chronological order
         except Exception as e:
             logger.error(f"Error retrieving cached messages: {e}")
@@ -175,7 +175,7 @@ async def websocket_job_updates(
 
     **Connection:**
     ```javascript
-    const ws = new WebSocket(`ws://localhost:8000/api/v1/ws/jobs/${jobId}?token=${accessToken}`);
+    const ws = new WebSocket(`ws://<host>/api/v1/ws/jobs/${jobId}?token=${accessToken}`);
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -264,9 +264,55 @@ async def websocket_job_updates(
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    # TODO: Validate token if provided
-    # For now, we allow unauthenticated connections for development
-    # In production, validate JWT token here
+    # Validate JWT token
+    if not token:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    try:
+        from app.services.auth_service import auth_service
+        user_id = auth_service.verify_token(token)
+    except Exception:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    # Verify the job's project belongs to the authenticated user
+    try:
+        from supabase import create_client
+        from app.config import settings
+        _supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+        job_result = _supabase.table("jobs")\
+            .select("project_id")\
+            .eq("id", job_id)\
+            .execute()
+
+        if not job_result.data:
+            await websocket.close(code=4003)
+            return
+
+        project_id = job_result.data[0].get("project_id")
+        if project_id:
+            project_result = _supabase.table("projects")\
+                .select("id")\
+                .eq("id", project_id)\
+                .eq("user_id", str(user_id))\
+                .execute()
+
+            if not project_result.data:
+                # Check if user is a project member
+                member_result = _supabase.table("project_members")\
+                    .select("id")\
+                    .eq("project_id", project_id)\
+                    .eq("user_id", str(user_id))\
+                    .execute()
+
+                if not member_result.data:
+                    await websocket.close(code=4003)
+                    return
+    except Exception as e:
+        logger.error(f"Error verifying job ownership for WebSocket: {e}")
+        await websocket.close(code=4003)
+        return
 
     await manager.connect(job_id, websocket)
 
@@ -327,21 +373,27 @@ async def websocket_job_updates(
 
 
 @router.get("/jobs/{job_id}/messages")
-async def get_job_messages(job_id: str):
+async def get_job_messages(
+    job_id: str,
+    token: Optional[str] = Query(None)
+):
     """
     Get cached messages for a job (REST endpoint alternative to WebSocket).
 
-    This is useful for:
-    - Polling-based updates
-    - Checking status without WebSocket connection
-    - Retrieving message history
-
-    Args:
-        job_id: Job ID
-
-    Returns:
-        List of cached messages
+    Requires authentication via token query parameter.
     """
+    # Authenticate
+    if not token:
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(status_code=401, detail="Authentication required")
+
+    try:
+        from app.services.auth_service import auth_service
+        auth_service.verify_token(token)
+    except Exception:
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(status_code=401, detail="Invalid token")
+
     try:
         UUID(job_id)
     except ValueError:

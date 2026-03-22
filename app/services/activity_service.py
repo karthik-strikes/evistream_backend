@@ -1,14 +1,18 @@
 """Service for logging user activities."""
 
+import logging
+
 from supabase import create_client, Client
 from typing import Optional, Dict, Any
 from uuid import UUID
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def get_supabase() -> Client:
-    """Get Supabase client."""
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    """Get Supabase client with service role key to bypass RLS for backend operations."""
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 
 async def log_activity(
@@ -47,4 +51,4 @@ async def log_activity(
 
     except Exception as e:
         # Log error but don't fail the main operation
-        print(f"Error logging activity: {e}")
+        logger.exception("Error logging activity")

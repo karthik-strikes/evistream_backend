@@ -2,15 +2,13 @@
 Extraction service for running DSPy extractions on documents.
 """
 
-import sys
 import asyncio
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
-# Add project root to Python path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+from app.config import settings as _app_settings
+_BATCH_CONCURRENCY = _app_settings.EXTRACTION_BATCH_CONCURRENCY
 
 from core.extractor import run_async_extraction_and_evaluation
 from schemas import get_schema, build_runtime
@@ -70,9 +68,15 @@ class ExtractionService:
         try:
             self._ensure_dspy_configured()
 
-            # Get schema and build runtime
+            # Get schema and build runtime (re-discover if not found)
             logger.info(f"Loading schema: {schema_name}")
-            schema_config = get_schema(schema_name)
+            try:
+                schema_config = get_schema(schema_name)
+            except ValueError:
+                logger.info(f"Schema {schema_name} not found, re-discovering...")
+                from schemas.registry import auto_discover_schemas
+                auto_discover_schemas()
+                schema_config = get_schema(schema_name)
             schema_runtime = build_runtime(schema_config)
 
             # Check if single file or directory
@@ -213,17 +217,23 @@ class ExtractionService:
             if max_documents:
                 markdown_files = markdown_files[:max_documents]
 
-            logger.info(f"Processing {len(markdown_files)} documents")
+            logger.info(f"Processing {len(markdown_files)} documents (concurrency={_BATCH_CONCURRENCY})")
 
-            # Run extractions sequentially (can be made parallel if needed)
-            results = []
-            for md_file in markdown_files:
-                result = await self._run_single_extraction(
-                    markdown_path=str(md_file),
-                    schema_runtime=schema_runtime,
-                    ground_truth=[]
-                )
-                results.append(result)
+            # Run extractions in parallel, bounded by semaphore
+            semaphore = asyncio.Semaphore(_BATCH_CONCURRENCY)
+
+            async def _extract_with_semaphore(md_file):
+                async with semaphore:
+                    return await self._run_single_extraction(
+                        markdown_path=str(md_file),
+                        schema_runtime=schema_runtime,
+                        ground_truth=[]
+                    )
+
+            results = await asyncio.gather(
+                *[_extract_with_semaphore(f) for f in markdown_files],
+                return_exceptions=False,
+            )
 
             # Count successes and failures
             successes = [r for r in results if r.get("success")]
@@ -248,6 +258,163 @@ class ExtractionService:
                 "success": False,
                 "error": str(e)
             }
+
+    async def _run_files_parallel(
+        self,
+        path_to_doc_id: dict,
+        schema_runtime,
+        on_paper_done=None,
+    ) -> list:
+        """
+        Run extraction on a list of (markdown_path, doc_id) pairs in parallel,
+        bounded by _BATCH_CONCURRENCY semaphore.
+        """
+        semaphore = asyncio.Semaphore(_BATCH_CONCURRENCY)
+
+        async def _extract_one(markdown_path, doc_id):
+            async with semaphore:
+                result = await self._run_single_extraction(
+                    markdown_path=markdown_path,
+                    schema_runtime=schema_runtime,
+                    ground_truth=[]
+                )
+                # Tag with doc_id for the Celery worker to store correctly
+                if result.get("success") and result.get("results"):
+                    for r in result["results"]:
+                        r["document_id"] = doc_id
+                        r["source_file"] = markdown_path
+                if on_paper_done is not None:
+                    try:
+                        await on_paper_done(doc_id, result)
+                    except Exception as cb_err:
+                        logger.warning(f"on_paper_done callback error (non-fatal): {cb_err}")
+                return result
+
+        tasks = [
+            _extract_one(path, doc_id)
+            for path, doc_id in path_to_doc_id.items()
+        ]
+        # return_exceptions=True means one paper failing does NOT
+        # cancel the other 4 — each result is either a dict or an Exception
+        return await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _run_files_stage_fanout(
+        self,
+        path_to_doc_id: dict,
+        schema_config,
+        on_paper_done=None,
+    ) -> list:
+        """
+        Stage-level fan-out extraction.
+        Reads all files upfront, then fans them out stage-by-stage.
+        """
+        from app.config import settings as _s
+
+        # Read all markdown files upfront
+        papers = []
+        for markdown_path, doc_id in path_to_doc_id.items():
+            try:
+                with open(markdown_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                papers.append({"doc_id": doc_id, "markdown_content": content, "path": markdown_path})
+            except Exception as e:
+                logger.error(f"[stage_fanout] Failed to read {markdown_path}: {e}")
+
+        if not papers:
+            return []
+
+        pipeline = schema_config.build_pipeline()
+
+        # Adaptive concurrency: reduce when circuit breaker is recovering
+        # to avoid blasting a recovering model with 350 simultaneous requests.
+        from utils.circuit_breaker import ModelRouter
+        try:
+            router = ModelRouter.get_instance()
+            if router.is_any_breaker_half_open():
+                effective_concurrency = max(1, int(_s.EXTRACTION_TASK_CONCURRENCY * 0.1))
+                logger.warning(
+                    f"[stage_fanout] Circuit breaker in HALF_OPEN — reducing concurrency "
+                    f"from {_s.EXTRACTION_TASK_CONCURRENCY} to {effective_concurrency}"
+                )
+            else:
+                effective_concurrency = _s.EXTRACTION_TASK_CONCURRENCY
+        except Exception:
+            effective_concurrency = _s.EXTRACTION_TASK_CONCURRENCY
+
+        task_semaphore = asyncio.Semaphore(effective_concurrency)
+
+        async def _on_paper_done(doc_id, accumulated_results):
+            result = {
+                "success": True,
+                "results": [{**accumulated_results, "document_id": doc_id}],
+            }
+            if on_paper_done is not None:
+                try:
+                    await on_paper_done(doc_id, result)
+                except Exception as e:
+                    logger.warning(f"[stage_fanout] on_paper_done error for {doc_id}: {e}")
+
+        accumulated = await pipeline.run_batch(papers, task_semaphore, on_paper_done=_on_paper_done)
+
+        results = []
+        for paper in papers:
+            doc_id = paper["doc_id"]
+            paper_data = accumulated.get(doc_id, {})
+            results.append({
+                "success": True,
+                "results": [{**paper_data, "document_id": doc_id, "source_file": paper["path"]}],
+                "source_file": paper["path"],
+            })
+        return results
+
+    def run_files_extraction(
+        self,
+        path_to_doc_id: dict,
+        schema_name: str,
+        on_paper_done=None,
+    ) -> Dict[str, Any]:
+        """
+        Sync entry point for Celery: run parallel extraction on a
+        path→doc_id mapping. Calls asyncio.run() exactly once.
+        """
+        try:
+            self._ensure_dspy_configured()
+            try:
+                schema_config = get_schema(schema_name)
+            except ValueError:
+                logger.info(f"Schema {schema_name} not found, re-discovering...")
+                from schemas.registry import auto_discover_schemas
+                auto_discover_schemas()
+                schema_config = get_schema(schema_name)
+
+            results = asyncio.run(
+                self._run_files_stage_fanout(path_to_doc_id, schema_config, on_paper_done=on_paper_done)
+            )
+
+            all_results = []
+            failed = 0
+            for r in results:
+                if isinstance(r, Exception):
+                    # One paper threw an unhandled exception — log and skip
+                    logger.error(f"Paper extraction raised exception: {r}")
+                    failed += 1
+                elif r.get("success") and r.get("results"):
+                    all_results.extend(r["results"])
+                else:
+                    # Paper returned success=False (e.g. file read error, LLM error)
+                    logger.warning(f"Paper extraction failed: {r.get('error')}")
+                    failed += 1
+
+            return {
+                "success": True,
+                "total_documents": len(path_to_doc_id),
+                "successful_extractions": len(path_to_doc_id) - failed,
+                "failed_extractions": failed,
+                "results": all_results,
+            }
+        except Exception as e:
+            logger.error(f"Parallel files extraction failed: {e}")
+            return {"success": False, "error": str(e)}
 
     def check_extraction_status(self) -> Dict[str, Any]:
         """

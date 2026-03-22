@@ -1,14 +1,41 @@
 """Service for creating user notifications."""
 
+import logging
+
 from supabase import create_client, Client
 from typing import Optional
 from uuid import UUID
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def get_supabase() -> Client:
     """Get Supabase client."""
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+
+
+def _get_user_notification_prefs(user_id: UUID) -> dict:
+    """Fetch notification preferences for a user. Returns defaults if no row exists."""
+    try:
+        supabase = get_supabase()
+        result = supabase.table("user_settings")\
+            .select("notify_email, notify_browser, notify_extraction_completed, notify_extraction_failed, notify_code_generation")\
+            .eq("user_id", str(user_id))\
+            .limit(1)\
+            .execute()
+        if result.data:
+            return result.data[0]
+    except Exception:
+        logger.debug("Could not load notification prefs for user %s, using defaults", user_id)
+    # Defaults — all enabled
+    return {
+        "notify_email": True,
+        "notify_browser": True,
+        "notify_extraction_completed": True,
+        "notify_extraction_failed": True,
+        "notify_code_generation": True,
+    }
 
 
 async def create_notification(
@@ -50,7 +77,7 @@ async def create_notification(
 
     except Exception as e:
         # Log error but don't fail the main operation
-        print(f"Error creating notification: {e}")
+        logger.exception("Error creating notification")
 
 
 async def notify_job_completed(
@@ -70,9 +97,13 @@ async def notify_job_completed(
         success: Whether the job succeeded
         error_message: Optional error message if failed
     """
+    prefs = _get_user_notification_prefs(user_id)
+
     if success:
         # Success notifications
         if job_type == "extraction":
+            if not prefs.get("notify_extraction_completed", True):
+                return
             await create_notification(
                 user_id=user_id,
                 type="success",
@@ -95,6 +126,8 @@ async def notify_job_completed(
                 related_entity_id=job_id,
             )
         elif job_type == "form_generation":
+            if not prefs.get("notify_code_generation", True):
+                return
             await create_notification(
                 user_id=user_id,
                 type="success",
@@ -107,6 +140,8 @@ async def notify_job_completed(
             )
     else:
         # Failure notification
+        if job_type == "extraction" and not prefs.get("notify_extraction_failed", True):
+            return
         await create_notification(
             user_id=user_id,
             type="error",

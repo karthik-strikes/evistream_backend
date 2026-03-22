@@ -2,14 +2,9 @@
 PDF processing service - wraps existing pdf_processor for backend use.
 """
 
-import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
-
-# Add project root to Python path
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
 
 from pdf_processor.pdf_processor import PDFProcessor
 
@@ -52,7 +47,7 @@ class PDFProcessingService:
             return {
                 "success": False,
                 "error": "PDF processor not initialized",
-                "markdown_path": None,
+                "markdown_content": None,
                 "metadata": {}
             }
 
@@ -63,7 +58,7 @@ class PDFProcessingService:
                 return {
                     "success": False,
                     "error": f"PDF file not found: {pdf_path}",
-                    "markdown_path": None,
+                    "markdown_content": None,
                     "metadata": {}
                 }
 
@@ -83,37 +78,25 @@ class PDFProcessingService:
                     return {
                         "success": False,
                         "error": "No markdown content in processing result",
-                        "markdown_path": None,
+                        "markdown_content": None,
                         "metadata": {}
                     }
 
-                # Save markdown content to a separate .md file
-                unique_filename = result.get("unique_filename", Path(pdf_path).stem)
-                markdown_dir = Path(__file__).parent.parent.parent.parent / "storage" / "processed" / "extracted_pdfs"
-                markdown_dir.mkdir(parents=True, exist_ok=True)
-
-                markdown_file = markdown_dir / f"{unique_filename}.md"
-                with open(markdown_file, "w", encoding="utf-8") as f:
-                    f.write(markdown_content)
-
-                logger.info(f"Saved markdown to: {markdown_file}")
-
                 return {
                     "success": True,
-                    "markdown_path": str(markdown_file),
+                    "markdown_content": markdown_content,
                     "error": None,
                     "metadata": {
                         "pages": result.get("marker", {}).get("pages", 0),
                         "processing_time": result.get("marker", {}).get("processing_time", 0),
                         "cost": result.get("marker", {}).get("cost", 0),
-                        "unique_filename": unique_filename
                     }
                 }
             else:
                 return {
                     "success": False,
                     "error": result.get("error", "Unknown error during processing"),
-                    "markdown_path": None,
+                    "markdown_content": None,
                     "metadata": {}
                 }
 
@@ -122,7 +105,7 @@ class PDFProcessingService:
             return {
                 "success": False,
                 "error": str(e),
-                "markdown_path": None,
+                "markdown_content": None,
                 "metadata": {}
             }
 

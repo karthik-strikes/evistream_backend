@@ -1,0 +1,19 @@
+{
+  "required_fields": [
+    "num_patients_received_index_test_but_not_reference_standard",
+    "num_patients_received_reference_standard_but_not_index_test",
+    "num_lesions_received_index_test_but_not_reference_standard",
+    "num_lesions_received_reference_standard_but_not_index_test",
+    "time_interval_between_index_test_and_reference_standard"
+  ],
+  "semantic_fields": [
+    "time_interval_between_index_test_and_reference_standard"
+  ],
+  "exact_fields": [
+    "num_patients_received_index_test_but_not_reference_standard",
+    "num_patients_received_reference_standard_but_not_index_test",
+    "num_lesions_received_index_test_but_not_reference_standard",
+    "num_lesions_received_reference_standard_but_not_index_test"
+  ],
+  "groupable_patterns": {}
+}

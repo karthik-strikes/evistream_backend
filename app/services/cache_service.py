@@ -11,7 +11,7 @@ Provides caching for:
 
 import redis
 import json
-import pickle
+import hashlib
 from typing import Any, Optional, Union
 from datetime import timedelta
 import logging
@@ -82,12 +82,12 @@ class CacheService:
             if value is None:
                 return None
 
-            # Try to unpickle (for Python objects)
+            # Deserialize JSON (safe alternative to pickle)
             try:
-                return pickle.loads(value)
-            except:
-                # If unpickling fails, return as string
-                return value.decode('utf-8') if isinstance(value, bytes) else value
+                decoded = value.decode('utf-8') if isinstance(value, bytes) else value
+                return json.loads(decoded)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                return decoded if isinstance(decoded, str) else value
         except Exception as e:
             logger.error(f"Cache get error for key {key}: {e}")
             return None
@@ -113,8 +113,8 @@ class CacheService:
             return False
 
         try:
-            # Pickle the value for storage
-            pickled_value = pickle.dumps(value)
+            # Serialize to JSON (safe alternative to pickle)
+            pickled_value = json.dumps(value).encode('utf-8')
 
             if ttl:
                 self.redis_client.setex(key, ttl, pickled_value)
@@ -238,9 +238,10 @@ class CacheService:
                 return None
 
             try:
-                return pickle.loads(value)
-            except:
-                return value.decode('utf-8') if isinstance(value, bytes) else value
+                decoded = value.decode('utf-8') if isinstance(value, bytes) else value
+                return json.loads(decoded)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                return decoded if isinstance(decoded, str) else value
         except Exception as e:
             logger.error(f"Cache hget error for {name}:{key}: {e}")
             return None
@@ -261,8 +262,8 @@ class CacheService:
             return False
 
         try:
-            pickled_value = pickle.dumps(value)
-            self.redis_client.hset(name, key, pickled_value)
+            serialized = json.dumps(value).encode('utf-8')
+            self.redis_client.hset(name, key, serialized)
             return True
         except Exception as e:
             logger.error(f"Cache hset error for {name}:{key}: {e}")
@@ -287,9 +288,10 @@ class CacheService:
             for key, value in data.items():
                 k = key.decode('utf-8') if isinstance(key, bytes) else key
                 try:
-                    result[k] = pickle.loads(value)
-                except:
-                    result[k] = value.decode('utf-8') if isinstance(value, bytes) else value
+                    decoded = value.decode('utf-8') if isinstance(value, bytes) else value
+                    result[k] = json.loads(decoded)
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    result[k] = decoded if isinstance(decoded, str) else value
             return result
         except Exception as e:
             logger.error(f"Cache hgetall error for {name}: {e}")
@@ -314,8 +316,8 @@ class CacheService:
             return False
 
         try:
-            pickled_value = pickle.dumps(value)
-            self.redis_client.lpush(key, pickled_value)
+            serialized = json.dumps(value).encode('utf-8')
+            self.redis_client.lpush(key, serialized)
             return True
         except Exception as e:
             logger.error(f"Cache lpush error for key {key}: {e}")
@@ -340,9 +342,10 @@ class CacheService:
                 return None
 
             try:
-                return pickle.loads(value)
-            except:
-                return value.decode('utf-8') if isinstance(value, bytes) else value
+                decoded = value.decode('utf-8') if isinstance(value, bytes) else value
+                return json.loads(decoded)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                return decoded if isinstance(decoded, str) else value
         except Exception as e:
             logger.error(f"Cache rpop error for key {key}: {e}")
             return None
@@ -385,8 +388,8 @@ class CacheService:
             return False
 
         try:
-            pickled_values = [pickle.dumps(v) for v in values]
-            self.redis_client.sadd(key, *pickled_values)
+            serialized_values = [json.dumps(v).encode('utf-8') for v in values]
+            self.redis_client.sadd(key, *serialized_values)
             return True
         except Exception as e:
             logger.error(f"Cache sadd error for key {key}: {e}")
@@ -407,8 +410,8 @@ class CacheService:
             return False
 
         try:
-            pickled_value = pickle.dumps(value)
-            return bool(self.redis_client.sismember(key, pickled_value))
+            serialized = json.dumps(value).encode('utf-8')
+            return bool(self.redis_client.sismember(key, serialized))
         except Exception as e:
             logger.error(f"Cache sismember error for key {key}: {e}")
             return False

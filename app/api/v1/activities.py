@@ -1,19 +1,22 @@
 """Activity Feed API endpoints."""
 
+import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from supabase import create_client
 from typing import List, Optional
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from app.dependencies import get_current_user, get_optional_user
+from app.dependencies import get_current_user
 from app.config import settings
 from app.models.schemas import ActivityResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 # Initialize Supabase client
-supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 
 @router.get("", response_model=List[ActivityResponse])
@@ -23,27 +26,21 @@ async def get_activities(
     date_range: Optional[str] = Query("week", description="Date range: today, week, month, all"),
     limit: int = Query(100, ge=1, le=500, description="Number of activities to return"),
     offset: int = Query(0, ge=0, description="Number of activities to skip"),
-    user_id: UUID = Depends(get_optional_user),
+    user_id: UUID = Depends(get_current_user),
 ):
     """Get user's activity feed with optional filters."""
     try:
-        # Use placeholder user ID if not authenticated (dev mode)
-        effective_user_id = user_id or UUID("00000000-0000-0000-0000-000000000001")
-
-        # Build query
+        # Build query — scoped to authenticated user
         query = supabase.table("activities")\
             .select("*, projects(name)")\
-            .eq("user_id", str(effective_user_id))
+            .eq("user_id", str(user_id))
 
-        # Add project filter
         if project_id:
             query = query.eq("project_id", project_id)
 
-        # Add action type filter
         if action_type:
             query = query.eq("action_type", action_type)
 
-        # Add date range filter
         if date_range != "all":
             now = datetime.utcnow()
             if date_range == "today":
@@ -53,18 +50,15 @@ async def get_activities(
             elif date_range == "month":
                 start_date = now - timedelta(days=30)
             else:
-                start_date = now - timedelta(days=7)  # Default to week
+                start_date = now - timedelta(days=7)
 
             query = query.gte("created_at", start_date.isoformat())
 
-        # Add ordering and pagination
         query = query.order("created_at", desc=True)\
             .range(offset, offset + limit - 1)
 
-        # Execute query
         result = query.execute()
 
-        # Transform data to include project_name
         activities = []
         for activity in result.data:
             project_name = None
@@ -87,26 +81,24 @@ async def get_activities(
         return activities
 
     except Exception as e:
+        logger.exception("Error fetching activities")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching activities: {str(e)}"
+            detail="An unexpected error occurred"
         )
 
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
 async def get_activity(
     activity_id: UUID,
-    user_id: UUID = Depends(get_optional_user),
+    user_id: UUID = Depends(get_current_user),
 ):
     """Get a specific activity by ID."""
     try:
-        # Use placeholder user ID if not authenticated (dev mode)
-        effective_user_id = user_id or UUID("00000000-0000-0000-0000-000000000001")
-
         result = supabase.table("activities")\
             .select("*, projects(name)")\
             .eq("id", str(activity_id))\
-            .eq("user_id", str(effective_user_id))\
+            .eq("user_id", str(user_id))\
             .execute()
 
         if not result.data:
@@ -136,7 +128,8 @@ async def get_activity(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("Error fetching activity")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching activity: {str(e)}"
+            detail="An unexpected error occurred"
         )

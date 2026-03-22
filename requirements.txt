@@ -1,43 +1,76 @@
+# eviStream Backend Dependencies
+# For exact reproducible installs, use: pip install -r requirements.lock.txt
+# This file lists the primary dependencies with minimum versions.
+
 # FastAPI and Server
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-multipart==0.0.6
-slowapi==0.1.9
+fastapi>=0.128.0
+uvicorn[standard]>=0.35.0
+python-multipart>=0.0.20
+slowapi>=0.1.9
+sse-starlette>=3.0.0
 
 # Database and ORM
-sqlalchemy==2.0.25
-alembic==1.13.1
+sqlalchemy>=2.0.25
+alembic>=1.13.1
 supabase>=2.3.0
+psycopg2-binary>=2.9.11
 
 # Authentication
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-dotenv==1.0.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-dotenv>=1.0.0
+PyJWT>=2.10.0
 
 # Task Queue
-celery==5.3.6
-redis==5.0.1
+celery>=5.3.6
+redis>=5.0.1
+
+# LangGraph
+langgraph>=1.0.0
+langgraph-checkpoint-postgres>=3.0.0
+
+# LLM Providers
+dspy>=3.0.0
+litellm>=1.30.0
+anthropic>=0.75.0
+openai>=2.8.0
+google-generativeai>=0.8.0
+langchain>=1.0.0
+langchain-anthropic>=1.0.0
+langchain-openai>=1.0.0
+langchain-google-genai>=3.0.0
 
 # AWS
-boto3==1.34.34
+boto3>=1.34.34
+watchtower>=3.0.1
 
 # HTTP Client
 httpx>=0.26.0
 
 # Validation
-pydantic==2.5.3
-pydantic-settings==2.1.0
+pydantic>=2.5.3
+pydantic-settings>=2.1.0
 
-# Existing dependencies (core logic)
-dspy
-streamlit==1.31.0
-pandas==2.2.0
-numpy==1.26.0
-matplotlib==3.8.0
-seaborn==0.13.0
-scikit-learn==1.4.0
-tiktoken==0.5.2
-sentence-transformers==2.3.0
-scipy==1.12.0
-aiofiles==23.2.1
-diskcache==5.6.3
+# Data & ML
+pandas>=2.2.0
+numpy>=2.0.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+scikit-learn>=1.4.0
+scipy>=1.12.0
+sentence-transformers>=4.0.0
+torch
+transformers>=4.48.0
+
+# PDF Processing
+marker-pdf>=1.6.0
+surya-ocr>=0.13.0
+PyMuPDF>=1.26.0
+pdf2image>=1.17.0
+pdfplumber>=0.11.0
+
+# Utilities
+tiktoken>=0.5.2
+aiofiles>=23.2.1
+diskcache>=5.6.3
+orjson>=3.10.0

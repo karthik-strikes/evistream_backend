@@ -251,6 +251,17 @@ UNION ALL
 SELECT 'extraction_results', COUNT(*) FROM extraction_results;
 
 -- ============================================================================
+-- ROLE COLUMN MIGRATION
+-- ============================================================================
+-- Run this once in Supabase SQL Editor to add role-based access control
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'
+  CHECK (role IN ('admin', 'user'));
+
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- ============================================================================
 -- CLEANUP (if needed)
 -- ============================================================================
 -- Uncomment these lines if you need to drop all tables and start fresh
@@ -267,3 +278,25 @@ DROP TABLE IF EXISTS projects CASCADE;
 -- DROP TABLE IF EXISTS users CASCADE;  -- Be careful with this!
 DROP FUNCTION IF EXISTS update_updated_at_column CASCADE;
 */
+
+-- ============================================================================
+-- PROJECT MEMBERS TABLE
+-- ============================================================================
+-- Stores per-user permission flags per project for collaborative access
+
+CREATE TABLE IF NOT EXISTS project_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  can_view_docs BOOLEAN NOT NULL DEFAULT TRUE,
+  can_upload_docs BOOLEAN NOT NULL DEFAULT FALSE,
+  can_create_forms BOOLEAN NOT NULL DEFAULT FALSE,
+  can_run_extractions BOOLEAN NOT NULL DEFAULT FALSE,
+  can_view_results BOOLEAN NOT NULL DEFAULT TRUE,
+  invited_by UUID REFERENCES users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(project_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id);

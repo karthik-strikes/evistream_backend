@@ -2,26 +2,30 @@
 Project management endpoints - Full CRUD operations.
 """
 
+import logging
+from collections import Counter
 from fastapi import APIRouter, Depends, HTTPException, status
 from supabase import create_client
 from uuid import UUID
 from typing import List
 
-from app.dependencies import get_current_user, get_optional_user
+from app.dependencies import get_current_user
 from app.config import settings
-from app.models.schemas import ProjectCreate, ProjectUpdate, ProjectResponse
+from app.models.schemas import ProjectCreate, ProjectUpdate, ProjectResponse, MyPermissionsResponse
+from app.services.project_access import check_project_access
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 # Initialize Supabase client
-supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(
     project_data: ProjectCreate,
-    user_id: UUID = Depends(get_optional_user)
+    user_id: UUID = Depends(get_current_user)
 ):
     """
     Create a new project.
@@ -30,12 +34,8 @@ async def create_project(
     - **description**: Optional project description
     """
     try:
-        # Use placeholder user ID if not authenticated (dev mode)
-        effective_user_id = user_id or UUID("00000000-0000-0000-0000-000000000001")
-
-        # Create project in database
         result = supabase.table("projects").insert({
-            "user_id": str(effective_user_id),
+            "user_id": str(user_id),
             "name": project_data.name,
             "description": project_data.description
         }).execute()
@@ -47,8 +47,6 @@ async def create_project(
             )
 
         project = result.data[0]
-
-        # Add counts (new project has no forms or documents)
         project["forms_count"] = 0
         project["documents_count"] = 0
 
@@ -57,14 +55,15 @@ async def create_project(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("Error creating project")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating project: {str(e)}"
+            detail="An unexpected error occurred"
         )
 
 
 @router.get("", response_model=List[ProjectResponse])
-async def list_projects(user_id: UUID = Depends(get_optional_user)):
+async def list_projects(user_id: UUID = Depends(get_current_user)):
     """
     List all projects for the current user.
 
@@ -72,49 +71,74 @@ async def list_projects(user_id: UUID = Depends(get_optional_user)):
     Includes counts of forms and documents in each project.
     """
     try:
-        # Use placeholder user ID if not authenticated (dev mode)
-        effective_user_id = user_id or UUID("00000000-0000-0000-0000-000000000001")
-
-        # Get all user's projects
-        projects_result = supabase.table("projects")\
+        # Get owned projects
+        owned_result = supabase.table("projects")\
             .select("*")\
-            .eq("user_id", str(effective_user_id))\
+            .eq("user_id", str(user_id))\
             .order("created_at", desc=True)\
             .execute()
+        owned_projects = owned_result.data or []
 
-        projects = projects_result.data or []
+        # Get member projects
+        member_result = supabase.table("project_members")\
+            .select("project_id")\
+            .eq("user_id", str(user_id))\
+            .execute()
+        member_project_ids = [r["project_id"] for r in (member_result.data or [])]
 
-        # Get counts for each project
+        member_projects = []
+        if member_project_ids:
+            mp_result = supabase.table("projects")\
+                .select("*")\
+                .in_("id", member_project_ids)\
+                .order("created_at", desc=True)\
+                .execute()
+            member_projects = mp_result.data or []
+
+        # Merge, deduplicate by id
+        seen = set()
+        projects = []
+        for p in owned_projects + member_projects:
+            if p["id"] not in seen:
+                seen.add(p["id"])
+                projects.append(p)
+
+        # Batch-fetch counts for all projects in 2 queries (not 2N)
+        project_ids = [p["id"] for p in projects]
+        if project_ids:
+            all_forms = supabase.table("forms")\
+                .select("project_id")\
+                .in_("project_id", project_ids)\
+                .execute()
+            forms_count_map = Counter(r["project_id"] for r in (all_forms.data or []))
+
+            all_docs = supabase.table("documents")\
+                .select("project_id")\
+                .in_("project_id", project_ids)\
+                .execute()
+            docs_count_map = Counter(r["project_id"] for r in (all_docs.data or []))
+        else:
+            forms_count_map = {}
+            docs_count_map = {}
+
         for project in projects:
-            project_id = project["id"]
-
-            # Count forms
-            forms_count = supabase.table("forms")\
-                .select("id", count="exact")\
-                .eq("project_id", project_id)\
-                .execute()
-            project["forms_count"] = forms_count.count or 0
-
-            # Count documents
-            docs_count = supabase.table("documents")\
-                .select("id", count="exact")\
-                .eq("project_id", project_id)\
-                .execute()
-            project["documents_count"] = docs_count.count or 0
+            project["forms_count"] = forms_count_map.get(project["id"], 0)
+            project["documents_count"] = docs_count_map.get(project["id"], 0)
 
         return [ProjectResponse(**p) for p in projects]
 
     except Exception as e:
+        logger.exception("Error listing projects")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error listing projects: {str(e)}"
+            detail="An unexpected error occurred"
         )
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(
     project_id: UUID,
-    user_id: UUID = Depends(get_optional_user)
+    user_id: UUID = Depends(get_current_user)
 ):
     """
     Get a specific project by ID.
@@ -122,25 +146,18 @@ async def get_project(
     Returns 404 if project doesn't exist or doesn't belong to the user.
     """
     try:
-        # Use placeholder user ID if not authenticated (dev mode)
-        effective_user_id = user_id or UUID("00000000-0000-0000-0000-000000000001")
+        await check_project_access(project_id, user_id)
 
-        # Get project
         result = supabase.table("projects")\
             .select("*")\
             .eq("id", str(project_id))\
-            .eq("user_id", str(effective_user_id))\
             .execute()
 
         if not result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         project = result.data[0]
 
-        # Get counts
         forms_count = supabase.table("forms")\
             .select("id", count="exact")\
             .eq("project_id", str(project_id))\
@@ -158,17 +175,15 @@ async def get_project(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error getting project: {str(e)}"
-        )
+        logger.exception("Error getting project")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred")
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)
 async def update_project(
     project_id: UUID,
     project_data: ProjectUpdate,
-    user_id: UUID = Depends(get_optional_user)
+    user_id: UUID = Depends(get_current_user)
 ):
     """
     Update a project.
@@ -177,14 +192,10 @@ async def update_project(
     Only the project owner can update it.
     """
     try:
-        # Use placeholder user ID if not authenticated (dev mode)
-        effective_user_id = user_id or UUID("00000000-0000-0000-0000-000000000001")
-
-        # Verify project exists and belongs to user
         existing = supabase.table("projects")\
             .select("id")\
             .eq("id", str(project_id))\
-            .eq("user_id", str(effective_user_id))\
+            .eq("user_id", str(user_id))\
             .execute()
 
         if not existing.data:
@@ -193,7 +204,6 @@ async def update_project(
                 detail="Project not found"
             )
 
-        # Build update data (only include fields that are set)
         update_data = {}
         if project_data.name is not None:
             update_data["name"] = project_data.name
@@ -206,7 +216,6 @@ async def update_project(
                 detail="No fields to update"
             )
 
-        # Update project
         result = supabase.table("projects")\
             .update(update_data)\
             .eq("id", str(project_id))\
@@ -220,7 +229,6 @@ async def update_project(
 
         project = result.data[0]
 
-        # Get counts
         forms_count = supabase.table("forms")\
             .select("id", count="exact")\
             .eq("project_id", str(project_id))\
@@ -238,16 +246,17 @@ async def update_project(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("Error updating project")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error updating project: {str(e)}"
+            detail="An unexpected error occurred"
         )
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     project_id: UUID,
-    user_id: UUID = Depends(get_optional_user)
+    user_id: UUID = Depends(get_current_user)
 ):
     """
     Delete a project.
@@ -261,14 +270,10 @@ async def delete_project(
     Only the project owner can delete it.
     """
     try:
-        # Use placeholder user ID if not authenticated (dev mode)
-        effective_user_id = user_id or UUID("00000000-0000-0000-0000-000000000001")
-
-        # Verify project exists and belongs to user
         existing = supabase.table("projects")\
             .select("id")\
             .eq("id", str(project_id))\
-            .eq("user_id", str(effective_user_id))\
+            .eq("user_id", str(user_id))\
             .execute()
 
         if not existing.data:
@@ -277,7 +282,6 @@ async def delete_project(
                 detail="Project not found"
             )
 
-        # Delete project (CASCADE will delete related records)
         supabase.table("projects")\
             .delete()\
             .eq("id", str(project_id))\
@@ -288,7 +292,27 @@ async def delete_project(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("Error deleting project")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error deleting project: {str(e)}"
+            detail="An unexpected error occurred"
+        )
+
+
+@router.get("/{project_id}/my-permissions", response_model=MyPermissionsResponse)
+async def get_my_permissions(
+    project_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Get the current user's effective permissions for a project."""
+    try:
+        permissions = await check_project_access(project_id, user_id)
+        return MyPermissionsResponse(**permissions)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error getting permissions")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
         )

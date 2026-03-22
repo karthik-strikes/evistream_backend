@@ -1,0 +1,31 @@
+{
+  "required_fields": [
+    "linking_index_test",
+    "outcome_target_condition",
+    "true_positives",
+    "false_positives",
+    "false_negatives",
+    "true_negatives",
+    "reported_sensitivity",
+    "reported_sensitivity_ci",
+    "reported_specificity",
+    "reported_specificity_ci",
+    "outcomes_comment"
+  ],
+  "semantic_fields": [
+    "linking_index_test",
+    "outcome_target_condition",
+    "outcomes_comment"
+  ],
+  "exact_fields": [
+    "true_positives",
+    "false_positives",
+    "false_negatives",
+    "true_negatives",
+    "reported_sensitivity",
+    "reported_sensitivity_ci",
+    "reported_specificity",
+    "reported_specificity_ci"
+  ],
+  "groupable_patterns": {}
+}

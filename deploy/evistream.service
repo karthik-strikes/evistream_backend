@@ -1,0 +1,20 @@
+[Unit]
+Description=eviStream Application Stack
+After=network-online.target redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=ubuntu
+WorkingDirectory=/home/ubuntu/evistream
+ExecStart=/usr/bin/tmux new-session -d -s evistream -x 220 -y 50 \; \
+  send-keys "cd /home/ubuntu/evistream/frontend && npm run start" Enter \; \
+  split-window -v \; \
+  send-keys "source /home/ubuntu/.bashrc && conda activate topics && cd /home/ubuntu/evistream/backend && bash start_workers.sh && uvicorn app.main:app --host 0.0.0.0 --port 8001" Enter
+ExecStop=/usr/bin/tmux kill-session -t evistream
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

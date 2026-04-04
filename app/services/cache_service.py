@@ -80,8 +80,10 @@ class CacheService:
         try:
             value = self.redis_client.get(key)
             if value is None:
+                logger.debug(f"Cache miss: {key}")
                 return None
 
+            logger.debug(f"Cache hit: {key}")
             # Deserialize JSON (safe alternative to pickle)
             try:
                 decoded = value.decode('utf-8') if isinstance(value, bytes) else value

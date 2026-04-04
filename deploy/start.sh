@@ -10,6 +10,8 @@
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 SESSION="evistream"
 CONDA_ENV="topics"
+LOGS_DIR="$PROJECT_DIR/logs"
+mkdir -p "$LOGS_DIR"
 
 # Kill existing session if running
 tmux kill-session -t "$SESSION" 2>/dev/null
@@ -19,13 +21,14 @@ echo "Starting eviStream stack..."
 # Create tmux session with the frontend pane
 tmux new-session -d -s "$SESSION" -n "stack" -c "$PROJECT_DIR/frontend"
 
-# Pane 0: Frontend
-tmux send-keys -t "$SESSION:stack.0" "npm run dev" C-m
+# Pane 0: Frontend — build then start, tee output to logs
+tmux send-keys -t "$SESSION:stack.0" \
+  "npm run build 2>&1 | tee $LOGS_DIR/nextjs-build.log && npm run start 2>&1 | tee $LOGS_DIR/nextjs.log" C-m
 
 # Pane 1: Backend (split horizontally)
 tmux split-window -h -t "$SESSION:stack" -c "$PROJECT_DIR/backend"
 tmux send-keys -t "$SESSION:stack.1" \
-  "source ~/.bashrc && conda activate $CONDA_ENV && bash stop_workers.sh && bash start_workers.sh && python -m app.main" C-m
+  "source ~/.bashrc && conda activate $CONDA_ENV && bash stop_workers.sh && bash start_workers.sh && python -m app.main 2>&1 | tee $LOGS_DIR/api.log" C-m
 
 # Even out the panes
 tmux select-layout -t "$SESSION:stack" even-horizontal

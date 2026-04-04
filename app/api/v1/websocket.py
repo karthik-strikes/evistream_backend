@@ -14,6 +14,7 @@ import asyncio
 import logging
 from uuid import UUID
 
+import redis.asyncio as aioredis
 from app.services.cache_service import cache_service
 
 
@@ -316,6 +317,24 @@ async def websocket_job_updates(
 
     await manager.connect(job_id, websocket)
 
+    async def _redis_subscriber():
+        """Subscribe to Redis pub/sub and forward messages to this WebSocket client."""
+        from app.config import settings
+        r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        async with r:
+            pubsub = r.pubsub()
+            await pubsub.subscribe(f"ws_jobs:{job_id}")
+            try:
+                async for msg in pubsub.listen():
+                    if msg["type"] == "message":
+                        await websocket.send_json(json.loads(msg["data"]))
+            except Exception:
+                pass
+            finally:
+                await pubsub.unsubscribe(f"ws_jobs:{job_id}")
+
+    sub_task = asyncio.create_task(_redis_subscriber())
+
     try:
         # Send initial connection message
         await manager.send_personal_message({
@@ -364,11 +383,17 @@ async def websocket_job_updates(
                     last_heartbeat = current_time
 
     except WebSocketDisconnect:
-        await manager.disconnect(job_id, websocket)
         logger.info(f"Client disconnected from job {job_id}")
 
     except Exception as e:
         logger.error(f"WebSocket error for job {job_id}: {e}")
+
+    finally:
+        sub_task.cancel()
+        try:
+            await sub_task
+        except asyncio.CancelledError:
+            pass
         await manager.disconnect(job_id, websocket)
 
 

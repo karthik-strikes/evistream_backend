@@ -137,20 +137,23 @@ async def get_dashboard_stats(
 
         fields_filled_map: dict = {}
         total_fields_map: dict = {}
+        doc_count_map: dict = {}  # extraction_id → set of doc_ids
         if recent_ext_ids:
             detail_resp = (
                 supabase.table("extraction_results")
-                .select("extraction_id,extracted_data")
+                .select("extraction_id,document_id,extracted_data")
                 .in_("extraction_id", recent_ext_ids)
                 .execute()
             )
-            # Take first row per extraction, mirror allFieldNames + getCompleteness logic
-            seen: set = set()
+            # Aggregate across ALL result rows per extraction (not just first)
+            agg_filled: dict = {}
+            agg_total: dict = {}
+            agg_docs: dict = {}
             for row in (detail_resp.data or []):
                 eid = row["extraction_id"]
-                if eid in seen:
-                    continue
-                seen.add(eid)
+                doc_id = row.get("document_id")
+                if doc_id:
+                    agg_docs.setdefault(eid, set()).add(doc_id)
                 data_blob = row.get("extracted_data") or {}
                 if isinstance(data_blob, str):
                     try:
@@ -165,18 +168,24 @@ async def get_dashboard_stats(
                     1 for k in field_keys
                     if (v := _extract_value(data_blob[k])) and v not in ("—", "N/A")
                 )
-                fields_filled_map[eid] = filled
-                total_fields_map[eid] = len(field_keys)
+                agg_filled[eid] = agg_filled.get(eid, 0) + filled
+                agg_total[eid] = agg_total.get(eid, 0) + len(field_keys)
+            fields_filled_map = agg_filled
+            total_fields_map = agg_total
+            doc_count_map = {eid: len(docs) for eid, docs in agg_docs.items()}
 
-        doc_ids_needed = [
-            first_doc_map[eid] for eid in recent_ext_ids if eid in first_doc_map
+        # Resolve filenames only for single-doc extractions
+        single_doc_ids = [
+            first_doc_map[eid]
+            for eid in recent_ext_ids
+            if eid in first_doc_map and doc_count_map.get(eid, 0) <= 1
         ]
         doc_name_map: dict = {}
-        if doc_ids_needed:
+        if single_doc_ids:
             docs_resp = (
                 supabase.table("documents")
                 .select("id,filename")
-                .in_("id", doc_ids_needed)
+                .in_("id", single_doc_ids)
                 .execute()
             )
             doc_name_map = {
@@ -189,23 +198,26 @@ async def get_dashboard_stats(
         # 6. Recent 5 extractions (from already-fetched extractions_data)
         recent = []
         for e in extractions_data[:5]:
-            first_doc_id = first_doc_map.get(e["id"])
-            doc_name = (
-                doc_name_map.get(first_doc_id, first_doc_id[:12] if first_doc_id else "—")
-                if first_doc_id
-                else "—"
-            )
+            eid = e["id"]
+            n_docs = doc_count_map.get(eid, 0)
+            first_doc_id = first_doc_map.get(eid)
+            if n_docs > 1:
+                doc_name = f"{n_docs} docs"
+            elif n_docs == 1 and first_doc_id:
+                doc_name = doc_name_map.get(first_doc_id, first_doc_id[:12] if first_doc_id else "—")
+            else:
+                doc_name = "—"
             recent.append(
                 {
-                    "id": e["id"],
+                    "id": eid,
                     "status": e["status"],
                     "form_id": e["form_id"],
                     "form_name": form_name_map.get(e["form_id"], ""),
                     "created_at": e["created_at"],
-                    "result_count": result_count_map.get(e["id"], 0),
+                    "result_count": result_count_map.get(eid, 0),
                     "doc_name": doc_name,
-                    "fields_filled": fields_filled_map.get(e["id"], 0),
-                    "total_fields": total_fields_map.get(e["id"], 0),
+                    "fields_filled": fields_filled_map.get(eid, 0),
+                    "total_fields": total_fields_map.get(eid, 0),
                 }
             )
 

@@ -12,11 +12,22 @@ from app.config import settings
 from app.services.code_generation_service import code_generation_service
 from app.models.enums import FormStatus, JobStatus
 from app.workers.utils import sync_log_activity, sync_notify
+from app.services.cache_service import cache_service
 
 logger = logging.getLogger(__name__)
 
 # Initialize Supabase client
 supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+
+
+def _invalidate_form_caches(project_id: str, form_id: str):
+    """Invalidate Redis form caches after a status change in the worker."""
+    try:
+        if project_id:
+            cache_service.delete_pattern(f"forms:project:{project_id}:*")
+        cache_service.delete(f"forms:detail:{form_id}")
+    except Exception as e:
+        logger.warning(f"Cache invalidation failed (non-fatal): {e}")
 
 
 def _form_still_exists(form_id: str) -> bool:
@@ -75,6 +86,7 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
             raise Exception(f"Form {form_id} not found")
 
         form = form_result.data[0]
+        project_id = form.get("project_id")
 
         # Parse fields from JSON string
         fields = json.loads(form["fields"]) if isinstance(form.get("fields"), str) else form["fields"]
@@ -170,6 +182,16 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
             }).eq("id", job_id).execute()
             broadcaster.progress(50, "Awaiting human review")
 
+            # Invalidate cache so frontend sees awaiting_review immediately
+            _invalidate_form_caches(project_id, form_id)
+
+            # Broadcast complete event so frontend can react in real-time
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": "awaiting_review",
+            })
+
             return {
                 "status": "awaiting_review",
                 "form_id": form_id,
@@ -197,6 +219,7 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
                 "error": None,
             }
             supabase.table("forms").update(update_data).eq("id", form_id).execute()
+            _invalidate_form_caches(project_id, form_id)
             broadcaster.info(f"💾 Saved to: {result['schema_name']}")
 
             # Update job status to completed
@@ -211,6 +234,11 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
                 }
             }).eq("id", job_id).execute()
             broadcaster.progress(100, "Complete! Form ready for extraction.")
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": "completed",
+            })
 
             # Notify and log activity on success
             job_record = supabase.table("jobs").select("user_id, project_id").eq("id", job_id).execute()
@@ -239,12 +267,18 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
             error_msg = result.get("error", "Unknown error")
             logger.error(f"Code generation failed for form {form_id}: {error_msg}")
             broadcaster.error(f"❌ Generation failed: {error_msg}")
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": "failed",
+            })
 
             # Update form status to failed
             supabase.table("forms").update({
                 "status": FormStatus.FAILED.value,
                 "error": error_msg
             }).eq("id", form_id).execute()
+            _invalidate_form_caches(project_id, form_id)
 
             # Update job status to failed
             supabase.table("jobs").update({
@@ -530,6 +564,11 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
             }).eq("id", job_id).execute()
 
             broadcaster.progress(100, "Complete! Form ready for extraction.")
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": "completed",
+            })
 
             # Log activity on success
             job_record = supabase.table("jobs").select("user_id, project_id").eq("id", job_id).execute()

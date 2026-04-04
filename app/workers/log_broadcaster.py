@@ -1,13 +1,15 @@
 """
 Log broadcasting utility for Celery workers.
 
-Enables real-time log streaming from Celery tasks to WebSocket clients.
+Enables real-time log streaming from Celery tasks to WebSocket clients
+via Redis pub/sub. The Celery worker and FastAPI run in separate processes,
+so this broadcaster publishes to a Redis channel that the FastAPI WebSocket
+handler subscribes to and forwards to connected clients.
 """
 
-import asyncio
+import json
 import logging
-import time
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from datetime import datetime
 
 
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class CeleryLogBroadcaster:
     """
-    Broadcasts logs from Celery workers to WebSocket clients.
+    Broadcasts logs from Celery workers to WebSocket clients via Redis pub/sub.
 
     Usage in Celery tasks:
         broadcaster = CeleryLogBroadcaster(job_id)
@@ -25,48 +27,33 @@ class CeleryLogBroadcaster:
     """
 
     def __init__(self, job_id: str):
-        """
-        Initialize log broadcaster.
-
-        Args:
-            job_id: Job ID to broadcast logs for
-        """
         self.job_id = job_id
-        self._loop = None
-
-    def _get_or_create_loop(self):
-        """Get or create event loop for async operations."""
-        if self._loop is None:
-            try:
-                self._loop = asyncio.get_event_loop()
-            except RuntimeError:
-                self._loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self._loop)
-        return self._loop
 
     def _broadcast_message(self, message: Dict[str, Any]):
         """
-        Broadcast a message to WebSocket clients.
+        Publish a message to Redis so the FastAPI WebSocket handler
+        can forward it to any connected clients.
 
-        Args:
-            message: Message dictionary to broadcast
+        Also appends to the Redis cache list so clients that connect
+        after the job completes can replay the message history.
         """
         try:
-            # Import here to avoid circular imports
-            from app.api.v1.websocket import manager
+            from app.services.cache_service import cache_service
 
-            loop = self._get_or_create_loop()
+            payload = json.dumps(message)
+            channel = f"ws_jobs:{self.job_id}"
 
-            # Run async broadcast in sync context
-            if loop.is_running():
-                # If loop is already running, create a task
-                asyncio.create_task(manager.broadcast_to_job(self.job_id, message))
-            else:
-                # Otherwise run until complete
-                loop.run_until_complete(manager.broadcast_to_job(self.job_id, message))
+            # Live path: pub/sub delivers to currently connected clients
+            cache_service.redis_client.publish(channel, payload)
+
+            # Late-join path: cache list for clients that connect after job ends
+            key = f"ws_messages:{self.job_id}"
+            cache_service.redis_client.lpush(key, payload.encode())
+            cache_service.redis_client.ltrim(key, 0, 99)
+            cache_service.redis_client.expire(key, 3600)
 
         except Exception as e:
-            logger.error(f"Failed to broadcast message: {e}")
+            logger.error(f"Failed to publish message: {e}")
 
     def log(self, message: str, level: str = "info"):
         """
@@ -84,7 +71,6 @@ class CeleryLogBroadcaster:
             "job_id": self.job_id
         })
 
-        # Also log to standard logger
         log_func = getattr(logger, level if level != "success" else "info")
         log_func(f"[Job {self.job_id}] {message}")
 

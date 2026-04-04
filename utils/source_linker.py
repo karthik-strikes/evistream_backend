@@ -28,24 +28,82 @@ PAGE_SEPARATOR_RE = re.compile(r'\{(\d+)\}-{48,}')
 # Embedded page map header in markdown
 PAGE_MAP_HEADER_RE = re.compile(r'<!--\s*PAGE_MAP:\s*(\[.*?\])\s*-->', re.DOTALL)
 
+# Section heading detection — matches lines where the entire content is a known academic section name
+# Handles: "## Methods", "**Participants**", "2. Results", "ABSTRACT", etc.
+_SECTION_HEADING_RE = re.compile(
+    r'(?m)^[ \t]*'                         # start of line
+    r'(?:#{1,6}[ \t]+)?'                   # optional markdown heading: ## or ###
+    r'\*{0,2}'                             # optional bold open: **
+    r'(?:\d+[\.\)]\s*)?'                   # optional numbering: "2. " or "3) "
+    r'(abstract|introduction|background|'
+    r'(?:materials?\s+and\s+)?methods?|methodology|'
+    r'study\s+(?:design|population|setting)|'
+    r'participants?|subjects?|patients?|'
+    r'(?:primary\s+)?(?:results?|outcomes?|findings?)|'
+    r'discussion|conclusions?|summary|'
+    r'references?|bibliography|'
+    r'statistical\s+(?:analysis|methods?)|data\s+(?:analysis|collection)|'
+    r'randomiz(?:ation|ing)|interventions?|'
+    r'(?:inclusion|exclusion)\s+criteria|eligibility|'
+    r'blinding|allocation|randomiz(?:ation|ing)|'
+    r'adverse\s+events?|safety|efficacy)'
+    r'\*{0,2}'                             # optional bold close: **
+    r'[ \t]*$',                            # nothing else on this line
+    re.IGNORECASE,
+)
+
+# Canonical display names for matched section keywords
+_SECTION_CANONICAL: Dict[str, str] = {
+    'abstract': 'Abstract',
+    'introduction': 'Introduction',
+    'background': 'Background',
+    'methods': 'Methods', 'method': 'Methods', 'methodology': 'Methods',
+    'materials and methods': 'Methods', 'material and methods': 'Methods',
+    'study design': 'Methods', 'study setting': 'Methods',
+    'study population': 'Participants',
+    'participants': 'Participants', 'participant': 'Participants',
+    'subjects': 'Participants', 'subject': 'Participants',
+    'patients': 'Participants', 'patient': 'Participants',
+    'eligibility': 'Participants',
+    'inclusion criteria': 'Participants', 'exclusion criteria': 'Participants',
+    'results': 'Results', 'result': 'Results',
+    'outcomes': 'Results', 'outcome': 'Results',
+    'primary outcomes': 'Results', 'primary outcome': 'Results',
+    'findings': 'Results', 'finding': 'Results',
+    'discussion': 'Discussion',
+    'conclusions': 'Conclusion', 'conclusion': 'Conclusion', 'summary': 'Conclusion',
+    'references': 'References', 'reference': 'References', 'bibliography': 'References',
+    'statistical analysis': 'Methods', 'statistical methods': 'Methods',
+    'data analysis': 'Methods', 'data collection': 'Methods',
+    'randomization': 'Methods', 'randomizing': 'Methods',
+    'interventions': 'Methods', 'intervention': 'Methods',
+    'blinding': 'Methods', 'allocation': 'Methods',
+    'adverse events': 'Results', 'adverse event': 'Results',
+    'safety': 'Results', 'efficacy': 'Results',
+}
+
 
 @dataclass
 class SourceLocation:
     """Location of a source text snippet in the original document."""
-    page: int                   # 1-indexed page number
-    start_char: int             # Character offset in full markdown
-    end_char: int               # Character offset end
-    matched_text: str           # The actual text that was matched
-    confidence: float           # Match quality 0-1
+    page: int                        # 1-indexed page number
+    start_char: int                  # Character offset in full markdown
+    end_char: int                    # Character offset end
+    matched_text: str                # The actual text that was matched
+    confidence: float                # Match quality 0-1
+    section: Optional[str] = None   # Nearest section heading above the match
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result: Dict[str, Any] = {
             "page": self.page,
             "start_char": self.start_char,
             "end_char": self.end_char,
             "matched_text": self.matched_text,
             "confidence": round(self.confidence, 3),
         }
+        if self.section:
+            result["section"] = self.section
+        return result
 
 
 @dataclass
@@ -219,6 +277,7 @@ def locate_source(
             end_char=exact_pos + len(source_clean),
             matched_text=source_clean,
             confidence=1.0,
+            section=_detect_section(source_index.full_text, exact_pos),
         )
 
     # --- Fuzzy matching against chunks ---
@@ -273,6 +332,7 @@ def locate_source(
             end_char=best_chunk.end_char,
             matched_text=best_chunk.text[:500],  # Truncate very long matches
             confidence=best_score,
+            section=_detect_section(source_index.full_text, best_chunk.start_char),
         )
 
     return None
@@ -383,6 +443,29 @@ def embed_page_map_header(markdown_content: str, page_map: List[Dict[str, Any]])
 def _normalize_whitespace(text: str) -> str:
     """Collapse multiple whitespace characters into single spaces."""
     return re.sub(r'\s+', ' ', text.strip())
+
+
+def _detect_section(full_text: str, start_char: int, search_window: int = 3000) -> Optional[str]:
+    """
+    Detect which academic section the text at start_char belongs to.
+
+    Scans backward from start_char (up to search_window chars) for the nearest
+    line whose entire content is a known section heading keyword.
+
+    Returns a canonical section name (e.g. "Methods", "Results") or None.
+    """
+    search_start = max(0, start_char - search_window)
+    preceding_text = full_text[search_start:start_char]
+
+    matches = list(_SECTION_HEADING_RE.finditer(preceding_text))
+    if not matches:
+        return None
+
+    # Last match = nearest heading above the source text
+    keyword = matches[-1].group(1).lower().strip()
+    # Collapse internal whitespace for lookup
+    keyword = re.sub(r'\s+', ' ', keyword)
+    return _SECTION_CANONICAL.get(keyword)
 
 
 def _char_offset_to_page(offset: int, source_index: SourceIndex) -> int:

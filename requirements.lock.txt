@@ -120,7 +120,6 @@ google-cloud-resource-manager==1.15.0
 google-cloud-storage==3.6.0
 google-crc32c==1.7.1
 google-genai==1.53.0
-google-generativeai==0.8.5
 google-resumable-media==2.8.0
 googleapis-common-protos==1.70.0
 graphviz==0.20.3

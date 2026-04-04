@@ -114,7 +114,16 @@ async def create_extraction_job(
 
         # Guard B: per-job document cap
         doc_ids = extraction_data.document_ids
-        effective_count = len(doc_ids) if doc_ids else 999
+        if doc_ids:
+            effective_count = len(doc_ids)
+        else:
+            # "Run all" — count completed documents in the project
+            count_result = supabase.table("documents")\
+                .select("id", count="exact")\
+                .eq("project_id", str(extraction_data.project_id))\
+                .eq("processing_status", "completed")\
+                .execute()
+            effective_count = count_result.count or 0
         if effective_count > settings.MAX_DOCUMENTS_PER_EXTRACTION_JOB:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -327,6 +336,171 @@ async def list_extractions(
         raise
     except Exception as e:
         logger.exception("Failed to list extractions")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.get("/coverage")
+@limiter.limit(RATE_LIMIT_EXTRACTION_LIST)
+async def get_extraction_coverage(
+    request: Request,
+    project_id: UUID = Query(...),
+    user_id: UUID = Depends(get_current_user),
+):
+    """
+    Get per-form extraction coverage for a project.
+
+    Returns aggregated data: for each form that has been used in at least one
+    extraction, how many project documents have been extracted, failed, or not
+    yet attempted.
+    """
+    try:
+        await check_project_access(project_id, user_id, "can_view_results")
+        pid = str(project_id)
+
+        # 1) Total completed documents in the project
+        docs_result = supabase.table("documents")\
+            .select("id", count="exact")\
+            .eq("project_id", pid)\
+            .eq("processing_status", "completed")\
+            .execute()
+        total_docs = docs_result.count or 0
+
+        # 2) All extractions for this project (to know which forms were used)
+        extractions_result = supabase.table("extractions")\
+            .select("id, form_id, status, created_at")\
+            .eq("project_id", pid)\
+            .order("created_at", desc=True)\
+            .execute()
+        extractions_data = extractions_result.data or []
+
+        if not extractions_data:
+            return []
+
+        # Group extractions by form_id
+        from collections import defaultdict
+        form_extractions: dict = defaultdict(list)
+        for ext in extractions_data:
+            form_extractions[ext["form_id"]].append(ext)
+
+        # 3) Get form names
+        form_ids = list(form_extractions.keys())
+        forms_result = supabase.table("forms")\
+            .select("id, form_name")\
+            .in_("id", form_ids)\
+            .execute()
+        form_names = {f["id"]: f["form_name"] for f in (forms_result.data or [])}
+
+        # 4) Count distinct successfully extracted document_ids per form
+        #    extraction_results has (form_id, document_id, extracted_data)
+        results_result = supabase.table("extraction_results")\
+            .select("form_id, document_id")\
+            .eq("project_id", pid)\
+            .execute()
+        results_data = results_result.data or []
+
+        # Build set of extracted doc_ids per form
+        form_extracted_docs: dict = defaultdict(set)
+        for r in results_data:
+            form_extracted_docs[r["form_id"]].add(r["document_id"])
+
+        # 5) Get all extraction jobs for this project to find failed doc_ids and active jobs
+        extraction_ids = [ext["id"] for ext in extractions_data]
+        jobs_result = supabase.table("jobs")\
+            .select("id, status, progress, input_data, result_data, created_at")\
+            .eq("job_type", "extraction")\
+            .eq("project_id", pid)\
+            .order("created_at", desc=True)\
+            .execute()
+        jobs_data = jobs_result.data or []
+
+        # Map jobs by extraction_id
+        form_jobs: dict = defaultdict(list)
+        for job in jobs_data:
+            eid = (job.get("input_data") or {}).get("extraction_id")
+            if eid:
+                # Find the form_id for this extraction
+                for ext in extractions_data:
+                    if ext["id"] == eid:
+                        form_jobs[ext["form_id"]].append(job)
+                        break
+
+        # 6) Build coverage response per form
+        coverage = []
+        for form_id, exts in form_extractions.items():
+            extracted_doc_ids = form_extracted_docs.get(form_id, set())
+            extracted_count = len(extracted_doc_ids)
+
+            # Collect failed doc_ids from all jobs for this form,
+            # excluding any that were later successfully extracted
+            failed_doc_ids = set()
+            for job in form_jobs.get(form_id, []):
+                rd = job.get("result_data") or {}
+                for doc_id in (rd.get("failed_document_ids") or []):
+                    if doc_id not in extracted_doc_ids:
+                        failed_doc_ids.add(doc_id)
+            failed_count = len(failed_doc_ids)
+
+            not_run_count = max(0, total_docs - extracted_count - failed_count)
+
+            # Active jobs (pending or processing)
+            active_jobs = []
+            for job in form_jobs.get(form_id, []):
+                if job["status"] in ("pending", "processing"):
+                    rd = job.get("result_data") or {}
+                    active_jobs.append({
+                        "job_id": job["id"],
+                        "extraction_id": (job.get("input_data") or {}).get("extraction_id"),
+                        "status": job["status"],
+                        "progress": job.get("progress", 0),
+                        "papers_total": rd.get("total_documents", 0),
+                        "papers_done": (rd.get("successful_extractions") or 0) + (rd.get("failed_extractions") or 0),
+                    })
+
+            # Most recent extraction date and ID (exts already sorted desc by created_at)
+            last_run_at = exts[0]["created_at"]
+            latest_extraction_id = exts[0]["id"]
+
+            # Find the most recent failed extraction (for retry action)
+            latest_failed_extraction_id = None
+            for ext in exts:
+                if ext["status"] == "failed":
+                    latest_failed_extraction_id = ext["id"]
+                    break
+
+            coverage.append({
+                "form_id": form_id,
+                "form_name": form_names.get(form_id, "Unknown Form"),
+                "total_project_documents": total_docs,
+                "extracted_count": extracted_count,
+                "failed_count": failed_count,
+                "not_run_count": not_run_count,
+                "total_runs": len(exts),
+                "last_run_at": last_run_at,
+                "latest_extraction_id": latest_extraction_id,
+                "latest_failed_extraction_id": latest_failed_extraction_id,
+                "active_jobs": active_jobs,
+                "extracted_document_ids": list(extracted_doc_ids),
+                "failed_document_ids": list(failed_doc_ids),
+            })
+
+        # Sort: active jobs first, then by last_run_at desc within each group
+        coverage.sort(
+            key=lambda c: (0 if c["active_jobs"] else 1, c["last_run_at"]),
+        )
+        # Reverse the date within groups (we want newest first)
+        active = sorted([c for c in coverage if c["active_jobs"]], key=lambda c: c["last_run_at"], reverse=True)
+        inactive = sorted([c for c in coverage if not c["active_jobs"]], key=lambda c: c["last_run_at"], reverse=True)
+        coverage = active + inactive
+
+        return coverage
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to get extraction coverage")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred"
@@ -620,11 +794,9 @@ async def retry_failed_extraction(
         result_data = job.get("result_data") or {}
         failed_document_ids = result_data.get("failed_document_ids") or []
 
+        # If no specific failed docs recorded, the whole extraction failed — retry all docs
         if not failed_document_ids:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No failed documents to retry"
-            )
+            failed_document_ids = None  # None = run on all project documents
 
         # Clear failed_document_ids from the current job so the retry button disappears
         updated_result_data = dict(result_data)
@@ -679,19 +851,20 @@ async def retry_failed_extraction(
             "celery_task_id": celery_task.id
         }).eq("id", new_job_id).execute()
 
+        retrying_count = len(failed_document_ids) if failed_document_ids else "all"
         background_tasks.add_task(
             log_activity,
             user_id=user_id,
             action_type="extraction",
             action="Retry Failed Papers",
-            description=f"Retrying {len(failed_document_ids)} failed papers for extraction {extraction_id}",
+            description=f"Retrying {retrying_count} failed papers for extraction {extraction_id}",
             project_id=UUID(extraction["project_id"]),
-            metadata={"extraction_id": str(extraction_id), "retrying_count": len(failed_document_ids)},
+            metadata={"extraction_id": str(extraction_id), "retrying_count": retrying_count},
         )
 
         return {
             "job_id": new_job_id,
-            "retrying_count": len(failed_document_ids)
+            "retrying_count": retrying_count
         }
 
     except HTTPException:

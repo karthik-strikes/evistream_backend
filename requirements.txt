@@ -31,7 +31,7 @@ langgraph-checkpoint-postgres>=3.0.0
 
 # LLM Providers
 dspy>=3.0.0
-litellm>=1.30.0
+litellm>=1.30.0,!=1.82.7,!=1.82.8
 anthropic>=0.75.0
 openai>=2.8.0
 google-generativeai>=0.8.0

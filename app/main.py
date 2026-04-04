@@ -2,8 +2,13 @@
 FastAPI application entry point.
 """
 
+# Must be first — populates os.environ before any config classes initialize
+from utils.secrets_loader import load_secrets
+load_secrets()
+
 import asyncio
 import logging
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
@@ -17,7 +22,7 @@ import uvicorn
 
 from app.config import settings
 from app.context import configure_logging, request_id_var
-configure_logging(level=settings.LOG_LEVEL)
+configure_logging(level=settings.LOG_LEVEL, log_file="/home/ubuntu/evistream/logs/api.log")
 from app.rate_limit import limiter
 from app.api.v1.router import api_router
 
@@ -47,6 +52,42 @@ class RequestContextMiddleware:
             await self.app(scope, receive, send_with_header)
         finally:
             request_id_var.reset(token)
+
+
+class RequestLoggingMiddleware:
+    """Log every HTTP request with method, path, status code, and latency."""
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        if path == "/health":
+            await self.app(scope, receive, send)
+            return
+
+        method = scope.get("method", "")
+        start = time.monotonic()
+        status_code = 0
+
+        async def send_capturing(message):
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message.get("status", 0)
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_capturing)
+        finally:
+            ms = int((time.monotonic() - start) * 1000)
+            level = logging.WARNING if status_code >= 400 else logging.INFO
+            if status_code >= 500:
+                level = logging.ERROR
+            logger.log(level, f"{method} {path} {status_code} {ms}ms")
 
 
 # ASGI middleware to strip trailing slashes so routes match without 307 redirects
@@ -125,6 +166,7 @@ app.add_middleware(
 # This normalizes /api/v1/projects/ → /api/v1/projects so routes match without 307 redirects
 app.add_middleware(StripTrailingSlashMiddleware)
 app.add_middleware(RequestContextMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)

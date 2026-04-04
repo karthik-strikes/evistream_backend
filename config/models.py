@@ -21,8 +21,8 @@ EXTRACTION_FALLBACK_MODELS   = ["openai/gpt-4o", "gemini/gemini-2.0-flash-exp"]
 EXTRACTION_MAX_TOKENS        = 20000
 EXTRACTION_TEMPERATURE       = 1.0
 EXTRACTION_BATCH_CONCURRENCY = 5     # papers in parallel per job
-EXTRACTION_MAX_JOBS_PER_USER = 2     # fairness cap
-EXTRACTION_MAX_DOCS_PER_JOB  = 50
+EXTRACTION_MAX_JOBS_PER_USER = 10    # soft cap — users can queue up to 10, system processes as capacity allows
+EXTRACTION_MAX_DOCS_PER_JOB  = 100
 EXTRACTION_TASK_CONCURRENCY  = 350  # max simultaneous LLM calls across ALL papers AND stages
 
 # ── EVALUATION ────────────────────────────────────────────────────────

@@ -122,6 +122,8 @@ def register_schema(config: DynamicSchemaConfig) -> None:
             schema_data = {
                 "schema_name": config.schema_name,
                 "task_name": config.task_name,
+                "module_path": config.module_path,
+                "signatures_path": config.signatures_path,
                 "signature_class_names": config.signature_class_names,
                 "pipeline_stages": config.pipeline_stages,
                 "form_id": str(config.form_id) if config.form_id else None,

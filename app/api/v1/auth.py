@@ -66,6 +66,7 @@ async def register(request: Request, user_data: UserRegister):
         access_token = auth_service.create_access_token(user_id, role=user_role)
         refresh_token = auth_service.create_refresh_token(user_id)
 
+        logger.info(f"Registration successful: user={user_data.email}")
         return TokenWithRefresh(
             access_token=access_token,
             refresh_token=refresh_token,
@@ -131,6 +132,7 @@ async def login(request: Request, credentials: UserLogin):
         access_token = auth_service.create_access_token(user_id, role=user_role)
         refresh_token = auth_service.create_refresh_token(user_id)
 
+        logger.info(f"Login successful: user={credentials.email} role={user_role}")
         return TokenWithRefresh(
             access_token=access_token,
             refresh_token=refresh_token,

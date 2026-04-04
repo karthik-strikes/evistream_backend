@@ -2,6 +2,10 @@
 Celery application configuration for background task processing.
 """
 
+# Must be first — populates os.environ before any config classes initialize
+from utils.secrets_loader import load_secrets
+load_secrets()
+
 from celery import Celery
 from celery.schedules import crontab
 from app.config import settings
@@ -108,7 +112,7 @@ def setup_worker_logging(sender, instance, **kwargs):
 
     # Derive log file from worker name: "extraction_worker@host" → "logs/extraction_worker.log"
     worker_name = sender.split("@")[0]
-    log_file = f"logs/{worker_name}.log"
+    log_file = f"/home/ubuntu/evistream/logs/{worker_name}.log"
 
     configure_logging(level=settings.LOG_LEVEL, stream_name=stream_name, log_file=log_file)
 

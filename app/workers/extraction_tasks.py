@@ -113,6 +113,9 @@ def run_extraction(
             "progress": 20
         }).eq("id", job_id).execute()
 
+        # Initialize failed_doc_ids before branching (used in final status update)
+        failed_doc_ids: list = []
+
         # Determine if single or batch extraction
         if len(documents) == 1:
             # Single document extraction — download from S3 to temp file
@@ -169,6 +172,9 @@ def run_extraction(
                 missing = len(s3_docs) - len(valid_path_to_doc_id)
                 if missing:
                     logger.warning(f"{missing} markdown file(s) could not be downloaded, skipping")
+
+                if not valid_path_to_doc_id:
+                    raise Exception(f"All {len(s3_docs)} markdown file(s) failed to download from S3 — cannot extract")
 
                 total_papers = len(valid_path_to_doc_id)
                 completed_papers = 0
@@ -358,6 +364,13 @@ def run_extraction(
                 }
             }).eq("id", job_id).execute()
 
+            # Broadcast completion so frontend updates instantly (no poll cycle needed)
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": extraction_status,
+            })
+
             # Log activity and notify on success
             job_record = supabase.table("jobs").select("user_id, project_id").eq("id", job_id).execute()
             if job_record.data:
@@ -395,6 +408,13 @@ def run_extraction(
                 "progress": 0,
                 "error_message": error_msg
             }).eq("id", job_id).execute()
+
+            # Broadcast completion so frontend updates instantly
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": "failed",
+            })
 
             # Log activity and notify on failure
             job_record = supabase.table("jobs").select("user_id, project_id").eq("id", job_id).execute()
@@ -434,6 +454,15 @@ def run_extraction(
                 "progress": 0,
                 "error_message": error_msg
             }).eq("id", job_id).execute()
+            # Broadcast completion so frontend updates instantly
+            try:
+                broadcaster._broadcast_message({
+                    "type": "complete",
+                    "job_id": str(job_id),
+                    "status": "failed",
+                })
+            except Exception:
+                pass
             # Notify on exception
             job_record = supabase.table("jobs").select("user_id, project_id").eq("id", job_id).execute()
             if job_record.data:

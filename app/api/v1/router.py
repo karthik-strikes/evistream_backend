@@ -26,6 +26,7 @@ from .vocabularies import router as vocabularies_router
 from .data_cleaning import router as data_cleaning_router
 from .audit import router as audit_router
 from .client_logs import router as client_logs_router
+from .pilot import router as pilot_router
 
 
 api_router = APIRouter()
@@ -60,3 +61,4 @@ api_router.include_router(vocabularies_router, prefix="/vocabularies", tags=["Vo
 api_router.include_router(data_cleaning_router, prefix="/data-cleaning", tags=["Data Cleaning"])
 api_router.include_router(audit_router, prefix="/audit", tags=["Audit Trail"])
 api_router.include_router(client_logs_router, prefix="/logs", tags=["Client Logs"])
+api_router.include_router(pilot_router, prefix="/forms", tags=["Pilot"])

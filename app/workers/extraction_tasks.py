@@ -68,7 +68,7 @@ def run_extraction(
 
         # Get extraction configuration from database
         extraction_result = supabase.table("extractions")\
-            .select("*, forms(schema_name, task_dir)")\
+            .select("*, forms(schema_name, task_dir, metadata)")\
             .eq("id", extraction_id)\
             .execute()
 
@@ -86,6 +86,20 @@ def run_extraction(
             raise Exception(f"Schema name not found for extraction {extraction_id}")
 
         logger.info(f"Using schema: {schema_name}")
+
+        # Load pilot calibration feedback if available
+        pilot_feedback = None
+        form_metadata = form.get("metadata") or {}
+        pilot_data = form_metadata.get("pilot") or {}
+        if pilot_data.get("field_examples") or pilot_data.get("field_instructions"):
+            pilot_feedback = {
+                "field_examples": pilot_data.get("field_examples", {}),
+                "field_instructions": pilot_data.get("field_instructions", {}),
+            }
+            logger.info(
+                f"Loaded pilot feedback: {len(pilot_feedback['field_examples'])} fields with examples, "
+                f"{len(pilot_feedback['field_instructions'])} fields with instructions"
+            )
 
         # Note: results are upserted below on (extraction_id, document_id) to ensure idempotency
 
@@ -234,6 +248,7 @@ def run_extraction(
                     path_to_doc_id=valid_path_to_doc_id,
                     schema_name=schema_name,
                     on_paper_done=on_paper_done,
+                    pilot_feedback=pilot_feedback,
                 )
             finally:
                 # Clean up temp files

@@ -89,7 +89,7 @@ class DynamicSchemaConfig:
         signatures_module = importlib.import_module(self.signatures_path)
         return [getattr(signatures_module, name) for name in self.signature_class_names]
 
-    def build_pipeline(self) -> Any:
+    def build_pipeline(self, pilot_feedback=None) -> Any:
         """
         Build extraction pipeline following pipeline_stages structure.
 
@@ -97,10 +97,15 @@ class DynamicSchemaConfig:
         - Stage execution order
         - Parallel vs sequential execution within stages
         - Field dependencies between stages
-        """
-        return self._build_staged_pipeline()
 
-    def _build_staged_pipeline(self) -> Any:
+        Args:
+            pilot_feedback: Optional dict with 'field_examples' and 'field_instructions'
+                from pilot calibration. When provided, signature field descriptors are
+                augmented at runtime with calibration examples and instructions.
+        """
+        return self._build_staged_pipeline(pilot_feedback=pilot_feedback)
+
+    def _build_staged_pipeline(self, pilot_feedback=None) -> Any:
         """Build pipeline that follows pipeline_stages execution order."""
         modules_module = importlib.import_module(f"{self.module_path}.modules")
 
@@ -121,15 +126,25 @@ class DynamicSchemaConfig:
             raise ValueError(
                 f"No extractors found for schema {self.schema_name}. Available classes: {[n for n in dir(modules_module) if not n.startswith('_')]}")
 
+        # Load signature classes for pilot feedback augmentation
+        signatures_module = None
+        if pilot_feedback:
+            try:
+                signatures_module = importlib.import_module(self.signatures_path)
+            except (ImportError, ModuleNotFoundError):
+                logger.warning(f"Could not load signatures module for pilot feedback augmentation")
+
         class StagedPipeline(dspy.Module):
             """Pipeline that executes stages in order with dependency handling."""
 
             MAX_EXTRACTOR_RETRIES = 2
 
-            def __init__(self, stages, extractor_factories_map):
+            def __init__(self, stages, extractor_factories_map, pilot_fb=None, sig_module=None):
                 super().__init__()
                 self.stages = stages
                 self.extractor_factories = extractor_factories_map
+                self.pilot_feedback = pilot_fb
+                self._signatures_module = sig_module
 
             @staticmethod
             def _to_dict(result: Any) -> Optional[Dict]:
@@ -213,8 +228,33 @@ class DynamicSchemaConfig:
                 return {"__extraction_failed": True, "__reason": f"all {self.MAX_EXTRACTOR_RETRIES + 1} extraction attempts failed"}
 
             def _create_extractor(self, sig_name):
-                """Create a fresh extractor instance from the factory for this signature."""
-                return self.extractor_factories[sig_name]()
+                """Create a fresh extractor instance from the factory for this signature.
+
+                If pilot feedback exists, augments the signature class with calibration
+                examples and instructions before instantiation.
+                """
+                extractor = self.extractor_factories[sig_name]()
+
+                if self.pilot_feedback and self._signatures_module:
+                    field_examples = self.pilot_feedback.get("field_examples", {})
+                    field_instructions = self.pilot_feedback.get("field_instructions", {})
+                    if field_examples or field_instructions:
+                        from utils.pilot_feedback import augment_signature_with_feedback
+                        sig_class = getattr(self._signatures_module, sig_name, None)
+                        if sig_class is not None:
+                            augmented = augment_signature_with_feedback(
+                                sig_class, field_examples, field_instructions
+                            )
+                            if augmented is not sig_class:
+                                # Replace the signature on the extractor's ChainOfThought
+                                # The extractor wraps a dspy.ChainOfThought which holds the signature
+                                for attr_name in dir(extractor):
+                                    attr = getattr(extractor, attr_name, None)
+                                    if isinstance(attr, dspy.ChainOfThought):
+                                        attr.signature = augmented
+                                        break
+
+                return extractor
 
             async def __call__(self, markdown_content: str, **kwargs):
                 """
@@ -431,7 +471,10 @@ class DynamicSchemaConfig:
 
                 return accumulated
 
-        return StagedPipeline(self.pipeline_stages, extractor_factories)
+        return StagedPipeline(
+            self.pipeline_stages, extractor_factories,
+            pilot_fb=pilot_feedback, sig_module=signatures_module,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict for database/JSON storage."""

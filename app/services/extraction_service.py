@@ -303,6 +303,7 @@ class ExtractionService:
         path_to_doc_id: dict,
         schema_config,
         on_paper_done=None,
+        pilot_feedback=None,
     ) -> list:
         """
         Stage-level fan-out extraction.
@@ -323,7 +324,7 @@ class ExtractionService:
         if not papers:
             return []
 
-        pipeline = schema_config.build_pipeline()
+        pipeline = schema_config.build_pipeline(pilot_feedback=pilot_feedback)
 
         # Adaptive concurrency: reduce when circuit breaker is recovering
         # to avoid blasting a recovering model with 350 simultaneous requests.
@@ -372,6 +373,7 @@ class ExtractionService:
         path_to_doc_id: dict,
         schema_name: str,
         on_paper_done=None,
+        pilot_feedback=None,
     ) -> Dict[str, Any]:
         """
         Sync entry point for Celery: run parallel extraction on a
@@ -388,7 +390,11 @@ class ExtractionService:
                 schema_config = get_schema(schema_name)
 
             results = asyncio.run(
-                self._run_files_stage_fanout(path_to_doc_id, schema_config, on_paper_done=on_paper_done)
+                self._run_files_stage_fanout(
+                    path_to_doc_id, schema_config,
+                    on_paper_done=on_paper_done,
+                    pilot_feedback=pilot_feedback,
+                )
             )
 
             all_results = []

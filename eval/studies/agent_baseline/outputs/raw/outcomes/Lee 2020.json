@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 104254,
+  "duration_api_ms": 105242,
+  "ttft_ms": 3766,
+  "ttft_stream_ms": 3741,
+  "time_to_request_ms": 187,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 6.47,\n      \"sd_arm1\": 0.34,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 6.98,\n      \"sd_arm2\": 0.51,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 6.43,\n      \"sd_arm1\": 0.35,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 6.98,\n      \"sd_arm2\": 0.51,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 3.23,\n      \"sd_arm1\": 0.37,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 3.62,\n      \"sd_arm2\": 0.64,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 3.34,\n      \"sd_arm1\": 0.74,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 3.62,\n      \"sd_arm2\": 0.64,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 11.66,\n      \"sd_arm1\": 8.86,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 22.66,\n      \"sd_arm2\": 13.62,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 5.73,\n      \"sd_arm1\": 5.70,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 22.66,\n      \"sd_arm2\": 13.62,\n      \"n_arm2\": 20\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n| Row | Comparison | Source |\n|-----|-----------|--------|\n| HbA1c row 1 | SRP (arm1) vs CTR (arm2) | Table 4, 3-month values |\n| HbA1c row 2 | SRPAT (arm1) vs CTR (arm2) | Table 4, 3-month values |\n| PPD row 1 | SRP (arm1) vs CTR (arm2) | Table 4, PD at 3 months |\n| PPD row 2 | SRPAT (arm1) vs CTR (arm2) | Table 4, PD at 3 months |\n| BOP row 1 | SRP (arm1) vs CTR (arm2) | Table 4, BOP(%) at 3 months |\n| BOP row 2 | SRPAT (arm1) vs CTR (arm2) | Table 4, BOP(%) at 3 months |\n\n- N=20 per arm (from CONSORT diagram; 5 dropouts from each original group of 25).\n- CI (calculus index) was not extracted \u2014 not in the allowed outcome type list.\n- CAL, PI, GI were not reported in this paper.\n- SRPAT adds professional toothbrushing (Watanabe method), not an antimicrobial or mouthrinse, so both comparisons are classified `SI_vs_usual_care`.\n- The 12-week/3-month follow-up maps to the `3-4_months` bin.",
+  "stop_reason": "end_turn",
+  "session_id": "3951ee59-3f81-4b2f-bd0f-74f8f42bf918",
+  "total_cost_usd": 0.26411765,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 33435,
+    "cache_read_input_tokens": 89008,
+    "output_tokens": 7358,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 33435
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1112,
+        "cache_read_input_tokens": 45621,
+        "cache_creation_input_tokens": 6178,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 6178,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 7358,
+      "cacheReadInputTokens": 89008,
+      "cacheCreationInputTokens": 33435,
+      "webSearchRequests": 0,
+      "costUSD": 0.26246865,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "d7643ae5-e490-4c40-97c7-28e41477d8a3"
+}

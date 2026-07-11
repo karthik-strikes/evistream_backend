@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 25252,
+  "duration_api_ms": 25986,
+  "ttft_ms": 1774,
+  "ttft_stream_ms": 1747,
+  "time_to_request_ms": 178,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"India\",\n  \"setting\": \"university dental college hospital (Department of Periodontics, JSS Dental College and Hospital, Mysore)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"3-arm parallel RCT (Group A: scaling and root planing only; Group B: scaling and root planing + systemic doxycycline; Group C: no treatment control)\",\n  \"recruitment_period\": \"NR\",\n  \"funding_source\": \"Nil (Source of Support: Nil)\",\n  \"notes\": \"3-arm trial; no sample size calculation reported. Conflict of interest: None declared.\"\n}\n```\n\n**Extraction notes:**\n- **Country/Setting**: Explicitly stated as JSS Dental College and Hospital, Mysore, Karnataka, India \u2014 a single university dental college hospital.\n- **Trial design**: 3-arm (not 2-arm) parallel RCT; important for the Cochrane review as it has two active treatment arms (SRP alone vs. SRP + doxycycline) plus an untreated control.\n- **Recruitment period**: Not reported anywhere in the paper.\n- **Funding**: Paper states \"Source of Support: Nil\" and \"Conflict of Interest: None declared.\"\n- **Notes**: No sample size calculation is described; HbA1c data are available numerically in Table 2 (not graph-only).",
+  "stop_reason": "end_turn",
+  "session_id": "e706c7d2-2665-414e-8eeb-16eb5d851741",
+  "total_cost_usd": 0.10999605,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 17447,
+    "cache_read_input_tokens": 77876,
+    "output_tokens": 1330,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 17447
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 336,
+        "cache_read_input_tokens": 34879,
+        "cache_creation_input_tokens": 932,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 932,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1330,
+      "cacheReadInputTokens": 77876,
+      "cacheCreationInputTokens": 17447,
+      "webSearchRequests": 0,
+      "costUSD": 0.10875404999999999,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "8a926cb0-7dbc-4142-92ed-98ab7f09bbbc"
+}

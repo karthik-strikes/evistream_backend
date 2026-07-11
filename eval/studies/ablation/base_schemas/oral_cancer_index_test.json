@@ -1,0 +1,491 @@
+{
+  "version": 1,
+  "task_name": "dynamic_35b35b01_OralCancerIndexTestV2",
+  "signatures": [
+    {
+      "docstring": "Determine the total number of distinct index tests evaluated within the same study, used to flag multi-arm studies where results may overlap in the study population.\n\nForm Questions:\n- n_index_tests_in_study: \"How many distinct index tests were evaluated within this study?\"\n  Options: 1, 2, 3 or more",
+      "class_name": "EstablishIndexTestCount",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the document to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "n_index_tests_in_study",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under study design, index tests, or diagnostic tests evaluated",
+            "Check if multiple tests or test variants are compared against the same reference standard in the same study population",
+            "Count distinct index tests, not sub-analyses or thresholds of the same test"
+          ],
+          "rules": [
+            "Must be exactly one of the allowed options: '1', '2', or '3 or more'",
+            "Use exact spelling and formatting as listed in options",
+            "Select '3 or more' if three or more distinct index tests are evaluated, regardless of the exact number",
+            "Use \"NR\" if the number of index tests cannot be determined from the document"
+          ],
+          "options": [
+            "1",
+            "2",
+            "3 or more"
+          ],
+          "examples": [
+            {
+              "value": "2",
+              "source_text": ""
+            }
+          ],
+          "description": "Total number of distinct index tests evaluated within the same study. Used to flag multi-arm studies where results may overlap in the study population.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract all index-test arms evaluated in the study, one row per arm. Every arm mentioned in the paper must be captured \u2014 do not omit any.\n\nForm Questions:\n- index_test_arms: \"Extract ALL index-test arms evaluated in the study. Each row is one arm.\"\n  Columns per arm:\n  - index_test_arm_label: Full label for this specific index-test arm as it appears in the extraction spreadsheet\n  - index_test_original_category: Broad category of the index test as originally classified\n    Options: Vital Staining, Light-based test - Tissue reflectance, Light-based test - Narrow band imaging, Light-based test - Autofluorescence, Cytology, Combined, Other\n  - index_test_type_transformed: Harmonized index test type applied consistently across the review\n    Options: toluidine blue, acetic acid, lugol's iodine, methylene blue, rose bengal, toluidine blue + acetic acid, acetic acid + lugol's iodine, methylene blue + lugol's iodine, tissue reflectance, narrow band imaging, autofluorescence, cytology, combined, other\n  - index_test_reagent_name: Specific reagent, agent, or device name and concentration\n  - index_test_commercial_name: Commercial or brand name of the test kit or device\n  - site_selection_index_test: How and where the index test was applied within the oral cavity\n  - specimen_collection: How the specimen was collected for tests requiring tissue or cellular material\n  - technique: Step-by-step technique used to apply or perform the index test\n  - n_patients_received: Number of patients who received the index test\n  - n_patients_analyzed: Number of patients whose index test results were included in the analysis\n  - n_lesions_received: Number of lesions that received the index test\n  - n_lesions_analyzed: Number of lesions included in the index-test analysis\n  - positivity_threshold: Exact or paraphrased positivity criterion used to classify a test result as positive\n  - positivity_threshold_transformed: Harmonized short summary of the positivity threshold after review adjudication\n  - calibration_of_assessors: Any training, calibration, or standardization undertaken by the clinicians\n  - blinding_index_test_assessors: Whether the people who applied or interpreted the index test were blinded to the reference standard result\n  - blinding_index_test_examiner: Whether the examiner performing or reading the index test was blinded to other clinical information\n  - comments_index_test: Free-text reviewer notes about this index-test arm\n\nThis signature extracts repeating structured data \u2014 one row per index-test arm. The number of arms is informed by the previously extracted n_index_tests_in_study context field.",
+      "class_name": "ExtractAllIndexTestArms",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the diagnostic accuracy study paper to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        },
+        {
+          "desc": "Previously extracted number of index tests in the study with source grounding (contains 'value' and 'source_text' keys). Used to verify that the correct number of arms are extracted.",
+          "name": "n_index_tests_in_study",
+          "type": "Dict[str, Any]"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "index_test_arms",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under headings such as 'Index Test', 'Study Tests', 'Interventions', or 'Procedures'",
+            "In multi-arm studies, each distinct test or concentration typically constitutes a separate arm",
+            "Cross-check the number of arms extracted against the n_index_tests_in_study context value",
+            "Results tables and flow diagrams may reveal additional arms not explicitly named in the Methods narrative"
+          ],
+          "rules": [
+            "Extract EVERY index-test arm mentioned \u2014 do not omit any arm",
+            "Each arm must be a separate object in the array",
+            "Use {\"value\": \"NR\", \"source_text\": \"NR\"} if no index-test arms can be identified in the document",
+            "The total number of rows should match n_index_tests_in_study where possible"
+          ],
+          "description": "All index-test arms evaluated in the study, with one structured row per arm capturing test identity, technique, participant counts, positivity criteria, and assessor blinding details.",
+          "anchor_columns": [
+            "index_test_arm_label",
+            "index_test_commercial_name",
+            "index_test_original_category",
+            "index_test_reagent_name",
+            "index_test_type_transformed"
+          ],
+          "subform_fields": [
+            {
+              "hints": [
+                "Look in the Methods section, tables of study arms, or figure legends where individual index tests are named or listed",
+                "In multi-arm studies, each distinct test (e.g., different staining agents or concentrations) should yield a separate label",
+                "If the paper uses abbreviations (e.g., 'TB' for toluidine blue), expand to the full label format used in the extraction spreadsheet",
+                "If the arm label is not stated explicitly, construct it from the broad category and the specific reagent/concentration reported (e.g., 'Vital Staining (1% Toluidine Blue)')",
+                "In single-arm studies, the label is typically the name of the one index test evaluated"
+              ],
+              "rules": [
+                "Copy the label exactly as it appears in the extraction spreadsheet; if constructing from paper text, follow the format: 'Category (Reagent/Concentration)'",
+                "Include the concentration in parentheses when reported (e.g., '1% Toluidine Blue', '5% Acetic Acid')",
+                "Each unique index-test arm must have a distinct label \u2014 do not reuse the same label for two different arms",
+                "Do not abbreviate the category or reagent name unless the spreadsheet convention explicitly uses abbreviations",
+                "This field must always be populated; it is the row anchor \u2014 do not leave blank or use NR"
+              ],
+              "field_name": "index_test_arm_label",
+              "field_type": "text",
+              "extraction_role": "anchor",
+              "field_description": "Full label for this specific index-test arm as it appears in the extraction spreadsheet, including the test type and concentration if applicable (e.g., 'Vital Staining (1% Toluidine Blue)', 'Vital Staining (5% Acetic Acid)'). This links the row to the correct arm in multi-test studies."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'Index Test', 'Diagnostic Test', or 'Intervention' headings for how the authors categorise the test",
+                "Check the abstract or introduction where the test type is first introduced \u2014 authors often name the category explicitly (e.g., 'vital staining', 'autofluorescence device', 'cytology brush')",
+                "In multi-arm studies, each arm may be described with its category label in a table or list of interventions",
+                "If the paper does not use these exact category names, map the described test to the closest matching option based on the test mechanism"
+              ],
+              "rules": [
+                "Must be exactly one of the listed options \u2014 no free-text variants",
+                "Use 'Combined' only when the arm explicitly combines tests from two or more distinct categories (e.g., vital staining plus autofluorescence); do not use it for two agents within the same category",
+                "Use 'Other' if the test does not fit any listed category, and record details in comments_index_test",
+                "This field captures the original/pre-harmonisation classification; do not apply the harmonised type from index_test_type_transformed here",
+                "Select the category that best matches the test mechanism as described by the authors, even if the authors do not use the exact option wording"
+              ],
+              "options": [
+                "Vital Staining",
+                "Light-based test - Tissue reflectance",
+                "Light-based test - Narrow band imaging",
+                "Light-based test - Autofluorescence",
+                "Cytology",
+                "Combined",
+                "Other"
+              ],
+              "field_name": "index_test_original_category",
+              "field_type": "select",
+              "extraction_role": "anchor",
+              "field_description": "Broad category of the index test as originally classified in the paper or by the reviewers before transformation."
+            },
+            {
+              "hints": [
+                "Look at the Methods section where the index test is described, and cross-reference with the index_test_original_category and index_test_reagent_name fields already extracted",
+                "For vital staining arms, identify the specific agent (e.g., toluidine blue, acetic acid, lugol's iodine) to select the correct sub-category",
+                "For combined tests, use a combination option (e.g., 'toluidine blue + acetic acid') if the exact pairing is listed; otherwise use 'combined'",
+                "If the paper uses a synonym or abbreviation (e.g., 'TB' for toluidine blue, 'AA' for acetic acid), map it to the appropriate harmonized option",
+                "When the test type is implicit (e.g., described only by brand name), infer the category from the reagent name or device description"
+              ],
+              "rules": [
+                "Must be exactly one of the listed options \u2014 no free-text modifications",
+                "Use lowercase exactly as shown in the options list (e.g., 'toluidine blue', not 'Toluidine Blue')",
+                "If the test uses two agents listed as a combination option, select that combination option rather than 'combined'",
+                "Use 'combined' only when the multi-test combination does not match any of the specific paired options",
+                "Use 'other' if the test type does not fit any listed category, and document the actual test type in comments_index_test",
+                "This field must be populated for every arm \u2014 do not leave blank or use NR"
+              ],
+              "options": [
+                "toluidine blue",
+                "acetic acid",
+                "lugol's iodine",
+                "methylene blue",
+                "rose bengal",
+                "toluidine blue + acetic acid",
+                "acetic acid + lugol's iodine",
+                "methylene blue + lugol's iodine",
+                "tissue reflectance",
+                "narrow band imaging",
+                "autofluorescence",
+                "cytology",
+                "combined",
+                "other"
+              ],
+              "field_name": "index_test_type_transformed",
+              "field_type": "select",
+              "extraction_role": "anchor",
+              "field_description": "Harmonized index test type applied consistently across the review. Vital-staining studies are sub-classified by agent. Select 'other' and describe in comments if the test does not fit any listed category."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'Index Test', 'Materials', or 'Procedure' for the exact reagent name and concentration",
+                "The concentration is often stated alongside the agent name (e.g., '1% toluidine blue solution', '3% acetic acid')",
+                "For device-based tests (e.g., tissue reflectance, narrow band imaging), record the device name and model if given rather than a chemical concentration",
+                "If multiple concentrations were tested in the same arm, record all as stated (e.g., '1% and 2% toluidine blue')",
+                "The reagent name may appear in the abstract or introduction when the test is first introduced, as well as in the Methods"
+              ],
+              "rules": [
+                "Record the reagent or device name and concentration exactly as stated in the paper; do not paraphrase or standardise spelling beyond minor normalisation",
+                "Include the concentration unit (%, mg/mL, etc.) when reported",
+                "Do not conflate this field with index_test_type_transformed (the harmonised category) or index_test_commercial_name (the brand name) \u2014 record the generic formulation here",
+                "Use \"NR\" if neither the reagent name nor concentration is reported anywhere in the paper"
+              ],
+              "field_name": "index_test_reagent_name",
+              "field_type": "text",
+              "extraction_role": "anchor",
+              "field_description": "Specific reagent, agent, or device name and concentration as used in the study (e.g., '1% toluidine blue', '5% acetic acid'). This is more specific than the broad test category and captures the exact formulation used."
+            },
+            {
+              "hints": [
+                "Look in the Materials, Methods, or Index Test sections for brand names, trade names, or manufacturer product names",
+                "Commercial names are often presented alongside the reagent name or device description, sometimes in parentheses or as a footnote",
+                "Check figure legends, tables, and supplementary materials where product names may be listed separately from the main text",
+                "Distinguish from the reagent name (captured in index_test_reagent_name) \u2014 this field captures only the marketed product or brand identity"
+              ],
+              "rules": [
+                "Record the commercial or brand name exactly as it appears in the paper, preserving capitalisation and any registered trademark indicators",
+                "Do not conflate with the generic reagent name or concentration already captured in index_test_reagent_name",
+                "Use \"NR\" if no commercial or brand name is mentioned for this arm"
+              ],
+              "field_name": "index_test_commercial_name",
+              "field_type": "text",
+              "extraction_role": "anchor",
+              "field_description": "Commercial or brand name of the test kit or device if reported. Use NR if not reported."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'Index Test', 'Procedure', or 'Examination Protocol' for descriptions of which oral sites were examined or how sites were selected for staining/testing",
+                "Check for phrases describing whole-mouth rinse, targeted application to suspicious lesions, or systematic examination of specific anatomical sites (e.g., floor of mouth, lateral tongue, buccal mucosa)",
+                "For the already-identified arm row, locate the site-selection description specific to that test arm \u2014 in multi-arm studies, each arm may have a distinct application site or selection procedure"
+              ],
+              "rules": [
+                "Quote verbatim if the paper provides a clear, concise description; paraphrase closely if the original text is very long",
+                "Do not conflate site-selection with the step-by-step technique (captured in the 'technique' field) \u2014 focus on which sites were examined and how they were chosen, not the procedural steps",
+                "Do not duplicate information already captured in 'technique'; if site selection is embedded in technique text, extract only the site-relevant portion here",
+                "Use \"NR\" if the paper does not describe how or where the index test was applied within the oral cavity"
+              ],
+              "field_name": "site_selection_index_test",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "How and where the index test was applied within the oral cavity \u2014 the site-selection procedure used by the clinician. Quote verbatim or paraphrase closely. Use NR if not reported."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under specimen collection, sample preparation, or cytology procedures for the identified index-test arm",
+                "For cytology arms, look for descriptions of brush biopsy, scrape, swab, or exfoliative cytology techniques",
+                "For tissue reflectance or narrow band imaging arms, no specimen is typically collected \u2014 use NA",
+                "Distinguish this field from 'technique', which covers the full application procedure; this field focuses specifically on how the physical specimen was obtained"
+              ],
+              "rules": [
+                "Quote verbatim or paraphrase closely from the Methods section",
+                "Use \"NA\" when the index test is an in-vivo staining or optical test that does not require specimen collection (e.g., toluidine blue, acetic acid, tissue reflectance, narrow band imaging, autofluorescence)",
+                "Use \"NR\" if the test requires specimen collection but the collection method is not described",
+                "Do not conflate specimen collection with the staining or analysis technique \u2014 capture only the physical collection step"
+              ],
+              "field_name": "specimen_collection",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Description of how the specimen was collected for tests requiring tissue or cellular material. Use NA for in-vivo staining tests where no specimen is collected."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under headings such as 'Index Test', 'Procedure', 'Staining Protocol', or 'Test Application'",
+                "For the already-identified arm (e.g., toluidine blue, acetic acid), locate the paragraph describing how that specific agent or device was applied \u2014 rinse steps, dwell time, wash steps, interpretation procedure",
+                "If multiple arms share a common technique, note any arm-specific deviations",
+                "Technique details may also appear in a supplementary protocol or figure legend"
+              ],
+              "rules": [
+                "Quote verbatim when the description is concise and precise; paraphrase or summarise when the original text is excessively long (>5 sentences)",
+                "Capture the full procedural sequence: preparation, application, dwell/contact time, rinsing, and interpretation steps",
+                "Do not conflate with site_selection_index_test (where the test was applied) or specimen_collection (how tissue was collected) \u2014 focus on the procedural steps of the test itself",
+                "Do not conflate with positivity_threshold \u2014 technique describes application steps, not the criterion for a positive result",
+                "Use \"NR\" if the technique is not described in the paper"
+              ],
+              "field_name": "technique",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Step-by-step technique used to apply or perform the index test, as described in the Methods section. Quote verbatim if precise; paraphrase for very long descriptions. Use NR if not stated."
+            },
+            {
+              "hints": [
+                "Look in the Methods or Results section for enrollment or flow diagrams describing how many patients underwent the index test for this specific arm",
+                "In multi-arm studies, locate the arm-specific count rather than the overall study total",
+                "Check participant flow tables, CONSORT-style diagrams, or the opening sentence of the Results section",
+                "Distinguish from n_patients_analyzed: this is the number who received the test, not necessarily those whose results were analyzed"
+              ],
+              "rules": [
+                "Output a whole integer (e.g., 45) representing the count of patients who received the index test for this arm",
+                "Do not conflate with n_patients_analyzed (existing field): n_patients_received is the denominator before exclusions; n_patients_analyzed is the number actually included in analysis",
+                "Do not sum across arms unless the paper explicitly states a combined figure applies to this arm",
+                "Use \"NR\" if the number of patients who received the test is not reported"
+              ],
+              "field_name": "n_patients_received",
+              "field_type": "number",
+              "extraction_role": "value",
+              "field_description": "Number of patients who received the index test (denominator for this arm). Use NR if not reported."
+            },
+            {
+              "hints": [
+                "Look in the Methods (participants/flow) or Results sections for the number of patients contributing to the index-test analysis for this specific arm",
+                "Check participant flow diagrams, CONSORT-style tables, or footnotes to results tables for exclusions between enrollment and analysis",
+                "Distinguish from n_patients_received: this is the post-exclusion count actually used in sensitivity/specificity calculations",
+                "In multi-arm studies, confirm the count corresponds to the already-identified arm row, not the total study population"
+              ],
+              "rules": [
+                "Output a whole integer (e.g., 120); do not include units, ranges, or text",
+                "If the paper reports only one patient count without distinguishing received vs. analyzed, record it here and also in n_patients_received",
+                "Use \"NR\" if the number of analyzed patients is not explicitly reported",
+                "Do not conflate with n_lesions_analyzed \u2014 this field counts patients, not lesions"
+              ],
+              "field_name": "n_patients_analyzed",
+              "field_type": "number",
+              "extraction_role": "value",
+              "field_description": "Number of patients whose index test results were included in the analysis. Use NR if not reported."
+            },
+            {
+              "hints": [
+                "Look in the Methods or Results section for enrollment or flow diagrams describing lesion-level counts",
+                "Check participant flow tables, STARD-style diagrams, or the opening Results paragraph for the number of lesions enrolled or screened with this specific index-test arm",
+                "Distinguish from n_lesions_analyzed (which is the post-exclusion count used in analysis); n_lesions_received is the pre-exclusion denominator"
+              ],
+              "rules": [
+                "Record as a whole integer (e.g., 45, 120)",
+                "Use \"NR\" if the number of lesions that received the test is not explicitly stated",
+                "Use \"NR\" if the study's unit of analysis is patients rather than lesions",
+                "Do not infer or calculate this value from other counts unless the paper explicitly states the derivation",
+                "Do not confuse with n_lesions_analyzed, which captures the subset included in the final analysis"
+              ],
+              "field_name": "n_lesions_received",
+              "field_type": "number",
+              "extraction_role": "value",
+              "field_description": "Number of lesions that received the index test in studies where the unit of analysis is the lesion. Use NR if not reported or if unit of analysis is patients only."
+            },
+            {
+              "hints": [
+                "Look in the Results section, participant flow diagrams, or analysis tables for lesion-level counts specific to this index-test arm",
+                "Distinguish from n_lesions_received (lesions that received the test) \u2014 this is the subset whose results were included in the final analysis",
+                "In multi-arm studies, confirm the count corresponds to the specific arm already identified, not the total across all arms",
+                "If the paper reports only patient-level counts and never mentions lesion counts, use NR"
+              ],
+              "rules": [
+                "Output a whole integer (e.g., 45) or the string \"NR\"",
+                "Use \"NR\" if lesion-level counts are not reported or if the unit of analysis is patients only",
+                "Do not conflate with n_lesions_received; n_lesions_analyzed may be smaller due to exclusions or missing results",
+                "Do not sum across arms unless the paper explicitly states a combined lesion count for this arm"
+              ],
+              "field_name": "n_lesions_analyzed",
+              "field_type": "number",
+              "extraction_role": "value",
+              "field_description": "Number of lesions included in the index-test analysis. Use NR if not reported or if unit of analysis is patients only."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'Index Test', 'Test Interpretation', or 'Criteria for Positivity'",
+                "May appear in a table describing test protocols or in the statistical analysis plan",
+                "For vital staining tests, look for descriptions of colour retention, staining intensity, or uptake patterns that define a positive result",
+                "This field captures the raw, verbatim or closely paraphrased criterion from the paper; the harmonized summary belongs in positivity_threshold_transformed"
+              ],
+              "rules": [
+                "Quote verbatim from the paper wherever possible; paraphrase only when the original text is excessively long",
+                "Do not summarize or harmonize \u2014 that is the role of positivity_threshold_transformed",
+                "Use \"NR\" if no positivity criterion is pre-specified or described in the paper",
+                "Do not leave blank; always use NR when the criterion is absent"
+              ],
+              "field_name": "positivity_threshold",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Exact or paraphrased positivity criterion used to classify a test result as positive. Quote verbatim as stated in the paper. Use NR if not pre-specified."
+            },
+            {
+              "hints": [
+                "Derive from the verbatim positivity_threshold already extracted for this arm \u2014 do not re-read the paper independently",
+                "Apply reviewer adjudication conventions to collapse varied phrasings into a standardized short label",
+                "Common patterns: 'positive: stain retention', 'positive: unstained area', 'positive: fluorescence loss', 'positive: abnormal reflectance'",
+                "If the arm's positivity_threshold is NR, this field should also be NR"
+              ],
+              "rules": [
+                "Output a short harmonized phrase, typically 5\u201315 words, beginning with 'positive:' followed by the key criterion",
+                "Normalize equivalent phrasings across arms and studies to the same label (e.g., all 'blue stain retained' variants \u2192 'positive: stain retention')",
+                "Do not copy the verbatim positivity_threshold text \u2014 this field is the adjudicated harmonized form",
+                "Use \"NR\" if the positivity threshold was not reported and cannot be inferred"
+              ],
+              "field_name": "positivity_threshold_transformed",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Harmonized short summary of the positivity threshold after review adjudication (e.g., 'positive: stain', 'positive: unstained'). Allows cross-study comparison."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under headings such as 'Training', 'Calibration', 'Standardization', 'Examiner training', or 'Quality assurance'",
+                "May appear in a subsection describing the index test procedure or in a description of examiner qualifications",
+                "Check for mention of pilot studies, consensus exercises, kappa exercises, or inter-rater reliability training sessions conducted prior to data collection",
+                "For multi-arm studies, note whether calibration details are shared across arms or specific to this arm"
+              ],
+              "rules": [
+                "Quote verbatim or paraphrase closely the calibration or training procedure described for the assessors of this specific index-test arm",
+                "Include details such as number of training cases, consensus sessions, use of reference images, or inter-examiner agreement exercises if reported",
+                "Do not conflate with blinding information already captured in blinding_index_test_assessors or blinding_index_test_examiner",
+                "Use \"NR\" if no training, calibration, or standardization of assessors is mentioned in the paper"
+              ],
+              "field_name": "calibration_of_assessors",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Any training, calibration, or standardization undertaken by the clinicians who applied or interpreted the index test before the study. Use NR if not reported."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'blinding', 'masking', or 'study design' subsections",
+                "Check the risk-of-bias or quality assessment discussion for blinding statements",
+                "This field concerns blinding to the reference standard result specifically \u2014 distinct from blinding_index_test_examiner, which concerns blinding to other clinical information",
+                "For the already-identified index-test arm, locate any sentence describing whether assessors were masked to histopathology or biopsy results when reading the index test"
+              ],
+              "rules": [
+                "Quote the relevant sentence verbatim if the paper explicitly states blinding status; paraphrase only if the original text is very long",
+                "Capture blinding to the reference standard result only \u2014 do not conflate with blinding to patient history or demographics (captured in blinding_index_test_examiner)",
+                "Use \"NR\" if blinding status is not reported or cannot be inferred from the text",
+                "Do not infer blinding from study design alone unless the paper explicitly states it"
+              ],
+              "field_name": "blinding_index_test_assessors",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Whether the people who applied or interpreted the index test were blinded to the reference standard result. Quote the relevant sentence if available. Use NR if not reported."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'blinding', 'masking', or 'examiner' subsections",
+                "Check the study design or risk-of-bias discussion for statements about what information the index-test examiner had access to",
+                "Distinguish from blinding_index_test_assessors: this field focuses on blinding to clinical information (history, demographics, prior diagnoses) rather than blinding to the reference standard result",
+                "If the paper uses a single examiner description that conflates both types of blinding, note the ambiguity in this field"
+              ],
+              "rules": [
+                "Copy or closely paraphrase the relevant sentence(s) from the paper describing what clinical information the examiner was or was not blinded to",
+                "If the paper states blinding but does not specify what information was withheld, record what is stated and flag the ambiguity",
+                "Do not conflate with blinding_index_test_assessors, which captures blinding to the reference standard; this field is specifically about blinding to patient clinical information",
+                "Use \"NR\" if the paper does not report whether the examiner was blinded to clinical information"
+              ],
+              "field_name": "blinding_index_test_examiner",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Whether the examiner performing or reading the index test was blinded to other clinical information (patient history, demographics, prior diagnoses). Note any ambiguity that affects risk-of-bias judgement. Use NR if not reported."
+            },
+            {
+              "hints": [
+                "Check reviewer annotation columns, footnotes, or supplementary notes sections for remarks specific to this arm",
+                "Look for any caveats mentioned in the Methods or Discussion that apply specifically to this index-test arm and are not captured by other structured fields",
+                "Note any overlap or shared patients/lesions between arms in multi-arm studies that could affect independence assumptions in meta-analysis"
+              ],
+              "rules": [
+                "Enter free text; no controlled vocabulary applies",
+                "Use \"NA\" if there are no reviewer notes or concerns for this arm \u2014 do not leave blank",
+                "Do not duplicate information already captured in structured fields (e.g., positivity_threshold, blinding, technique); only record residual concerns or clarifications not covered elsewhere",
+                "Keep notes concise but sufficiently detailed for a meta-analyst to act on them without returning to the source paper"
+              ],
+              "field_name": "comments_index_test",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Free-text reviewer notes about this index-test arm \u2014 methodological concerns, unusual study designs, multi-arm overlap, or clarifications needed before meta-analysis. Use NA if no notes are needed."
+            }
+          ],
+          "source_grounded": true,
+          "extraction_strategy": "row_then_columns"
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_35b35b01_OralCancerIndexTestV2",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "EstablishIndexTestCount"
+      ],
+      "provides_fields": [
+        "n_index_tests_in_study"
+      ],
+      "requires_fields": []
+    },
+    {
+      "stage": 2,
+      "execution": "sequential",
+      "signatures": [
+        "ExtractAllIndexTestArms"
+      ],
+      "provides_fields": [
+        "index_test_arms"
+      ],
+      "requires_fields": [
+        "n_index_tests_in_study"
+      ],
+      "waits_for_stage": 1
+    }
+  ],
+  "fallback_structures": {
+    "EstablishIndexTestCount": {
+      "n_index_tests_in_study": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractAllIndexTestArms": {
+      "index_test_arms": []
+    }
+  },
+  "field_to_signature_map": {
+    "index_test_arms": "ExtractAllIndexTestArms",
+    "n_index_tests_in_study": "EstablishIndexTestCount"
+  },
+  "_pulled_from": "project ca68ea03-abd0-48bd-b180-c474a5d5c398 \u00b7 form Oral Cancer - Index Test v2 (35b35b01-3788-4e39-b881-2bdf1ee06461) \u00b7 slug oral_cancer \u00b7 form_label index_test"
+}

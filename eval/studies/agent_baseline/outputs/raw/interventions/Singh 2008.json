@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 25640,
+  "duration_api_ms": 26167,
+  "ttft_ms": 1676,
+  "ttft_stream_ms": 1649,
+  "time_to_request_ms": 194,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Group A\",\n      \"comparison_summary\": \"SRP alone vs SRP plus systemic doxycycline vs no treatment control\",\n      \"intervention_description\": \"Oral hygiene instructions followed by full mouth scaling and root planing under local anesthesia.\",\n      \"n_in_arm\": 15,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Group B\",\n      \"comparison_summary\": \"SRP alone vs SRP plus systemic doxycycline vs no treatment control\",\n      \"intervention_description\": \"Oral hygiene instructions followed by full mouth scaling and root planing under local anesthesia, plus systemic doxycycline 100 mg (DOXY-1, USV Pharmaceuticals) \u2014 two tablets on the first day, followed by one tablet daily for 14 days.\",\n      \"n_in_arm\": 15,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Group C\",\n      \"comparison_summary\": \"SRP alone vs SRP plus systemic doxycycline vs no treatment control\",\n      \"intervention_description\": \"No treatment (control group) \u2014 received neither oral hygiene instructions nor full mouth scaling and root planing.\",\n      \"n_in_arm\": 15,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\nThree arms extracted from Singh et al. 2008 (Int J Diab Dev Ctries):\n\n- **Group A** (n=15): Full-mouth SRP under local anaesthesia + oral hygiene instructions \u2192 `SI_alone`\n- **Group B** (n=15): Full-mouth SRP + oral hygiene instructions + systemic doxycycline 100 mg/day for 14 days \u2192 `SI_plus_systemic_local_antimicrobial`\n- **Group C** (n=15): No periodontal treatment, no oral hygiene instructions \u2192 `usual_care`\n\nAll arms followed for 3 months; each had exactly 15 randomised participants as stated in the Methods and confirmed in the results tables.",
+  "stop_reason": "end_turn",
+  "session_id": "cbb59161-6169-4f24-8327-e57dca3a3a33",
+  "total_cost_usd": 0.1175421,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 17786,
+    "cache_read_input_tokens": 78282,
+    "output_tokens": 1726,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 17786
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 593,
+        "cache_read_input_tokens": 35084,
+        "cache_creation_input_tokens": 1066,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1066,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1726,
+      "cacheReadInputTokens": 78282,
+      "cacheCreationInputTokens": 17786,
+      "webSearchRequests": 0,
+      "costUSD": 0.1160871,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "055c3900-bc17-47e7-81ab-9b95aa88804e"
+}

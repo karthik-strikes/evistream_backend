@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 35258,
+  "duration_api_ms": 36038,
+  "ttft_ms": 1902,
+  "ttft_stream_ms": 1871,
+  "time_to_request_ms": 146,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"USA\",\n  \"setting\": \"Department of Veterans Affairs (VA) Medical Centers\",\n  \"number_of_centres\": \"4 (Bedford, MA; Boston, MA; Manchester, NH; Providence, RI)\",\n  \"trial_design\": \"Multi-site, single-blind, randomized, controlled clinical trial with a two-by-two factorial design (2-arm parallel comparison of Early Treatment vs Usual Care reported here for 0\u20134 months)\",\n  \"recruitment_period\": \"December 2000 to November 2004\",\n  \"funding_source\": \"Department of Veterans Affairs Health Services Research & Development Service, Career Development Program; VA HSR&D QUERI DII 99.206; NIH K24 DE00419; Boston University; equipment/materials donated by Dentsply International (ultrasonic scalers) and Colgate Oral Pharmaceuticals (chlorhexidine PerioGard\u00ae)\",\n  \"notes\": \"Study was designed for 300 participants (80% power, ES \u03b4=0.40) but enrolled only 193 and analysed 165 after exclusions \u2014 authors acknowledge the study was underpowered. This paper reports only the first 4-month phase of a 16-month design. 28 participants were excluded after randomisation. Seeking physician concurrence may have prompted providers to intensify diabetes management in the Usual Care group, biasing results toward the null. Population was almost exclusively male veterans (97% male), limiting generalisability.\"\n}\n```\n\nKey sourcing notes:\n- **Country/setting/centres**: Methods section \u2014 \"four Department of Veterans Affairs (VA) facilities in greater Boston\" with sites named in the Acknowledgements (Bedford MA, Boston MA, Manchester NH, Providence RI).\n- **Trial design**: Methods \u2014 \"multi-site, single-blind, randomized, controlled clinical trial\" with \"a two by two design.\"\n- **Recruitment period**: Methods \u2014 \"from December 2000 until November 2004.\"\n- **Funding**: Acknowledgements paragraph.\n- **Notes**: Power analysis section (designed for 300, underpowered), Discussion (physician-notification bias, 97% male population), and study design (4-month report from a 16-month trial).",
+  "stop_reason": "end_turn",
+  "session_id": "0fc98982-aeaa-40e7-aae0-f5f40f6e3f8b",
+  "total_cost_usd": 0.13559925,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 21857,
+    "cache_read_input_tokens": 81945,
+    "output_tokens": 1853,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 21857
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 520,
+        "cache_read_input_tokens": 38950,
+        "cache_creation_input_tokens": 1271,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1271,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1853,
+      "cacheReadInputTokens": 81945,
+      "cacheCreationInputTokens": 21857,
+      "webSearchRequests": 0,
+      "costUSD": 0.13435725,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "d78736fd-5eae-4c68-8ed5-b503d71f7dcc"
+}

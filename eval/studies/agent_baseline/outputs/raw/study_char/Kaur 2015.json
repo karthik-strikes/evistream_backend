@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 49621,
+  "duration_api_ms": 50122,
+  "ttft_ms": 2508,
+  "ttft_stream_ms": 2476,
+  "time_to_request_ms": 139,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"India\",\n  \"setting\": \"university clinic (Department of Periodontics and Oral Implantology, Post Graduate Institute of Dental Sciences, Rohtak; in collaboration with Department of Medicine, Post Graduate Institute of Medical Sciences, Rohtak)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"Randomized control trial; parallel group design with treatment (scaling and root planing) vs. no-treatment arms, stratified by baseline HbA1c into good and poor glycemic control (5 groups: TG, TP, NTG, NTP, and nondiabetic comparator NoDM); examiner blinded to group allocation\",\n  \"recruitment_period\": \"February 2010 to January 2012\",\n  \"funding_source\": \"NR\",\n  \"notes\": \"Sample size calculated for \u226522 patients per group (90% power, 5% two-sided type I error, expected mean HbA1c difference ~0.4%, SD 0.4). Nine dropouts (5 treatment, 4 no-treatment) included in ITT analysis via last observation carried forward. No inflammatory markers (TNF-\u03b1, IL-6, IL-1) measured. No conflicts of interest declared; no funding source stated.\"\n}\n```\n\n**Key extraction notes:**\n- **Country/Setting**: Explicitly stated as PGIDS Rohtak, India \u2014 a postgraduate dental institute (university clinic), in collaboration with PGIMS Rohtak.\n- **Centres**: Authors themselves acknowledge \"participants were recruited at a single center\" in the limitations section.\n- **Trial design**: The paper calls it a \"randomized control trial\" with treatment vs. no-treatment parallel arms, stratified by HbA1c; the examiner recording outcomes was blinded to allocation.\n- **Recruitment**: Stated as February 2010 to January 2012.\n- **Funding**: The conflict-of-interest/funding section only declares no conflicts of interest; no funder is named \u2014 coded NR.\n- **Notes**: Captures the power calculation, ITT approach, absence of inflammatory biomarkers, and lack of declared funding.",
+  "stop_reason": "end_turn",
+  "session_id": "0d92355d-fc12-4de1-b645-dc6a0549a6a2",
+  "total_cost_usd": 0.18822394999999997,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 31497,
+    "cache_read_input_tokens": 90644,
+    "output_tokens": 2776,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 31497
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 503,
+        "cache_read_input_tokens": 47649,
+        "cache_creation_input_tokens": 2212,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2212,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 19,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001262,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2776,
+      "cacheReadInputTokens": 90644,
+      "cacheCreationInputTokens": 31497,
+      "webSearchRequests": 0,
+      "costUSD": 0.18696195,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "480f9a6b-cfba-4d28-9828-d2e4fb6b2cce"
+}

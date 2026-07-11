@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 47580,
+  "duration_api_ms": 48247,
+  "ttft_ms": 2255,
+  "ttft_stream_ms": 1787,
+  "time_to_request_ms": 214,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": \"NR\",\n  \"age_arm_a_sd\": \"NR\",\n  \"age_arm_b\": \"NR\",\n  \"age_arm_b_sd\": \"NR\",\n  \"pct_female_arm_a\": \"NR\",\n  \"pct_female_arm_b\": \"NR\",\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.68,\n  \"baseline_hba1c_arm_b\": 7.74,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"NR\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"none (excluded)\",\n  \"inclusion_criteria\": \"patients with DM2, blood sugar controlled only with oral hypoglycemic agents, mild to moderate periodontitis (pocket depth of 4\u20135 mm), presence of a minimum of 28 teeth, and no systemic antibiotic administration and no periodontal treatment in last six months\",\n  \"exclusion_criteria\": \"patients with systemic diseases other than DM2, tobacco and alcohol users, and patients suffering from oral disease who needed emergency treatment\",\n  \"n_randomised\": 60,\n  \"n_evaluated\": \"60 at 3 months\"\n}\n```\n\n**Extraction notes:**\n\n- **Arm mapping**: Group A (scaling + mouthwash + brushing) = intervention arm A; Group C (brushing only) = control arm B. Group B (mouthwash + brushing) is a third arm not mapped here.\n- **Age**: Only an enrollment range (35\u201345 years) is stated for all participants combined; no per-arm mean or SD is reported \u2192 NR.\n- **Sex**: Not reported anywhere in the paper \u2192 NR.\n- **Baseline HbA1c**: From Table 1 (HbA1c 1st): Group A = 7.68 \u00b1 0.63; Group C = 7.74 \u00b1 0.59. Values ~7.7% fall in the \"fair\" control band (7\u20138%).\n- **Tobacco/alcohol**: Both tobacco and alcohol users were explicitly excluded by the eligibility criteria.\n- **N evaluated**: All 60 randomised participants completed the study at the 3-month follow-up.",
+  "stop_reason": "end_turn",
+  "session_id": "0ede5dc1-0f3a-437a-8fe7-6cd3dcf3a7a7",
+  "total_cost_usd": 0.13620025,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 18545,
+    "cache_read_input_tokens": 78355,
+    "output_tokens": 2754,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 18545
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 573,
+        "cache_read_input_tokens": 34793,
+        "cache_creation_input_tokens": 2116,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2116,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 19,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001825,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2754,
+      "cacheReadInputTokens": 78355,
+      "cacheCreationInputTokens": 18545,
+      "webSearchRequests": 0,
+      "costUSD": 0.13437525,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "be1a49d2-d5de-4371-93b9-d53f48770c1c"
+}

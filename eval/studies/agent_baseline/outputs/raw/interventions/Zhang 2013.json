@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 67897,
+  "duration_api_ms": 68334,
+  "ttft_ms": 1823,
+  "ttft_stream_ms": 1789,
+  "time_to_request_ms": 183,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"treatment group\",\n      \"comparison_summary\": \"SRP vs no periodontal treatment (control)\",\n      \"intervention_description\": \"oral health instructions, supra-/subgingival scaling (Cavitron Bobcat Pro, Dentsply, York, PA, USA), and manual curettage (Hu-Friedy, Chicago, IL, USA), which were completed within 2 weeks after the baseline evaluation\",\n      \"n_in_arm\": 50,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"control group\",\n      \"comparison_summary\": \"SRP vs no periodontal treatment (control)\",\n      \"intervention_description\": \"not given any periodontal treatment except for evaluations at the baseline as well as on the 3rd and 6th months\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    },\n    {\n      \"arm_label\": \"sub-ERP group\",\n      \"comparison_summary\": \"enhanced root planing (ERP) vs prophylaxis scaling (subprophylaxis)\",\n      \"intervention_description\": \"full-mouth ultrasonic scaling and manual root planing of the teeth with PPD \u2265 4 mm\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"subprophylaxis group\",\n      \"comparison_summary\": \"enhanced root planing (ERP) vs prophylaxis scaling (subprophylaxis)\",\n      \"intervention_description\": \"only full-mouth ultrasonic scaling to remove calculus and plaque\",\n      \"n_in_arm\": 24,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"supragingival_only\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\nThis paper has a two-phase design yielding four arms:\n\n- **Phase 1 (0\u20133 months):** 75 patients randomized 2:1 \u2014 treatment group (n=50, SRP) vs control group (n=25, no treatment). Follow-up 6 months total.\n- **Phase 2 (3\u20136 months):** The 49 remaining treatment-group patients re-randomized \u2014 sub-ERP (n=25, repeat ultrasonic scaling + manual root planing of sites with PPD \u22654 mm) vs subprophylaxis (n=24, ultrasonic scaling only). Follow-up 3 months for this comparison.\n\n`n_in_arm` uses the randomized numbers per the flow diagram (50/25 for phase 1; 25/24 for phase 2). The subprophylaxis arm is classed `supragingival_only` because the paper explicitly contrasts it with ERP by omitting manual root planing \u2014 only ultrasonic scaling for calculus/plaque removal (prophylaxis-level care).",
+  "stop_reason": "end_turn",
+  "session_id": "2a07a8e8-47ae-4262-87a3-3d3c0b3ad101",
+  "total_cost_usd": 0.17899379999999998,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 23272,
+    "cache_read_input_tokens": 81296,
+    "output_tokens": 4391,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 23272
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 792,
+        "cache_read_input_tokens": 38102,
+        "cache_creation_input_tokens": 3534,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3534,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4391,
+      "cacheReadInputTokens": 81296,
+      "cacheCreationInputTokens": 23272,
+      "webSearchRequests": 0,
+      "costUSD": 0.1775388,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "08f18f54-6c57-4d8b-90e2-7d8fee138eae"
+}

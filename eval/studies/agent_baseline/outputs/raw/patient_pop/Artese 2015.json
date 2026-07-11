@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 48720,
+  "duration_api_ms": 49389,
+  "ttft_ms": 2170,
+  "ttft_stream_ms": 1700,
+  "time_to_request_ms": 149,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 52.0,\n  \"age_arm_a_sd\": 3.3,\n  \"age_arm_b\": 54.4,\n  \"age_arm_b_sd\": 5.8,\n  \"pct_female_arm_a\": 52.0,\n  \"pct_female_arm_b\": 56.3,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": \"NR\",\n  \"baseline_hba1c_arm_b\": \"NR\",\n  \"metabolic_control_level\": \"NR\",\n  \"duration_since_diabetes_dx\": \">3 years\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"\u226535 years of age, confirmed diagnosis of T2DM for a period of over 3 years, generalized severe chronic periodontitis (PPD sites \u226530%, CAL >4 mm, and bleeding on probing), and \u226515 teeth\",\n  \"exclusion_criteria\": \"Pregnant women, smokers, BMI >35 kg/m\u00b2, or those who had received periodontal therapy, systemic antibiotic, or oral antiseptic therapy 6 months prior to the study\",\n  \"n_randomised\": 24,\n  \"n_evaluated\": \"24 at 6 months\"\n}\n```\n\n**Extraction notes:**\n\n- **Arm A = IT (Intensive Therapy)** \u2014 supra- and subgingival scaling + root planing (the more active periodontal intervention); **Arm B = ST (Supragingival Therapy)** \u2014 supragingival scaling only (the comparator/minimal-treatment control arm).\n- Age, SD, and % female come from the Results paragraph: \"ST group: 56.3% women, mean age 54.4 \u00b1 5.8 years; IT group: 52.0% women, mean age 52.0 \u00b1 3.3 years.\"\n- **Baseline HbA1c is NR**: the paper confirms both groups were similar at baseline and shows HbA1c data in Figure 1 (scatter plots), but no numeric means/medians are stated in the text for individual arms at baseline.\n- `metabolic_control_level` is therefore NR.\n- Smokers were explicitly excluded by the inclusion/exclusion criteria, hence `tobacco_use = \"none (excluded)\"`.\n- All 24 randomised participants completed the 6-month follow-up per the Results section.",
+  "stop_reason": "end_turn",
+  "session_id": "2bce93ef-fbaf-4822-ae9f-395f3d7922f7",
+  "total_cost_usd": 0.1428038,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 19022,
+    "cache_read_input_tokens": 78571,
+    "output_tokens": 3072,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 19022
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 631,
+        "cache_read_input_tokens": 35009,
+        "cache_creation_input_tokens": 2377,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2377,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3072,
+      "cacheReadInputTokens": 78571,
+      "cacheCreationInputTokens": 19022,
+      "webSearchRequests": 0,
+      "costUSD": 0.1409988,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "0b344878-e2fb-4695-91cf-f9e4e02bee2e"
+}

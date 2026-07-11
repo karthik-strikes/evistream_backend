@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 50325,
+  "duration_api_ms": 51267,
+  "ttft_ms": 2603,
+  "ttft_stream_ms": 2548,
+  "time_to_request_ms": 233,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Group A (n=20)\",\n      \"comparison_summary\": \"Scaling + chlorhexidine mouthwash + brushing vs chlorhexidine mouthwash + brushing vs brushing only (control)\",\n      \"intervention_description\": \"patients, who had undergone scaling, were advised to regularly use 0.12% mouthwash (once daily) and brush (twice daily)\",\n      \"n_in_arm\": 20,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_mouthrinse\"\n    },\n    {\n      \"arm_label\": \"Group B (n=20)\",\n      \"comparison_summary\": \"Scaling + chlorhexidine mouthwash + brushing vs chlorhexidine mouthwash + brushing vs brushing only (control)\",\n      \"intervention_description\": \"patients who were advised to regularly use 0.12% chlorhexidine mouthwash (once daily) and brush (twice daily)\",\n      \"n_in_arm\": 20,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"NR\"\n    },\n    {\n      \"arm_label\": \"Group C (control) (n=20)\",\n      \"comparison_summary\": \"Scaling + chlorhexidine mouthwash + brushing vs chlorhexidine mouthwash + brushing vs brushing only (control)\",\n      \"intervention_description\": \"patients who were advised to brush (twice daily)\",\n      \"n_in_arm\": 20,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Group A** (n=20): Professional scaling plus daily 0.12% chlorhexidine mouthwash plus brushing \u2014 classified as `SI_plus_mouthrinse` (subgingival instrumentation via scaling for 4\u20135 mm pockets, combined with an antiseptic mouthrinse).\n- **Group B** (n=20): 0.12% chlorhexidine mouthwash plus brushing only, no professional scaling \u2014 no Cochrane subgroup category fits (not SI-based, not supragingival scaling, not purely usual care), so `NR` is used for that optional field.\n- **Group C** (n=20): Brushing only (control) \u2014 `usual_care`, no active professional periodontal treatment.\n- All arms: 20 randomised per group (60 total), 3-month follow-up, all 60 completed.",
+  "stop_reason": "end_turn",
+  "session_id": "7168584d-bee5-442e-a9d6-a5aa5b76f0a1",
+  "total_cost_usd": 0.13813005,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 18313,
+    "cache_read_input_tokens": 77621,
+    "output_tokens": 2980,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 18313
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 662,
+        "cache_read_input_tokens": 34425,
+        "cache_creation_input_tokens": 2252,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2252,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2980,
+      "cacheReadInputTokens": 77621,
+      "cacheCreationInputTokens": 18313,
+      "webSearchRequests": 0,
+      "costUSD": 0.13667505,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "e882462c-e68a-4cd4-a099-715cd69824f5"
+}

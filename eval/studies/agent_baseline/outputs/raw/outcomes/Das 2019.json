@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 65011,
+  "duration_api_ms": 66819,
+  "ttft_ms": 1668,
+  "ttft_stream_ms": 1638,
+  "time_to_request_ms": 133,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 1.04,\n      \"sd_arm1\": 0.28,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 2.43,\n      \"sd_arm2\": 0.51,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 0.99,\n      \"sd_arm1\": 0.28,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 1.98,\n      \"sd_arm2\": 0.41,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.32,\n      \"sd_arm1\": 0.28,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 3.52,\n      \"sd_arm2\": 0.49,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 3.06,\n      \"sd_arm1\": 0.42,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 3.91,\n      \"sd_arm2\": 0.49,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 6.97,\n      \"sd_arm1\": 0.86,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 8.41,\n      \"sd_arm2\": 0.90,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 1.17,\n      \"sd_arm1\": 0.22,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 2.43,\n      \"sd_arm2\": 0.51,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 1.10,\n      \"sd_arm1\": 0.21,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 1.98,\n      \"sd_arm2\": 0.41,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 2.30,\n      \"sd_arm1\": 0.45,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 3.52,\n      \"sd_arm2\": 0.49,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 2.83,\n      \"sd_arm1\": 0.52,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 3.91,\n      \"sd_arm2\": 0.49,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 7.49,\n      \"sd_arm1\": 1.14,\n      \"n_arm1\": 17,\n      \"mean_arm2\": 8.41,\n      \"sd_arm2\": 0.90,\n      \"n_arm2\": 17\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **10 rows** total: 5 outcomes \u00d7 1 timepoint \u00d7 2 comparisons\n- **Single timepoint**: Day 90 (~3 months) \u2192 `3-4_months`\n- **Two comparisons**:\n  - `SI_vs_usual_care`: Group I (SRP alone) as arm 1 vs Group III (no treatment) as arm 2\n  - `SI_plus_antimicrobial`: Group II (SRP + systemic doxycycline) as arm 1 vs Group III as arm 2\n- **BOP**: Not measured/reported in this paper \u2014 no BOP rows\n- **n=17** per arm at Day 90 for all rows (CONSORT confirms zero dropouts)\n- All values sourced directly from Table 2 (periodontal parameters) and Table 3 (HbA1c) of the paper",
+  "stop_reason": "end_turn",
+  "session_id": "aa21d6cb-3df6-4ddb-adf6-1f58516cecd9",
+  "total_cost_usd": 0.20592925,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 26161,
+    "cache_read_input_tokens": 84005,
+    "output_tokens": 5398,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 26161
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1423,
+        "cache_read_input_tokens": 40618,
+        "cache_creation_input_tokens": 3907,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3907,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001639,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 5398,
+      "cacheReadInputTokens": 84005,
+      "cacheCreationInputTokens": 26161,
+      "webSearchRequests": 0,
+      "costUSD": 0.20429025,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "76edf121-2d43-4104-8e31-7d320faea3ce"
+}

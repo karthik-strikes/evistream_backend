@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 28025,
+  "duration_api_ms": 28738,
+  "ttft_ms": 1995,
+  "ttft_stream_ms": 1956,
+  "time_to_request_ms": 163,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Greece\",\n  \"setting\": \"university hospital outpatient diabetes clinic (Laiko General Hospital, Athens)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel randomized controlled clinical trial (examiner-blinded)\",\n  \"recruitment_period\": \"January 2006 to December 2008\",\n  \"funding_source\": \"European National Fund and National Resources (EPEAEK 2 PYTHAGORAS)\",\n  \"notes\": \"Sample size calculation: \u226519 patients per group needed to detect 0.4% mean difference in A1C reduction with 90% power and 5% two-sided type 1 error. Control group received minimal treatment (supragingival prophylaxis) rather than no treatment; authors note this may explain non-significant glycaemic improvement in CG. Authors acknowledge small sample size and potential selection bias limiting generalizability. No conflicts of interest declared.\"\n}\n```\n\n**Key sources within the paper:**\n- **Country/Setting**: Affiliations and Methods \u2014 \"outpatient university hospital diabetes clinic (Laiko General Hospital, Athens, Greece)\"\n- **Centres**: Single site; recruitment by \"a single examiner (P. M.)\"\n- **Trial design**: Abstract \u2014 \"randomized, controlled clinical trial\"; Methods describe examiner (X.D.) blinded to group allocation; 2 arms (IG and CG)\n- **Recruitment period**: Methods \u2014 \"screened and recruited between January 2006 and December 2008\"\n- **Funding**: Conflict of interest statement \u2014 \"co-funded by the European National Fund and National Resources (EPEAEK 2 PYTHAGORAS)\"\n- **Notes**: Sample size calculation in Methods; CG minimal-treatment limitation acknowledged in Discussion; no CoI declared",
+  "stop_reason": "end_turn",
+  "session_id": "d045f48a-9b69-48c5-bca8-95c7661602ea",
+  "total_cost_usd": 0.11891310000000001,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 19214,
+    "cache_read_input_tokens": 79612,
+    "output_tokens": 1448,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 19214
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 423,
+        "cache_read_input_tokens": 36615,
+        "cache_creation_input_tokens": 963,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 963,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1448,
+      "cacheReadInputTokens": 79612,
+      "cacheCreationInputTokens": 19214,
+      "webSearchRequests": 0,
+      "costUSD": 0.1176711,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "c2edd27f-ce6e-4fd6-9d7c-5327c406e8bf"
+}

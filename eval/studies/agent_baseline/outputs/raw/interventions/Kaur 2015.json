@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 51279,
+  "duration_api_ms": 51841,
+  "ttft_ms": 1809,
+  "ttft_stream_ms": 1778,
+  "time_to_request_ms": 183,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment/good glycemic control (TG) group\",\n      \"comparison_summary\": \"SRP vs no treatment in T2DM patients with good glycemic control (HbA1c <7%)\",\n      \"intervention_description\": \"Oral hygiene instructions at baseline followed by nonsurgical periodontal treatment comprising four SRP sessions over a maximum of 2 weeks, using standard rigid Gracey curettes (Hu-Friedy Manufacturing Co.) and an ultrasonic scaler (Suprasson P5 Booster, Satelec-Acteon group., Merignac, France). Oral hygiene instructions were reviewed at each visit, and additional supportive SRP was done when necessary. Patients were instructed to use only mechanical cleansing aids throughout the study.\",\n      \"n_in_arm\": 23,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Treatment/poor glycemic control (TP) group\",\n      \"comparison_summary\": \"SRP vs no treatment in T2DM patients with poor glycemic control (HbA1c \u22657%)\",\n      \"intervention_description\": \"Oral hygiene instructions at baseline followed by nonsurgical periodontal treatment comprising four SRP sessions over a maximum of 2 weeks, using standard rigid Gracey curettes (Hu-Friedy Manufacturing Co.) and an ultrasonic scaler (Suprasson P5 Booster, Satelec-Acteon group., Merignac, France). Oral hygiene instructions were reviewed at each visit, and additional supportive SRP was done when necessary. Patients were instructed to use only mechanical cleansing aids throughout the study.\",\n      \"n_in_arm\": 27,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"No-treatment/good glycemic control (NTG) group\",\n      \"comparison_summary\": \"SRP vs no treatment in T2DM patients with good glycemic control (HbA1c <7%)\",\n      \"intervention_description\": \"No periodontal treatment during the study period. Periodontal treatment was performed after completion of the study (after 6 months).\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    },\n    {\n      \"arm_label\": \"No-treatment/poor glycemic control (NTP) group\",\n      \"comparison_summary\": \"SRP vs no treatment in T2DM patients with poor glycemic control (HbA1c \u22657%)\",\n      \"intervention_description\": \"No periodontal treatment during the study period. Periodontal treatment was performed after completion of the study (after 6 months).\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    },\n    {\n      \"arm_label\": \"Treatment/nondiabetic (NoDM) group\",\n      \"comparison_summary\": \"SRP in nondiabetic individuals compared with SRP in T2DM patients with good and poor glycemic control\",\n      \"intervention_description\": \"Oral hygiene instructions at baseline followed by nonsurgical periodontal treatment comprising four SRP sessions over a maximum of 2 weeks, using standard rigid Gracey curettes (Hu-Friedy Manufacturing Co.) and an ultrasonic scaler (Suprasson P5 Booster, Satelec-Acteon group., Merignac, France). Oral hygiene instructions were reviewed at each visit, and additional supportive SRP was done when necessary. Patients were instructed to use only mechanical cleansing aids throughout the study.\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    }\n  ]\n}\n```\n\n**5 arms extracted.** Key decisions:\n\n- **TG (n=23) and TP (n=27)**: T2DM patients with good vs poor glycemic control (split by HbA1c <7% / \u22657%), all receiving the same SRP protocol \u2014 4 sessions over \u22642 weeks with Gracey curettes + ultrasonic scaler, plus OHI. Classified `SI_alone` (no antimicrobials or mouthrinse adjuncts).\n- **NTG (n=25) and NTP (n=25)**: Corresponding no-treatment controls stratified by glycemic control. Treatment deferred until after 6-month study completion. Classified `usual_care`.\n- **NoDM (n=25)**: Nondiabetic comparator group receiving identical SRP protocol. Classified `SI_alone`.\n- All arms followed for **6 months** with assessments at baseline, 3 months, and 6 months.",
+  "stop_reason": "end_turn",
+  "session_id": "363c5c09-ea5c-46fc-a35c-4a31ee4be200",
+  "total_cost_usd": 0.20885284999999998,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 32149,
+    "cache_read_input_tokens": 91047,
+    "output_tokens": 3968,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 32149
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1243,
+        "cache_read_input_tokens": 47851,
+        "cache_creation_input_tokens": 2662,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2662,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.0014449999999999999,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3968,
+      "cacheReadInputTokens": 91047,
+      "cacheCreationInputTokens": 32149,
+      "webSearchRequests": 0,
+      "costUSD": 0.20740784999999998,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "af6d6719-5f5c-408a-8d3a-7ed919af291d"
+}

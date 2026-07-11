@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 125298,
+  "duration_api_ms": 126058,
+  "ttft_ms": 2240,
+  "ttft_stream_ms": 1782,
+  "time_to_request_ms": 129,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 32,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 32,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 2.2,\n      \"sd_arm1\": 0.5,\n      \"n_arm1\": 32,\n      \"mean_arm2\": 2.6,\n      \"sd_arm2\": 0.7,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 2.2,\n      \"sd_arm1\": 0.5,\n      \"n_arm1\": 32,\n      \"mean_arm2\": 2.6,\n      \"sd_arm2\": 0.7,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 13.4,\n      \"sd_arm1\": 12.5,\n      \"n_arm1\": 32,\n      \"mean_arm2\": 20.1,\n      \"sd_arm2\": 17.1,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 12.0,\n      \"sd_arm1\": 11.4,\n      \"n_arm1\": 32,\n      \"mean_arm2\": 18.8,\n      \"sd_arm2\": 18.1,\n      \"n_arm2\": 17\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Subgroup = `SI_plus_antimicrobial`**: Arm 1 received subgingival scaling + topical minocycline (Periofil\u00ae) in every pocket; arm 2 received oral hygiene instructions only (usual care). The added local antibiotic places this in the antimicrobial category.\n- **HbA1c means/SDs = NR**: Follow-up HbA1c values are presented only as a line graph (Fig. 1a) with no tabulated mean \u00b1 SD. Baseline values (7.2 \u00b1 0.9% intervention; 6.9 \u00b1 0.9% control) are in Table 1 but are pre-treatment, not follow-up timepoints.\n- **PPD and BOP**: Fully tabulated in Table 2A for both 3-month and 6-month timepoints.\n- **1-month data excluded**: The paper reports 1-month data, but that timepoint has no matching bin in the allowed values.\n- **CRP-D/CRP-N subgroups excluded**: Both are sub-divisions of the intervention arm only; no separate control arm exists for that comparison.",
+  "stop_reason": "end_turn",
+  "session_id": "77993dd1-ef03-4943-a799-21a56dc2f9e0",
+  "total_cost_usd": 0.26272635,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 28865,
+    "cache_read_input_tokens": 83162,
+    "output_tokens": 8525,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 28865
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1007,
+        "cache_read_input_tokens": 39775,
+        "cache_creation_input_tokens": 7454,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 7454,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001644,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 8525,
+      "cacheReadInputTokens": 83162,
+      "cacheCreationInputTokens": 28865,
+      "webSearchRequests": 0,
+      "costUSD": 0.26108234999999996,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "65fa372c-45c9-44c3-bf46-310d272dc290"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 62553,
+  "duration_api_ms": 62962,
+  "ttft_ms": 2341,
+  "ttft_stream_ms": 1906,
+  "time_to_request_ms": 175,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 61.58,\n  \"age_arm_a_sd\": 4.69,\n  \"age_arm_b\": 61.90,\n  \"age_arm_b_sd\": 6.75,\n  \"pct_female_arm_a\": 36.84,\n  \"pct_female_arm_b\": 30.00,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.63,\n  \"baseline_hba1c_arm_b\": 7.67,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"8.47 \u00b1 3.08 y (intervention); 7.70 \u00b1 4.69 y (control); inclusion criterion: T2DM diagnosis for over one year\",\n  \"tobacco_use\": \"Smokers not excluded; intervention group: 6/19 (31.58%) smokers, 13/19 (68.42%) non-smokers; control group: 3/20 (15.00%) smokers, 17/20 (75.00%) non-smokers (defined as >1 cigarette/day for >1 year)\",\n  \"alcohol_consumption\": \"Intervention group: No 12 (61.15%), Seldom 3 (15.79%), Often 4 (21.06%); Control group: No 17 (75.00%), Seldom 2 (10.00%), Often 1 (5.00%) (Seldom: \u22641 time/week; Often: >1 time/week)\",\n  \"inclusion_criteria\": \"1) patients with a diagnosis of T2DM for over one year by a grade three hospital who volunteered for the research; 2) 6.50 \u2264 HbA1c% \u2264 10.00; 3) chronic periodontitis, \u226515 remaining teeth, and more than 30% of teeth with probing depths (PDs) \u2265 5 mm and attachment loss (AL) > 4 mm, or more than 60% of teeth with a PD > 4 mm and an AL \u2265 3 mm; 4) BMI < 30 kg/m\u00b2; 5) without periodontal treatment in the previous 6 months; 6) without antibiotic or non-steroidal anti-inflammatory drug administration in the 3 months; 7) without serious systemic diseases or complications\",\n  \"exclusion_criteria\": \"NR\",\n  \"n_randomised\": 44,\n  \"n_evaluated\": \"39 at 3 months (19 intervention, 20 control)\"\n}\n```\n\n**Key extraction notes:**\n\n- **Arms**: Intervention (periodontal therapy, n=22 randomised, 19 analysed) = arm A; Control (no intervention, n=22 randomised, 20 analysed) = arm B. All data from Table 1.\n- **Gender**: Derived from raw counts \u2014 arm A: 7 female / 19 = 36.84%; arm B: 6 female / 20 = 30.00%.\n- **HbA1c ~7.65%** in both arms at baseline \u2192 classified as **fair** (7\u20138% range).\n- **Tobacco**: Smokers were NOT excluded; approximately 31.6% (arm A) and 15.0% (arm B) were current smokers by the paper's definition.\n- **Exclusion criteria**: No separate exclusion criteria list is provided; criteria 5\u20137 of the inclusion list function as de facto exclusions but are presented inclusively. Coded as NR.\n- **n_evaluated**: 3 lost to follow-up in arm A, 2 in arm B (1 did treatment, 1 migrated), leaving 19 and 20 analysed at 3 months.",
+  "stop_reason": "end_turn",
+  "session_id": "38515688-faef-44db-b85c-ce090dbf5292",
+  "total_cost_usd": 0.17525625,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 23397,
+    "cache_read_input_tokens": 82275,
+    "output_tokens": 4067,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 23397
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 953,
+        "cache_read_input_tokens": 38713,
+        "cache_creation_input_tokens": 3048,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3048,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4067,
+      "cacheReadInputTokens": 82275,
+      "cacheCreationInputTokens": 23397,
+      "webSearchRequests": 0,
+      "costUSD": 0.17344125,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "666213f6-d6be-4fd5-9d79-fe1bc28dcd64"
+}

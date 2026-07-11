@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 50652,
+  "duration_api_ms": 53979,
+  "ttft_ms": 3613,
+  "ttft_stream_ms": 3164,
+  "time_to_request_ms": 132,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 51.2,\n  \"age_arm_a_sd\": 7.8,\n  \"age_arm_b\": 51.7,\n  \"age_arm_b_sd\": 9.9,\n  \"pct_female_arm_a\": 46.7,\n  \"pct_female_arm_b\": 66.7,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 9.7,\n  \"baseline_hba1c_arm_b\": 8.9,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"60.0 \u00b1 46.3 months (treatment group); 51.1 \u00b1 39.6 months (control group)\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"none (excluded)\",\n  \"inclusion_criteria\": \"Poorly controlled T2D patients with HbA1c >7%, moderate to severe chronic periodontitis according to the 2012 CDC-AAP classification, having at least eleven teeth (>11 teeth) in the mouth\",\n  \"exclusion_criteria\": \"Received periodontal treatment (scaling and root planning) or any alteration of diabetes treatment six months prior to study; onset of systemic diseases or acute condition; use of immunosuppressive medications or other drugs; conditions able to alter periodontitis clinical features: pregnant women, alcohol users, smokers, acute anemia\",\n  \"n_randomised\": 34,\n  \"n_evaluated\": \"30 at 3 months (15 per group)\"\n}\n```\n\n**Key extraction notes:**\n\n- **Ages/SDs**: From Table 1 \u2014 Treatment 51.2 \u00b1 7.8 yrs, Control 51.7 \u00b1 9.9 yrs.\n- **Sex proportions**: Table 1 shows M/F = 8/7 for treatment (7/15 = 46.7% female) and 5/10 for control (10/15 = 66.7% female).\n- **HbA1c**: Treatment arm baseline 9.7 \u00b1 1.6%, Control 8.9 \u00b1 0.9% (Table 1 and confirmed in Results). Both arms classified as **poor** control; the paper itself describes all participants as \"poorly controlled.\"\n- **Tobacco/alcohol**: Both smokers and alcohol users were explicitly listed in exclusion criteria and excluded (3 smokers excluded during screening per flowchart).\n- **Diabetes duration**: Reported per arm in Table 1 (months \u00b1 SD); abstract reports overall mean of 55.5 \u00b1 42.6 months.\n- **n_randomised**: 34 (17 per arm); 4 excluded post-randomisation leaving 30 analysed (15/group) at 3 months.",
+  "stop_reason": "end_turn",
+  "session_id": "dc395a68-375d-44bc-b357-42daeb49ec88",
+  "total_cost_usd": 0.15995075,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 23149,
+    "cache_read_input_tokens": 82740,
+    "output_tokens": 3100,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 23149
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 701,
+        "cache_read_input_tokens": 39178,
+        "cache_creation_input_tokens": 2335,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2335,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3100,
+      "cacheReadInputTokens": 82740,
+      "cacheCreationInputTokens": 23149,
+      "webSearchRequests": 0,
+      "costUSD": 0.15814575,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "ee1a2305-ca3d-496a-a045-28022f66cdb2"
+}

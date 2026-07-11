@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 139617,
+  "duration_api_ms": 140579,
+  "ttft_ms": 2403,
+  "ttft_stream_ms": 2001,
+  "time_to_request_ms": 177,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 45.5,\n  \"age_arm_a_sd\": 10.9,\n  \"age_arm_b\": 46.4,\n  \"age_arm_b_sd\": 9.1,\n  \"pct_female_arm_a\": 48.6,\n  \"pct_female_arm_b\": 37.0,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 8.3,\n  \"baseline_hba1c_arm_b\": 7.8,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"NR\",\n  \"tobacco_use\": \"Current, former, and never smokers enrolled (not excluded); treatment group: 66.7% current, 7.4% former, 25.9% never; control group: 43.5% current, 34.8% former, 21.7% never (complete smoking data available for 50 of 62 participants at baseline)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"Aboriginal Australian participants aged 18 years or older without a previous history of cardiovascular disease, a minimum of five natural teeth and moderate/severe periodontitis defined using the joint Centers for Disease Control and Prevention and American Academy of Periodontology case definition\",\n  \"exclusion_criteria\": \"individuals receiving periodontal treatment in the preceding 6 months, those with cardiovascular disease history, rheumatic fever or any other medical condition requiring preventive antibiotic prophylaxis, pregnant women, or people with clinically visible endodontic or orofacial infections\",\n  \"n_randomised\": 62,\n  \"n_evaluated\": \"44 at 3 months (treatment n=24, control n=20)\"\n}\n```\n\n**Extraction notes:**\n\n- **HbA1c conversion:** The paper reports HbA1c in mmol/mol (Table 1: treatment 67.5, control 61.5). Converted to % using the paper's own reference points: 65 mmol/mol = 8.1% (stated in Discussion) and 0.22 mmol/mol \u2248 0.02% (also stated in Discussion), yielding ~0.0909%/mmol/mol. Results: arm A \u2248 8.3%, arm B \u2248 7.8%.\n- **Metabolic control:** Overall baseline mean 65 mmol/mol = 8.1%; the paper itself states \"almost 60% had HbA1c \u22657%, indicative of suboptimal glycaemic control\" \u2192 classified as **poor**.\n- **n_randomised:** 62 is the diabetes subgroup randomized from the larger PerioCardio study (273 total); this is the trial's own randomized N for the reported analysis.\n- **Tobacco:** Smokers were not excluded; the paper reports a mixed distribution across current/former/never categories.",
+  "stop_reason": "end_turn",
+  "session_id": "ae4eb971-e63d-440b-82e1-a9fcbdc8ed7b",
+  "total_cost_usd": 0.29693084999999997,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 35371,
+    "cache_read_input_tokens": 89032,
+    "output_tokens": 9050,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 35371
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 720,
+        "cache_read_input_tokens": 45470,
+        "cache_creation_input_tokens": 8265,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 8265,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 9050,
+      "cacheReadInputTokens": 89032,
+      "cacheCreationInputTokens": 35371,
+      "webSearchRequests": 0,
+      "costUSD": 0.29511584999999996,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "38b0e333-3509-4c27-b315-6a4b22673677"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 48982,
+  "duration_api_ms": 49599,
+  "ttft_ms": 2332,
+  "ttft_stream_ms": 2305,
+  "time_to_request_ms": 143,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Intervention group (IG)\",\n      \"comparison_summary\": \"Immediate non-surgical periodontal treatment (SRP + chlorhexidine irrigation) vs delayed periodontal treatment (control)\",\n      \"intervention_description\": \"Motivational intervention with customised oral hygiene instructions followed by active professional treatment. Scaling and root planing performed under local anesthesia, divided into four sessions within 24 h, each of 45 min per quadrant, using an ultrasonic scaler (PIEZO-soft ultrasonic scaler; KaVo Dental, Germany) equipped with PIEZO Scaler Tip 201, and manual instruments (Gracey Curettes, SG 1/2, 3/4, 5/6, 7/8, 11/12, 13/14; Gracey Curette, SAS 3/4, 11/12, 13/14; Hu-Friedy, USA). Ultrasonic instrumentation performed in apical to cervical direction using linear oscillations at 30 KHz with a medium power setting. A continuous water spray on the working area was maintained, and a subgingival irrigation with an antiseptic mouthwash (chlorhexidine 0.12%) was associated.\",\n      \"n_in_arm\": 93,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_mouthrinse\"\n    },\n    {\n      \"arm_label\": \"Control group (CG)\",\n      \"comparison_summary\": \"Immediate non-surgical periodontal treatment (SRP + chlorhexidine irrigation) vs delayed periodontal treatment (control)\",\n      \"intervention_description\": \"Delayed non-surgical periodontal treatment; no active periodontal treatment during the 6-month follow-up period. At the end of the 6-month follow-up period the non-surgical periodontal treatment was carried out for the control group, performing the same procedures for an ethical reason.\",\n      \"n_in_arm\": 94,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Key extraction notes:**\n\n- **Two arms**: IG (n=93) received immediate SRP; CG (n=94) received delayed treatment (no active periodontal care during the 6-month follow-up).\n- **IG classification \u2014 `SI_plus_mouthrinse`**: The SRP procedure explicitly included \"a subgingival irrigation with an antiseptic mouthwash (chlorhexidine 0.12%)\" as an adjunct, placing this arm above plain SI_alone.\n- **CG classification \u2014 `usual_care`**: The control group explicitly received no periodontal treatment during the trial period (treatment delivered only after the 6-month endpoint for ethical reasons).\n- Follow-up is 6 months for both arms, as stated in the study design.",
+  "stop_reason": "end_turn",
+  "session_id": "b6671b06-c8c1-4fcb-bbbf-8e83d2842081",
+  "total_cost_usd": 0.18568445,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 29279,
+    "cache_read_input_tokens": 88444,
+    "output_tokens": 3192,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 29279
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 726,
+        "cache_read_input_tokens": 45246,
+        "cache_creation_input_tokens": 2397,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2397,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00146,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3192,
+      "cacheReadInputTokens": 88444,
+      "cacheCreationInputTokens": 29279,
+      "webSearchRequests": 0,
+      "costUSD": 0.18422445,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "b8aae80f-eba0-4c9c-8004-4f5f117588d4"
+}

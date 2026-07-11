@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 176525,
+  "duration_api_ms": 176660,
+  "ttft_ms": 2298,
+  "ttft_stream_ms": 2215,
+  "time_to_request_ms": 589,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"T2DM patients with periodontal disease (tooth extraction only)\",\n      \"comparison_summary\": \"Tooth extraction + FM-SRP vs tooth extraction alone in T2DM patients\",\n      \"intervention_description\": \"At least one tooth was extracted from each patient. Control group did not receive any other periodontal treatment until the 3-month follow-up.\",\n      \"n_in_arm\": 50,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    },\n    {\n      \"arm_label\": \"T2DM patients with periodontal disease treated with FM-SRP\",\n      \"comparison_summary\": \"Tooth extraction + FM-SRP vs tooth extraction alone in T2DM patients\",\n      \"intervention_description\": \"At least one tooth extracted per patient. Prior to the surgical procedures, Full-Mouth Scaling and Root Planing (FM-SRP) using an ultrasonic device (UDS-J Ultrasonic Scaler, Guilin Woodpecker Medical Instrument) and periodontal curettes for the mechanical debridement of supra- and subgingival plaque and calculus. Post-operative rinsing with antiseptic solution Listerine\u00ae (ethanol 21.6%, methyl salicylate 0.06%, menthol 0.042%, thymol 0.064% and eucalyptol 0.092%) as a mouthwash thrice a day for 3 weeks.\",\n      \"n_in_arm\": 50,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_mouthrinse\"\n    },\n    {\n      \"arm_label\": \"Non-diabetic patients with periodontal disease (tooth extraction only)\",\n      \"comparison_summary\": \"Tooth extraction + FM-SRP vs tooth extraction alone in non-diabetic patients\",\n      \"intervention_description\": \"At least one tooth was extracted from each patient. Control group did not receive any other periodontal treatment until the 3-month follow-up.\",\n      \"n_in_arm\": 30,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    },\n    {\n      \"arm_label\": \"Non-diabetic patients with periodontal disease treated with FM-SRP\",\n      \"comparison_summary\": \"Tooth extraction + FM-SRP vs tooth extraction alone in non-diabetic patients\",\n      \"intervention_description\": \"At least one tooth extracted per patient. Prior to the surgical procedures, Full-Mouth Scaling and Root Planing (FM-SRP) using an ultrasonic device (UDS-J Ultrasonic Scaler, Guilin Woodpecker Medical Instrument) and periodontal curettes for the mechanical debridement of supra- and subgingival plaque and calculus. Post-operative rinsing with antiseptic solution Listerine\u00ae (ethanol 21.6%, methyl salicylate 0.06%, menthol 0.042%, thymol 0.064% and eucalyptol 0.092%) as a mouthwash thrice a day for 3 weeks.\",\n      \"n_in_arm\": 30,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_mouthrinse\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\nThe paper is a 2\u00d72 open-label RCT with four arms (two T2DM, two non-diabetic), all of whom received at least one tooth extraction. The treatment arms additionally received FM-SRP (full-mouth subgingival + supragingival scaling/root planing with an ultrasonic scaler and curettes) followed by Listerine mouthrinse thrice daily for 3 weeks \u2014 hence `SI_plus_mouthrinse`. The control arms received tooth extraction only with no additional periodontal instrumentation, hence `usual_care`.\n\nKey ambiguity resolved: The paper's flowchart shows 61/63 (T2DM) and 37/39 (ND) initially allocated, but the abstract explicitly states \"100 patients with diabetes were randomly allocated\" (50+50) and the ND total is given as n=60 divided equally; n=50 and n=30 are used consistently throughout the results and are the values reported here.",
+  "stop_reason": "end_turn",
+  "session_id": "5ffd73c5-d19d-4805-982f-9f9f5ad26ed6",
+  "total_cost_usd": 0.31649175,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 30181,
+    "cache_read_input_tokens": 81060,
+    "output_tokens": 11835,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 30181
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1088,
+        "cache_read_input_tokens": 37860,
+        "cache_creation_input_tokens": 10685,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 10685,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 11835,
+      "cacheReadInputTokens": 81060,
+      "cacheCreationInputTokens": 30181,
+      "webSearchRequests": 0,
+      "costUSD": 0.31503675,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "ad68bdfb-3f96-46ca-a758-244a2f165fc4"
+}

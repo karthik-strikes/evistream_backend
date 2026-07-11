@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 217094,
+  "duration_api_ms": 218427,
+  "ttft_ms": 1917,
+  "ttft_stream_ms": 1864,
+  "time_to_request_ms": 204,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": -0.61,\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 82,\n      \"mean_arm2\": -0.63,\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 83\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **One row only**: HbA1c is the sole outcome with per-arm data at a follow-up timepoint. The paper reports mean *change from baseline* to 4 months (unadjusted values from Table 2: ET = \u22120.61%, UC = \u22120.63%); absolute post-treatment HbA1c values per arm are not reported.\n- **SD = NR**: SDs of the change are not reported per arm. The Discussion references an overall SD of \u22481.31 but does not split it by group.\n- **N per arm**: 82 (Early Treatment) and 83 (Usual Care), per Table 1 (N=165 total; unadjusted OLS used N=165).\n- **Subgroup = SI_plus_antimicrobial**: The intervention included systemic doxycycline (100 mg/day \u00d7 14 days) plus chlorhexidine rinses in addition to scaling/root planing.\n- **No periodontal rows**: The UC group's periodontal examination was performed at month 4 (their \"clinical baseline\"), not at study enrolment. No matched 4-month GI, PPD, CAL, BOP, or PI means are available for both arms simultaneously.",
+  "stop_reason": "end_turn",
+  "session_id": "1a7085ad-950c-4121-bf8a-7f7531200ff3",
+  "total_cost_usd": 0.34353154999999996,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 33283,
+    "cache_read_input_tokens": 82721,
+    "output_tokens": 12816,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 33283
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 440,
+        "cache_read_input_tokens": 39340,
+        "cache_creation_input_tokens": 12307,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 12307,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 12816,
+      "cacheReadInputTokens": 82721,
+      "cacheCreationInputTokens": 33283,
+      "webSearchRequests": 0,
+      "costUSD": 0.34188254999999995,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "f02cea47-ee5b-48ad-9070-29960cf2de44"
+}

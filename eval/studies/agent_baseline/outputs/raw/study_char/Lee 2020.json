@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 23659,
+  "duration_api_ms": 25535,
+  "ttft_ms": 2022,
+  "ttft_stream_ms": 1994,
+  "time_to_request_ms": 191,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Republic of Korea\",\n  \"setting\": \"Community health care centre (Gwangjin-gu Public Health Centre, Seoul)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"3-arm parallel-design double-blinded randomized controlled clinical trial\",\n  \"recruitment_period\": \"June 2013 to June 2014\",\n  \"funding_source\": \"Health Promotion Fund, Ministry of Health and Welfare, Republic of Korea (#13-15)\",\n  \"notes\": \"Described by authors as a preliminary report. Sample size calculation: 72 patients needed (\u03b1=0.05, power=0.80, effect size=0.40, 10% drop-out allowance); 75 randomised, 60 analysed (20 per group). No conflict of interest declared.\"\n}\n```\n\nKey extraction decisions:\n- **setting**: The paper specifies patients were recruited from \"a community health care centre (Gwangjin-gu Public Health Centre, Seoul, Korea)\".\n- **trial_design**: Taken verbatim from the Measurements section: \"randomized, parallel-design, double-blinded, controlled clinical trial\" \u2014 with 3 arms (SRP, SRPAT, CTR).\n- **recruitment_period**: Stated in the Abstract: \"between June 2013 and June 2014\".\n- **notes**: Flagged the \"preliminary report\" descriptor, the sample size calculation parameters, and the no-conflict-of-interest declaration.",
+  "stop_reason": "end_turn",
+  "session_id": "57eaa52f-e154-406f-a65b-abe17ff944cc",
+  "total_cost_usd": 0.15027915000000003,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 27693,
+    "cache_read_input_tokens": 88228,
+    "output_tokens": 1247,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 27693
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 357,
+        "cache_read_input_tokens": 45229,
+        "cache_creation_input_tokens": 828,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 828,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1247,
+      "cacheReadInputTokens": 88228,
+      "cacheCreationInputTokens": 27693,
+      "webSearchRequests": 0,
+      "costUSD": 0.14903715,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "816cd29b-ceb5-456e-b9af-ed56cedfd819"
+}

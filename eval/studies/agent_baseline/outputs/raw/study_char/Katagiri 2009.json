@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 41224,
+  "duration_api_ms": 43068,
+  "ttft_ms": 2579,
+  "ttft_stream_ms": 2519,
+  "time_to_request_ms": 124,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Japan\",\n  \"setting\": \"university hospital\",\n  \"number_of_centres\": \"5\",\n  \"trial_design\": \"2-arm parallel RCT (multi-centre)\",\n  \"recruitment_period\": \"NR\",\n  \"funding_source\": \"Grants-in Aid from the Ministry of Health and Welfare of Japan (H16-Iryo-020) and the Mitsui Sumitomo insurance foundation\",\n  \"notes\": \"Allocation ratio was 2:1 (intervention:control) by envelope method. HbA1c follow-up outcome data presented in a figure (Fig. 1a) as a line graph without exact tabulated values, making numerical extraction difficult. No conflict of interest declared.\"\n}\n```\n\n**Key extraction decisions:**\n\n- **country**: All affiliations are Japanese institutions (Tokyo, Nagoya, Kyoto).\n- **setting**: Five university hospitals \u2014 Tokyo Medical and Dental University Hospital, Kagoshima University Medical and Dental Hospital, Aichi Gakuin University Dental Hospital, Tokyo Medical University Hospital, and Kyoto Prefecture Medical University Hospital.\n- **number_of_centres**: Explicitly stated as \"5 institutes\" in the Subjects section.\n- **trial_design**: Subjects randomly allocated (envelope method) to intervention or control \u2014 2-arm parallel; no blinding described.\n- **recruitment_period**: No dates given in the paper.\n- **funding_source**: Verbatim from the Acknowledgements section.\n- **notes**: The 2:1 allocation ratio is unusual and worth flagging; HbA1c follow-up data are graphical only (Fig. 1a), complicating extraction.",
+  "stop_reason": "end_turn",
+  "session_id": "d7363509-ad2d-4fe0-a676-668dcef2463a",
+  "total_cost_usd": 0.14245035,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 22661,
+    "cache_read_input_tokens": 82382,
+    "output_tokens": 2100,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22661
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 397,
+        "cache_read_input_tokens": 39385,
+        "cache_creation_input_tokens": 1640,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1640,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2100,
+      "cacheReadInputTokens": 82382,
+      "cacheCreationInputTokens": 22661,
+      "webSearchRequests": 0,
+      "costUSD": 0.14120835,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "b0d38362-85c7-49b3-9bb2-636a74bfd435"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 99653,
+  "duration_api_ms": 100030,
+  "ttft_ms": 2563,
+  "ttft_stream_ms": 2121,
+  "time_to_request_ms": 285,
+  "num_turns": 4,
+  "result": "```json\n{\n  \"age_arm_a\": 53.2,\n  \"age_arm_a_sd\": 11.2,\n  \"age_arm_b\": 56,\n  \"age_arm_b_sd\": 6.9,\n  \"pct_female_arm_a\": 55.56,\n  \"pct_female_arm_b\": 60.0,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 8.081,\n  \"baseline_hba1c_arm_b\": 8.767,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"within the previous 3 years\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"none (excluded)\",\n  \"inclusion_criteria\": \"diagnosed with type 2 diabetes; diabetes therapy unchanged over previous 3 months; not participated in DM educational programs prior to study; diagnosis of periodontitis; type 2 diabetes diagnosed within the previous 3 years\",\n  \"exclusion_criteria\": \"insulin dependent diabetes mellitus; higher chronic disease; smoking or consuming alcohol; used antibiotics or long-term anti-inflammatory drugs in last 6 months prior to trial; females who are pregnant, lactating or less than 6 weeks post-partum; received periodontal treatment within the previous year; unable to provide informed consent or comply with study requirements; younger than 18 years\",\n  \"n_randomised\": 187,\n  \"n_evaluated\": \"90 at 3 months, 90 at 6 months (per group)\"\n}\n```\n\n**Extraction notes:**\n\n- **age_arm_b**: Table 1 shows \"56. \u00b1 6.9\" \u2014 the decimal appears truncated (likely a typographic error); recorded as 56.\n- **pct_female**: Derived from Table 1 counts (IG: 50F/40M = 90 analysed; CG: 54F/36M = 90 analysed).\n- **baseline_hba1c**: Means from Table 2. The CG mean (8.767) is heavily influenced by an apparent outlier (max = 88, a likely data-entry error for 8.8); CG median is 7.5. The IG mean is 8.081 (median 7.7). Both means exceed 8%, hence **poor** metabolic control.\n- **tobacco_use / alcohol_consumption**: Both explicitly listed as exclusion criteria (\"smoking or consuming alcohol\").\n- **duration_since_diabetes_dx**: Inclusion criterion states diabetes must have been diagnosed \"within the previous 3 years.\"\n- **n_evaluated**: 90 in each arm completed the 3- and 6-month follow-ups (4 IG and 3 CG lost to follow-up from 93/94 randomised).",
+  "stop_reason": "end_turn",
+  "session_id": "01f79b99-f141-4cfc-b79f-d83510cee656",
+  "total_cost_usd": 0.28405925,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 39725,
+    "cache_read_input_tokens": 142075,
+    "output_tokens": 6043,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 39725
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 692,
+        "cache_read_input_tokens": 52910,
+        "cache_creation_input_tokens": 5179,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 5179,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 6,
+      "outputTokens": 6043,
+      "cacheReadInputTokens": 142075,
+      "cacheCreationInputTokens": 39725,
+      "webSearchRequests": 0,
+      "costUSD": 0.28225425,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "d58a75e9-cd89-4e09-8993-37a94afa444c"
+}

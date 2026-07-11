@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 28912,
+  "duration_api_ms": 29562,
+  "ttft_ms": 2467,
+  "ttft_stream_ms": 2430,
+  "time_to_request_ms": 104,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Cameroon\",\n  \"setting\": \"hospital (National Obesity Center, Yaound\u00e9 Central Hospital \u2014 tertiary centre for diabetes care)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel RCT, single-blinded\",\n  \"recruitment_period\": \"December 2014 to May 2015\",\n  \"funding_source\": \"The study received no funding\",\n  \"notes\": \"Sample size calculation: 14 subjects per arm required (90% power, minimum 1% HbA1c difference, SD 0.8); 17 per arm recruited to allow for drop-outs. Trial retrospectively registered (NCT02745015; registered 17 July 2016, after study completion). No competing interests declared.\"\n}\n```\n\nKey sourcing notes:\n- **country/setting/number_of_centres**: \"carried out \u2026 at the National Obesity Center of the Yaound\u00e9 Central Hospital, a tertiary center for diabetes care in the capital city of Cameroon\" (Methods, Setting section).\n- **trial_design**: \"This single blinded randomized controlled trial\" with two groups (treatment vs. delayed-treatment control) (Methods).\n- **recruitment_period**: \"from December 2014 to May 2015\" (Methods, Setting section).\n- **funding_source**: \"The study received no funding\" (Funding section).\n- **notes**: sample size from the Sample Size Calculation section; retrospective registration confirmed by \"Date of registration: July 17, 2016 'Retrospectively registered'\" in the abstract; competing interests from the Competing Interests section.",
+  "stop_reason": "end_turn",
+  "session_id": "0511cf5b-e76e-4d8e-b5b4-527b4a149f36",
+  "total_cost_usd": 0.12698835,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 21243,
+    "cache_read_input_tokens": 81617,
+    "output_tokens": 1439,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 21243
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 386,
+        "cache_read_input_tokens": 38616,
+        "cache_creation_input_tokens": 991,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 991,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1439,
+      "cacheReadInputTokens": 81617,
+      "cacheCreationInputTokens": 21243,
+      "webSearchRequests": 0,
+      "costUSD": 0.12574635,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "10cab44f-a80f-40c3-9329-4a9dbea9b783"
+}

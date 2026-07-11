@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 27864,
+  "duration_api_ms": 28502,
+  "ttft_ms": 1852,
+  "ttft_stream_ms": 1814,
+  "time_to_request_ms": 188,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment (n = 22)\",\n      \"comparison_summary\": \"Full-mouth SRP vs no periodontal treatment\",\n      \"intervention_description\": \"Oral hygiene instructions and full-mouth scaling and root planing performed under local anaesthesia\",\n      \"n_in_arm\": 22,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Control (n = 22)\",\n      \"comparison_summary\": \"Full-mouth SRP vs no periodontal treatment\",\n      \"intervention_description\": \"No periodontal treatment during the study period. After completion of the study, these patients were given a full non-surgical and supportive periodontal treatment if needed.\",\n      \"n_in_arm\": 22,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two arms** (44 participants total, 22 per group), randomly assigned.\n- **Treatment arm**: Full-mouth SRP under local anaesthesia plus oral hygiene instructions \u2014 no antimicrobials mentioned, so classified as `SI_alone`.\n- **Control arm**: Explicitly received no periodontal treatment during the study period (`usual_care`). Post-study, they were offered treatment.\n- **Follow-up**: Periodontal parameters at 1 and 3 months; metabolic outcomes at 3 months only \u2014 primary endpoint at **3 months**.\n- **Comparison**: Described throughout as \"treatment group vs. non-treatment (control) group.\"",
+  "stop_reason": "end_turn",
+  "session_id": "c3bb0eb9-3736-412a-ad5b-1a1a29b3b4dd",
+  "total_cost_usd": 0.132042,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 22250,
+    "cache_read_input_tokens": 82815,
+    "output_tokens": 1486,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22250
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 421,
+        "cache_read_input_tokens": 39615,
+        "cache_creation_input_tokens": 999,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 999,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1486,
+      "cacheReadInputTokens": 82815,
+      "cacheCreationInputTokens": 22250,
+      "webSearchRequests": 0,
+      "costUSD": 0.13058699999999998,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "c157adc6-6359-488c-944d-27f543b24873"
+}

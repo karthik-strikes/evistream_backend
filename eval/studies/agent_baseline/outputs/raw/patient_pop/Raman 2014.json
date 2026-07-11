@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 39764,
+  "duration_api_ms": 40413,
+  "ttft_ms": 2081,
+  "ttft_stream_ms": 1583,
+  "time_to_request_ms": 196,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 57.7,\n  \"age_arm_a_sd\": 9.9,\n  \"age_arm_b\": 54.6,\n  \"age_arm_b_sd\": 6.2,\n  \"pct_female_arm_a\": 26.7,\n  \"pct_female_arm_b\": 47.1,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.8,\n  \"baseline_hba1c_arm_b\": 7.6,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"diagnosed at least 1 year prior to the study\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"type 2 diabetes diagnosed at least 1 year prior to the study, ages 30 to 70, presence of moderate to advanced chronic periodontitis, with at least 12 teeth present and with 5 or more pockets of 5 mm or more and probing attachment loss of 4 mm or more in at least 2 different quadrants which bled on probing\",\n  \"exclusion_criteria\": \"history of systemic antibiotic usage over the previous 4 months, having received non-surgical periodontal treatment within the past 6 months or surgical periodontal treatment within the past 12 months; pregnancy, change of medication for diabetes during the course of the study, current smokers or history of a cerebrovascular or cardiovascular event within the past 12 months\",\n  \"n_randomised\": 40,\n  \"n_evaluated\": \"32 at 3 months (15 NSPT, 17 OHI)\"\n}\n```\n\n**Key sources within the paper:**\n\n- **Age/gender** (Table 1): NSPT 57.7 \u00b1 9.9 yrs, 4/15 female (26.7%); OHI 54.6 \u00b1 6.2 yrs, 8/17 female (47.1%)\n- **HbA1c** (Table 4): NSPT baseline 7.8 \u00b1 1.5%, OHI baseline 7.6 \u00b1 1.5% \u2192 classified as **fair** (7\u20138%)\n- **Diabetes type**: T2DM throughout; diagnosed \u22651 year before study\n- **Tobacco**: current smokers explicitly excluded\n- **Alcohol**: not mentioned anywhere \u2192 NR\n- **n randomised**: 40 (20 per arm); **n evaluated**: 32 at 3 months (15 NSPT + 17 OHI)",
+  "stop_reason": "end_turn",
+  "session_id": "d43d427e-56d5-465a-96b3-e2c6a66ec952",
+  "total_cost_usd": 0.16686355,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 26527,
+    "cache_read_input_tokens": 86541,
+    "output_tokens": 2640,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 26527
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 665,
+        "cache_read_input_tokens": 42981,
+        "cache_creation_input_tokens": 1910,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1910,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00181,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2640,
+      "cacheReadInputTokens": 86541,
+      "cacheCreationInputTokens": 26527,
+      "webSearchRequests": 0,
+      "costUSD": 0.16505355,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "8d0d6a29-2835-43b3-bdb2-d7d60dc22e25"
+}

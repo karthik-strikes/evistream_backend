@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 40073,
+  "duration_api_ms": 40597,
+  "ttft_ms": 1700,
+  "ttft_stream_ms": 1674,
+  "time_to_request_ms": 134,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Australia\",\n  \"setting\": \"community health services and correctional facilities (Northern Territory)\",\n  \"number_of_centres\": \"4 locations (Darwin, Katherine, and two correctional facilities in Darwin and Alice Springs)\",\n  \"trial_design\": \"2-arm parallel-group, randomized, open-label trial\",\n  \"recruitment_period\": \"June 2010 to January 2012\",\n  \"funding_source\": \"National Health and Medical Research Council: Project grant #627100; Future Leader Fellowship from the National Heart Foundation of Australia #100419 (MRS); University of Adelaide Divisional Scholarship (KK)\",\n  \"notes\": \"This paper reports a secondary/subgroup analysis of 62 participants with type 2 diabetes drawn from the original PerioCardio RCT (n=273 Aboriginal Australian adults), which was primarily designed to examine cardiovascular endpoints. The study was substantially underpowered for HbA1c: post hoc power calculation showed 19% power (398 participants required for 80% power). No conflict of interest declared.\"\n}\n```\n\nKey extraction notes:\n- **Country/setting**: All sites in Australia's Northern Territory \u2014 urban health services plus two correctional facilities.\n- **Centres**: Paper explicitly states \"four locations\" (Darwin, Katherine, Darwin correctional facility, Alice Springs correctional facility).\n- **Trial design**: Described verbatim in the Introduction as \"a parallel-group, randomized, open-label trial.\"\n- **Recruitment**: Stated as \"baseline recruitment commenced in June 2010 and completed in January 2012.\"\n- **Funding**: From the Acknowledgements section; NHMRC grant #627100 is the primary funder.\n- **Notes**: Critically, this is a secondary/subgroup analysis of a cardiovascular-endpoint trial \u2014 not powered for glycaemic outcomes. Post hoc power was only 19%.",
+  "stop_reason": "end_turn",
+  "session_id": "b27b090e-ff39-4d34-ae57-f85e2f2b0c53",
+  "total_cost_usd": 0.16327035,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 28067,
+    "cache_read_input_tokens": 87907,
+    "output_tokens": 2026,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 28067
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 440,
+        "cache_read_input_tokens": 44906,
+        "cache_creation_input_tokens": 1525,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1525,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2026,
+      "cacheReadInputTokens": 87907,
+      "cacheCreationInputTokens": 28067,
+      "webSearchRequests": 0,
+      "costUSD": 0.16202835,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "e6bbc8f4-5fcb-4c7a-8f90-2c8e8ce900f7"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 33834,
+  "duration_api_ms": 35133,
+  "ttft_ms": 1852,
+  "ttft_stream_ms": 1821,
+  "time_to_request_ms": 184,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Early Treatment\",\n      \"comparison_summary\": \"SRP plus doxycycline and chlorhexidine rinses vs usual care\",\n      \"intervention_description\": \"Periodontal scaling and root planing until smooth root surfaces were achieved plus doxycycline [100 mg by mouth daily for 14 days] and chlorhexidine gluconate [CHX] rinses [30 cc, 0.12%, twice daily for 4 months]\",\n      \"n_in_arm\": 82,\n      \"duration_of_followup\": \"4 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Usual Care\",\n      \"comparison_summary\": \"SRP plus doxycycline and chlorhexidine rinses vs usual care\",\n      \"intervention_description\": \"Participants did not alter their medical and dental care routine; rather, they proceeded with their health care as usual. For some this meant that they used dental and medical services, for others it did not.\",\n      \"n_in_arm\": 83,\n      \"duration_of_followup\": \"4 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- The paper uses a 2\u00d72 factorial design (4 subgroups) but reports its primary 4-month analysis as two arms: **Early Treatment** (n=82) vs **Usual Care** (n=83), as confirmed by Table 1.\n- The Early Treatment arm received SRP + systemic doxycycline (100 mg/day \u00d7 14 days) + CHX mouthrinse (0.12%, 30 cc BID \u00d7 4 months), making `SI_plus_systemic_local_antimicrobial` the appropriate category (systemic antibiotic is the dominant adjunct).\n- The Usual Care arm received no protocol-directed periodontal treatment, classified as `usual_care`.\n- Follow-up for both arms is 4 months (this paper covers only the first 4 months of the longer study).",
+  "stop_reason": "end_turn",
+  "session_id": "ce6009ca-0f4f-443a-bebd-6fb88af14faa",
+  "total_cost_usd": 0.1393587,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 22190,
+    "cache_read_input_tokens": 82354,
+    "output_tokens": 1998,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22190
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 535,
+        "cache_read_input_tokens": 39156,
+        "cache_creation_input_tokens": 1398,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1398,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1998,
+      "cacheReadInputTokens": 82354,
+      "cacheCreationInputTokens": 22190,
+      "webSearchRequests": 0,
+      "costUSD": 0.1379037,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "e3177566-b5b0-41bb-948c-7e7219b7bbe0"
+}

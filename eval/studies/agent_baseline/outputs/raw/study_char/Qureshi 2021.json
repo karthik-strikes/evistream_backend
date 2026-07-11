@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 41165,
+  "duration_api_ms": 42136,
+  "ttft_ms": 2062,
+  "ttft_stream_ms": 2037,
+  "time_to_request_ms": 137,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Pakistan\",\n  \"setting\": \"tertiary care hospital (university hospital)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"3-arm parallel RCT\",\n  \"recruitment_period\": \"NR\",\n  \"funding_source\": \"Higher Education Commission of Pakistan through their National Research Program for Universities (NRPU) Grants [Grant No: 7143]\",\n  \"notes\": \"Sample size: minimum 27/group required (0.6% HbA1c reduction, 90% power); target raised to 50/group (150 total) to allow for 40% attrition. High dropout: 150 randomised, only 74 (49%) completed 6-month follow-up; reasons for loss to follow-up not systematically recorded. COVID-19 lockdown caused 3 participants to miss last follow-up visit. Screening was conducted at multi-centric community camps; intervention/follow-up was at a single base centre (Dow University of Health Sciences, Karachi). Authors declare no conflict of interest.\"\n}\n```\n\n**Key extraction notes:**\n- **Country/Setting**: Explicitly stated as Dow University of Health Sciences, Karachi \u2014 \"one of the largest tertiary care hospital settings in Pakistan.\"\n- **Centres**: The paper uses \"multi-centric camps\" only for initial community screening; all eligibility assessment and treatment took place at the single university hospital (\"base camp\").\n- **Trial design**: The paper states \"A parallel group, three-arm RCT\" with masked examiners, therapists, and laboratory personnel (partial blinding, not full double-blind).\n- **Recruitment period**: Only the registration date (17/11/2017) is given; no start/end recruitment dates are reported.\n- **Funding**: Verbatim from the Funding section.",
+  "stop_reason": "end_turn",
+  "session_id": "2efb280c-e140-4648-93bb-d18231f052fd",
+  "total_cost_usd": 0.1534989,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25314,
+    "cache_read_input_tokens": 85048,
+    "output_tokens": 2120,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25314
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 432,
+        "cache_read_input_tokens": 42051,
+        "cache_creation_input_tokens": 1627,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1627,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2120,
+      "cacheReadInputTokens": 85048,
+      "cacheCreationInputTokens": 25314,
+      "webSearchRequests": 0,
+      "costUSD": 0.1522569,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "29aa1077-e793-4b5a-804c-7cbb8e28eaf9"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 50390,
+  "duration_api_ms": 50975,
+  "ttft_ms": 2276,
+  "ttft_stream_ms": 1779,
+  "time_to_request_ms": 165,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 59.62,\n  \"age_arm_a_sd\": 7.95,\n  \"age_arm_b\": 59.42,\n  \"age_arm_b_sd\": 9.8,\n  \"pct_female_arm_a\": 43.3,\n  \"pct_female_arm_b\": 46.7,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.87,\n  \"baseline_hba1c_arm_b\": 7.59,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"Mean duration of diabetes (years): 7.76 \u00b1 4.33 (IG); 7.84 \u00b1 6.8 (CG)\",\n  \"tobacco_use\": \"Current/never/ex-smokers included: 4(13.3%)/13(43.3%)/13(43.3%) in IG; 7(23.3%)/16(53.3%)/7(23.3%) in CG\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"Type 2 DM, aged 40\u201375 years, A1C levels ranging from 7% to 10%, at least 16 teeth present, at least eight sites with PPD \u22656 mm and four sites with clinical attachment loss \u22655 mm, distributed in at least two different quadrants\",\n  \"exclusion_criteria\": \"History of systemic antibiotic usage over the previous 3 months; non-surgical periodontal treatment during the previous 6 months; surgical periodontal treatment over the previous 12 months; current medication usage of calcium channel blockers, phenytoin, or cyclosporine; history of stroke or an acute cardiovascular event over the previous 12 months; renal (creatinine >1.5 mg/dl) or liver dysfunction (AST/ALT levels >2.5 times ULN)\",\n  \"n_randomised\": 60,\n  \"n_evaluated\": \"60 at 6 months (30 IG, 30 CG; 7 lost to follow-up analysed by ITT/LOCF)\"\n}\n```\n\n**Source notes:**\n- Age and SD: Table 1 \u2014 IG 59.62 \u00b1 7.95, CG 59.42 \u00b1 9.8\n- Sex: Table 1 \u2014 IG 17M/13F (43.3% female), CG 16M/14F (46.7% female)\n- HbA1c: Table 2 \u2014 IG 7.87% (SD 0.74), CG 7.59% (SD 0.66); both in the 7\u20139% \"fair\" range\n- Diabetes type: Explicitly T2DM throughout\n- Tobacco: Smokers not excluded; current/never/ex proportions reported in Table 1\n- `n_evaluated`: 60 analysed (ITT with last-observation-carried-forward for the 7 lost to follow-up after 1 month)",
+  "stop_reason": "end_turn",
+  "session_id": "1cd0613a-91ee-436a-9f92-447e9a818231",
+  "total_cost_usd": 0.15586305,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 21305,
+    "cache_read_input_tokens": 80731,
+    "output_tokens": 3328,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 21305
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 769,
+        "cache_read_input_tokens": 37175,
+        "cache_creation_input_tokens": 2494,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2494,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3328,
+      "cacheReadInputTokens": 80731,
+      "cacheCreationInputTokens": 21305,
+      "webSearchRequests": 0,
+      "costUSD": 0.15404805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "625d1161-147a-417c-8d02-4fe8622d99ac"
+}

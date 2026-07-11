@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 95352,
+  "duration_api_ms": 95868,
+  "ttft_ms": 2259,
+  "ttft_stream_ms": 1819,
+  "time_to_request_ms": 182,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 72.45,\n  \"age_arm_a_sd\": 8.20,\n  \"age_arm_b\": 74.15,\n  \"age_arm_b_sd\": 7.21,\n  \"pct_female_arm_a\": 50,\n  \"pct_female_arm_b\": 50,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 6.68,\n  \"baseline_hba1c_arm_b\": 6.76,\n  \"metabolic_control_level\": \"good\",\n  \"duration_since_diabetes_dx\": \"NR\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"teeth with sites with a PD >5 mm and attachment loss in at least 2 quadrants; BOP at these sites; at least 20 remaining teeth; HbA1c level \u22656.5%; non-smoking status; diagnosed with periodontitis\",\n  \"exclusion_criteria\": \"current abuse of alcohol or drugs; chronic liver disease including hepatitis; BMI \u226540 kg/m\u00b2\",\n  \"n_randomised\": 75,\n  \"n_evaluated\": \"60 at 12 weeks (20 per group)\"\n}\n```\n\n**Extraction notes:**\n\n- **3-arm trial:** Arm A = SRPAT (SRP + additional toothbrushing \u2014 the primary novel intervention per the paper title); Arm B = CTR (control). The third arm (SRP alone) is not captured in this 2-arm form.\n- **Age/sex/HbA1c** all sourced from Table 1 (analyzed n=20/group).\n- **metabolic_control_level = good:** Mean HbA1c \u2248 6.68% (SRPAT) and 6.76% (CTR), both well below 7%.\n- **tobacco_use:** Non-smoking is inclusion criterion 5 \u2014 smokers were excluded.\n- **alcohol_consumption:** Alcohol *abuse* is an exclusion criterion, but the paper does not report actual consumption levels \u2192 NR.\n- **n_randomised = 75:** Per CONSORT diagram (25 per arm); abstract's \"60 patients\" refers to the number analyzed after 15 dropouts.\n- **duration_since_diabetes_dx:** Not reported anywhere in the paper.",
+  "stop_reason": "end_turn",
+  "session_id": "0e8722eb-2408-4be3-ac79-186cd13a0410",
+  "total_cost_usd": 0.2456172,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 32982,
+    "cache_read_input_tokens": 89349,
+    "output_tokens": 6220,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 32982
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 597,
+        "cache_read_input_tokens": 45789,
+        "cache_creation_input_tokens": 5557,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 5557,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 6220,
+      "cacheReadInputTokens": 89349,
+      "cacheCreationInputTokens": 32982,
+      "webSearchRequests": 0,
+      "costUSD": 0.24380220000000002,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "cc74bc2a-8e3b-4646-b85f-3d596870e842"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 45002,
+  "duration_api_ms": 45546,
+  "ttft_ms": 2145,
+  "ttft_stream_ms": 1627,
+  "time_to_request_ms": 213,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 52.95,\n  \"age_arm_a_sd\": 6.523,\n  \"age_arm_b\": 52.23,\n  \"age_arm_b_sd\": 7.028,\n  \"pct_female_arm_a\": 59.1,\n  \"pct_female_arm_b\": 54.5,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 8.12,\n  \"baseline_hba1c_arm_b\": 8.21,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"more than 5 years\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"Diagnosis of diabetes type 2 for more than 5 years; Type 2 diabetes with HbA1c level from 7% to 9% at the last medical evaluation; Age from 40 to 70 years; No change in diabetes treatment over the previous 3 months; Minimum sixth permanent teeth excluding third molars; CAL and pocket depth (PD) \u22654 mm in more than thirty percent of the sites; Diagnosis with chronic periodontitis; Diagnosis of periodontitis based on the presence of 4 teeth as a minimum with at least one site with a CAL \u22653 mm and PPD \u22654 mm\",\n  \"exclusion_criteria\": \"Pregnancy; Alcoholism and smoking; Presence of any systemic disorders other than hypertension and diabetes; Diabetic major complications; Antimicrobial therapies in the last 6 months; Periodontal therapies in the last 6 months; Allergy to metronidazole and amoxicillin\",\n  \"n_randomised\": 88,\n  \"n_evaluated\": \"44 (test) and 44 (control) at 3 months\"\n}\n```\n\n**Key extraction notes:**\n\n- **Age/sex**: From Table 1 \u2014 test group 52.95 \u00b1 6.523 yrs, 59.1% female; control group 52.23 \u00b1 7.028 yrs, 54.5% female.\n- **HbA1c**: From Table 2 baseline row \u2014 test 8.12 \u00b1 0.74%, control 8.21 \u00b1 0.71%. Both arms above 8% \u2192 classified as `poor` metabolic control; the paper explicitly describes these as \"uncontrolled diabetes\" patients (eligible HbA1c 7\u20139%).\n- **Tobacco/alcohol**: Smoking excluded per exclusion criteria \u2192 `none (excluded)`. \"Alcoholism\" was also an exclusion criterion, but alcohol consumption per se was not measured or reported \u2192 `NR`.\n- **n_evaluated**: All 88 randomised participants completed the 3-month follow-up (no dropouts reported).",
+  "stop_reason": "end_turn",
+  "session_id": "f364582a-e992-40c2-adaa-b5bffce2decd",
+  "total_cost_usd": 0.1618661,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 24604,
+    "cache_read_input_tokens": 84487,
+    "output_tokens": 2829,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 24604
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 721,
+        "cache_read_input_tokens": 40925,
+        "cache_creation_input_tokens": 2043,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2043,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2829,
+      "cacheReadInputTokens": 84487,
+      "cacheCreationInputTokens": 24604,
+      "webSearchRequests": 0,
+      "costUSD": 0.1600611,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "ab6ad475-8715-4f8b-9a2b-41c0b691e324"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 62062,
+  "duration_api_ms": 62654,
+  "ttft_ms": 3899,
+  "ttft_stream_ms": 3483,
+  "time_to_request_ms": 147,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 61.2,\n  \"age_arm_a_sd\": 9.2,\n  \"age_arm_b\": 62.8,\n  \"age_arm_b_sd\": 12.1,\n  \"pct_female_arm_a\": 35.0,\n  \"pct_female_arm_b\": 11.8,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.5,\n  \"baseline_hba1c_arm_b\": 7.7,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"diagnosed at least 2 months prior to the study\",\n  \"tobacco_use\": \"smokers not excluded; 2/20 (10.0%) in intervention arm, 5/17 (29.4%) in control arm\",\n  \"alcohol_consumption\": \"drinkers not excluded; 7/20 (35.0%) in intervention arm, 7/17 (41.2%) in control arm\",\n  \"inclusion_criteria\": \"Men and women \u226530 years; physician-diagnosed T2DM (diagnosed at least 2 months prior to the study); able to make hospital visits throughout the trial; in the care of a physician for diabetes; agreed to not change diabetes medications during the trial unless medically indicated; mild to advanced chronic periodontitis defined as \u22652 interproximal sites with CAL \u22653 mm and \u22652 interproximal sites with PPD \u22654 mm (not on the same tooth) or one site with PPD \u22655 mm; confirmed by radiographs\",\n  \"exclusion_criteria\": \"pregnancy; inappropriate status for the trials such as limited life expectancy and diabetes-related emergency; receiving periodontal treatment in the prior 6 months\",\n  \"n_randomised\": 40,\n  \"n_evaluated\": \"37 at 3 mths (ITT/LOCF; 20 intervention + 17 control); 28 completers at 6 mths (15 intervention + 13 control)\"\n}\n```\n\n**Source notes:**\n\n- **Arm A = periodontal treatment group** (n=20); **Arm B = control group** (n=17 at analysis).\n- Age and HbA1c from Table 1 (mean \u00b1 SD).\n- Sex: Table 1 reports males as 13/20 (65.0%) in arm A \u2192 35.0% female; 15/17 (88.2%) in arm B \u2192 11.8% female.\n- `metabolic_control_level` = **fair**: pooled mean HbA1c ~7.5\u20137.7%, consistent with fair/suboptimal but not poor (>8%) control.\n- Duration: the inclusion criterion states T2DM \"diagnosed at least 2 months prior to the study\" \u2014 no further duration data reported.\n- Smoking and alcohol: both groups had smokers and drinkers present (not excluded); counts from Table 1.\n- `n_randomised` = 40 (20 per arm); primary ITT analysis included 37 (LOCF applied to 3 dropouts in each arm at 3 months).",
+  "stop_reason": "end_turn",
+  "session_id": "6868f813-3e60-4a1b-9aba-db75eac2600d",
+  "total_cost_usd": 0.21462035,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 33915,
+    "cache_read_input_tokens": 92847,
+    "output_tokens": 3851,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 33915
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 791,
+        "cache_read_input_tokens": 49285,
+        "cache_creation_input_tokens": 2994,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2994,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3851,
+      "cacheReadInputTokens": 92847,
+      "cacheCreationInputTokens": 33915,
+      "webSearchRequests": 0,
+      "costUSD": 0.21281535,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "21feef05-14d5-4b3b-85e6-8317c1412ba1"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 27820,
+  "duration_api_ms": 28318,
+  "ttft_ms": 2084,
+  "ttft_stream_ms": 2052,
+  "time_to_request_ms": 295,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Intensive periodontal therapy (IPT)\",\n      \"comparison_summary\": \"IPT (whole mouth subgingival scaling \u00b1 surgical periodontal therapy + supportive therapy every 3 months) vs CPT (supragingival scaling and polishing)\",\n      \"intervention_description\": \"Initial single session of whole mouth scaling of the root surfaces under local analgesia, with no time limit set for the duration of the session. At 2 months: patients with good oral hygiene (dental plaque scores \u226420%) and at least one 6 mm or deeper residual periodontal pocket had periodontal surgical therapy to improve access for root surface cleaning; patients with suboptimum oral hygiene or without residual \u22656 mm pockets received additional scaling of the root surfaces under local analgesia. All patients subsequently received further sessions of scaling of the root surfaces under local analgesia every 3 months until completion of the study. Essential dental care, including oral hygiene instructions and removal of compromised teeth, was also done.\",\n      \"n_in_arm\": 133,\n      \"duration_of_followup\": \"12 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Control periodontal therapy (CPT)\",\n      \"comparison_summary\": \"IPT (whole mouth subgingival scaling \u00b1 surgical periodontal therapy + supportive therapy every 3 months) vs CPT (supragingival scaling and polishing)\",\n      \"intervention_description\": \"Supra-gingival scaling and polishing of all dentition at the same time-points as the IPT group (after baseline and at 2, 6, 9, and 12 months after the completion of the first session of periodontal therapy). Essential dental care, including oral hygiene instructions and removal of compromised teeth, was also done. At the end of the study, patients in the CPT group received any additional periodontal therapy that was required.\",\n      \"n_in_arm\": 131,\n      \"duration_of_followup\": \"12 months\",\n      \"cochrane_subgroup_category\": \"supragingival_only\"\n    }\n  ]\n}\n```\n\nTwo arms extracted from this 12-month UK RCT (D'Aiuto et al., Lancet Diabetes Endocrinol 2018; ISRCTN83229304):\n\n- **IPT arm (n=133):** Whole-mouth subgingival scaling under local analgesia (no time limit), followed at 2 months by either periodontal surgery (good oral hygiene + residual \u22656 mm pockets) or repeat subgingival scaling, then 3-monthly supportive subgingival scaling to 12 months \u2192 classified `SI_alone` (no antimicrobial adjunct).\n- **CPT arm (n=131):** Supragingival scaling and polishing at matching timepoints (baseline, 2, 6, 9, 12 months) \u2192 classified `supragingival_only`.",
+  "stop_reason": "end_turn",
+  "session_id": "035fe05e-55a5-45c7-bb51-1fbed4291522",
+  "total_cost_usd": 0.16111995,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 29269,
+    "cache_read_input_tokens": 90104,
+    "output_tokens": 1524,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 29269
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 732,
+        "cache_read_input_tokens": 46906,
+        "cache_creation_input_tokens": 727,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 727,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1524,
+      "cacheReadInputTokens": 90104,
+      "cacheCreationInputTokens": 29269,
+      "webSearchRequests": 0,
+      "costUSD": 0.15966495,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "b5374e79-e18f-4ffa-8e84-0dff3fe17ced"
+}

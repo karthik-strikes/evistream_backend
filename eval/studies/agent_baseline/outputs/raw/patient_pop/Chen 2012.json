@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 90950,
+  "duration_api_ms": 91489,
+  "ttft_ms": 2533,
+  "ttft_stream_ms": 2084,
+  "time_to_request_ms": 206,
+  "num_turns": 3,
+  "result": "Here is the extracted JSON:\n\n```json\n{\n  \"age_arm_a\": 59.86,\n  \"age_arm_a_sd\": 9.48,\n  \"age_arm_b\": 63.2,\n  \"age_arm_b_sd\": 8.51,\n  \"pct_female_arm_a\": 45.24,\n  \"pct_female_arm_b\": 58.54,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.31,\n  \"baseline_hba1c_arm_b\": 7.25,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \">1 year (mean \u00b1 SD: 8.69 \u00b1 5.25 yr arm A/TG1, 9.56 \u00b1 6.02 yr arm B/control)\",\n  \"tobacco_use\": \"current, former, and never-smokers enrolled; Treatment Group 1: 7 current, 1 former, 34 never; Control: 7 current, 0 former, 34 never-smokers\",\n  \"alcohol_consumption\": \"drinking/not drinking; drinkers (n): 2 (Treatment Group 1), 7 (Control Group)\",\n  \"inclusion_criteria\": \"confirmed T2DM diagnosis >1 year; no change in diabetic treatment plan in previous 2 months; no major diabetic complication (e.g., coronary heart disease); chronic periodontitis (AAP criteria) with \u22651 mm mean clinical attachment loss (slight, moderate, and severe); \u226516 teeth\",\n  \"exclusion_criteria\": \"systemic disease other than diabetes that could influence periodontal disease; systemic antibiotic administration within previous 3 months; pregnancy or lactation; refusal to provide written informed consent; active infection other than periodontitis; periodontal treatment in previous 12 months\",\n  \"n_randomised\": 134,\n  \"n_evaluated\": \"42 (arm A/TG1), 43 (TG2), 41 (arm B/control) at 6 months; 126 total analysed\"\n}\n```\n\n**Key extraction notes:**\n\n- **Arm assignment**: This is a 3-arm RCT. Arm A = Treatment Group 1 (SRP at baseline + subgingival debridement at 3 months, n=45 randomised/42 analysed); Arm B = Control Group (no intervention, n=44 randomised/41 analysed). Treatment Group 2 (SRP + supragingival prophylaxis) is a second active arm not mapped to the standard A/B schema.\n- **pct_female_arm_a**: 19 females / 42 total = 45.24%; **pct_female_arm_b**: 24 females / 41 total = 58.54% (derived from Table 1 M/F counts).\n- **metabolic_control_level = fair**: Baseline HbA1c ~7.3% (arm A) and ~7.25% (arm B) fall in the 7\u20138% \"fair\" range.\n- **tobacco_use**: Smokers were not excluded \u2014 current, former, and never-smokers were all enrolled (counts from Table 1).\n- **alcohol_consumption**: Table 1 reports alcohol consumption as a count of drinkers (2 in TG1, 7 in control), with the paper classifying use as \"drinking\" vs. \"not drinking.\"",
+  "stop_reason": "end_turn",
+  "session_id": "9250af19-3d76-4a6c-b621-8f987be391ea",
+  "total_cost_usd": 0.21307055,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 27985,
+    "cache_read_input_tokens": 85456,
+    "output_tokens": 5378,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 27985
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 858,
+        "cache_read_input_tokens": 41894,
+        "cache_creation_input_tokens": 4455,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 4455,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 5378,
+      "cacheReadInputTokens": 85456,
+      "cacheCreationInputTokens": 27985,
+      "webSearchRequests": 0,
+      "costUSD": 0.21126555,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "a44da9c7-8a9b-43e4-8a32-d35c816f328d"
+}

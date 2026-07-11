@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 28058,
+  "duration_api_ms": 28980,
+  "ttft_ms": 2149,
+  "ttft_stream_ms": 2115,
+  "time_to_request_ms": 235,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Intervention group\",\n      \"comparison_summary\": \"Periodontal therapy (full-mouth scaling + OHI) vs no intervention\",\n      \"intervention_description\": \"oral hygiene (utilizing correct methods and soft-bristled toothbrushes, interdental brushes and dental floss), full-mouth scaling (supragingival and subgingival scaling), the extraction of hopeless teeth, and the restoration of balanced occlusion. All periodontal interventions were completed by a single periodontist (Jingsong Liu) within two weeks.\",\n      \"n_in_arm\": 22,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Control group\",\n      \"comparison_summary\": \"Periodontal therapy (full-mouth scaling + OHI) vs no intervention\",\n      \"intervention_description\": \"No intervention (subjects who underwent no intervention).\",\n      \"n_in_arm\": 22,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two arms** randomised 1:1 (n=22 each); 19 and 20 completed \u2014 `n_in_arm` uses the randomised figure (22) per arm.\n- **Intervention group** received full-mouth scaling (both supragingival and subgingival) plus OHI, hopeless tooth extraction, and occlusal restoration \u2014 no antimicrobials mentioned \u2192 `SI_alone`.\n- **Control group** received no periodontal treatment \u2192 `usual_care`.\n- Follow-up was 3 months for both arms (measurements at baseline and after 3 months).",
+  "stop_reason": "end_turn",
+  "session_id": "a0c0316b-9e44-48bb-9558-6ab8e55187f0",
+  "total_cost_usd": 0.1311051,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 21178,
+    "cache_read_input_tokens": 81542,
+    "output_tokens": 1717,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 21178
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 453,
+        "cache_read_input_tokens": 38346,
+        "cache_creation_input_tokens": 1196,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1196,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1717,
+      "cacheReadInputTokens": 81542,
+      "cacheCreationInputTokens": 21178,
+      "webSearchRequests": 0,
+      "costUSD": 0.1296501,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "c3833a37-948f-4ad8-9e2c-de53f97ebdac"
+}

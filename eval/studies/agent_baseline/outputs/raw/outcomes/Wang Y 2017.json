@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 76017,
+  "duration_api_ms": 76970,
+  "ttft_ms": 1658,
+  "ttft_stream_ms": 1613,
+  "time_to_request_ms": 141,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 8.81,\n      \"sd_arm1\": 1.06,\n      \"n_arm1\": 11,\n      \"mean_arm2\": 8.35,\n      \"sd_arm2\": 1.37,\n      \"n_arm2\": 6\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 16.0,\n      \"sd_arm1\": 9.6,\n      \"n_arm1\": 11,\n      \"mean_arm2\": 66.4,\n      \"sd_arm2\": 39.3,\n      \"n_arm2\": 6\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 17.7,\n      \"sd_arm1\": 14.0,\n      \"n_arm1\": 11,\n      \"mean_arm2\": 67.9,\n      \"sd_arm2\": 22.4,\n      \"n_arm2\": 6\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 6.0,\n      \"sd_arm1\": 4.7,\n      \"n_arm1\": 11,\n      \"mean_arm2\": 45.1,\n      \"sd_arm2\": 34.5,\n      \"n_arm2\": 6\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 34.8,\n      \"sd_arm1\": 28.8,\n      \"n_arm1\": 11,\n      \"mean_arm2\": 57.8,\n      \"sd_arm2\": 32.5,\n      \"n_arm2\": 6\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **5 rows** extracted, all at `6_months` (the only follow-up timepoint reported). No 3-4 month or 12-month data exist.\n- **Subgroup**: `SI_vs_usual_care` \u2014 control arm received OHI alone (no subgingival instrumentation, no antimicrobials).\n- **Arm 1** = Treatment (OHI + scaling/root debridement, n=11); **Arm 2** = Control (OHI only, n=6; one participant lost to follow-up from original n=7).\n- **PPD**: Reported as \"PD \u2265 4 mm (%)\" \u2014 percentage of sites, not mean pocket depth. Mapped to `PPD` as the closest allowed type.\n- **CAL**: Reported as \"CAL \u2265 5 mm (%)\" \u2014 percentage of sites, not mean attachment level. Mapped to `CAL` as the closest allowed type.\n- **GI** was not reported in this paper.\n- All values sourced from Table 2 (page 1258).",
+  "stop_reason": "end_turn",
+  "session_id": "46553a2a-25f8-45bf-8a29-be1c2c56d978",
+  "total_cost_usd": 0.23236315000000002,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 32849,
+    "cache_read_input_tokens": 90168,
+    "output_tokens": 5364,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 32849
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 867,
+        "cache_read_input_tokens": 46783,
+        "cache_creation_input_tokens": 4430,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 4430,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 19,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001654,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 5364,
+      "cacheReadInputTokens": 90168,
+      "cacheCreationInputTokens": 32849,
+      "webSearchRequests": 0,
+      "costUSD": 0.23070915000000003,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "f43e05da-3bdf-4cef-a117-f2fe5b4b0c9e"
+}

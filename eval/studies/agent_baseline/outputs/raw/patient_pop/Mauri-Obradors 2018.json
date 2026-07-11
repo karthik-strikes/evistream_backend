@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 114107,
+  "duration_api_ms": 114876,
+  "ttft_ms": 2146,
+  "ttft_stream_ms": 1650,
+  "time_to_request_ms": 168,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 61,\n  \"age_arm_a_sd\": 11,\n  \"age_arm_b\": 62,\n  \"age_arm_b_sd\": 10,\n  \"pct_female_arm_a\": 59.5,\n  \"pct_female_arm_b\": 58.3,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": \"NR\",\n  \"baseline_hba1c_arm_b\": \"NR\",\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"Median 10 (IQR 10) years in TG; median 11 (IQR 12) years in CG; inclusion criterion: diagnosed at least 1.5 years prior to study\",\n  \"tobacco_use\": \"Smokers not excluded; TG: never 33.3%, current 35.7%, former 31%; CG: never 47.9%, current 6.3%, former 45.8% (groups differed significantly, p=.002)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"type 2 diabetes (diagnosed at least 1.5 years prior the study) and generalized chronic periodontitis (Armitage, 1999) at least nine teeth present and >30% of the probed gingiva with a depth and clinical attachment level \u22654 mm\",\n  \"exclusion_criteria\": \"antibiotic treatment during the previous 15 days or for periods >10 days during the last 3 months, non-surgical periodontal treatment within the past 6 months, pregnancy, significant changes in diabetes medication during the course of the study, and evidence of other serious systemic disease (ASA III or IV)\",\n  \"n_randomised\": 90,\n  \"n_evaluated\": \"90 (ITT) at 6 months; 79 completers (44 CG, 35 TG)\"\n}\n```\n\n**Key extraction notes:**\n\n- **Arm A = TG (treatment group)**: OHI + full-mouth SRP, n=42. **Arm B = CG (control group)**: OHI + supragingival debridement only, n=48.\n- **Age/sex**: from Table 2 \u2014 TG: mean 61 (SD 11), 59.5% female (25/42); CG: mean 62 (SD 10), 58.3% female (28/48).\n- **Baseline HbA1c per arm**: marked NR \u2014 Table 2 does not include HbA1c, and no per-arm values appear in the text. Only the overall mean (7.7% \u00b1 1.13%) is reported. `metabolic_control_level` derived from that overall mean as \"fair\" (paper itself calls it \"moderate\").\n- **Tobacco**: smokers were not excluded; the two arms differed significantly (p=.002) \u2014 more current smokers in TG (35.7% vs 6.3%).\n- **n_evaluated**: analysed by ITT (n=90); physical completers were 44 CG + 35 TG = 79 at 6 months (4 dropouts in CG, 7 in TG per Figure 1).",
+  "stop_reason": "end_turn",
+  "session_id": "90856ab0-4e4d-411e-964d-4446d3c01dd4",
+  "total_cost_usd": 0.25428850000000003,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 31766,
+    "cache_read_input_tokens": 87420,
+    "output_tokens": 7141,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 31766
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 807,
+        "cache_read_input_tokens": 43860,
+        "cache_creation_input_tokens": 6270,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 6270,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00181,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 7141,
+      "cacheReadInputTokens": 87420,
+      "cacheCreationInputTokens": 31766,
+      "webSearchRequests": 0,
+      "costUSD": 0.2524785,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "75d79e4c-b85a-4183-86df-f3a2bf6dd605"
+}

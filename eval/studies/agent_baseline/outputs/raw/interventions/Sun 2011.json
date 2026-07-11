@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 39567,
+  "duration_api_ms": 40233,
+  "ttft_ms": 2603,
+  "ttft_stream_ms": 2562,
+  "time_to_request_ms": 270,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"T2DM-NT group\",\n      \"comparison_summary\": \"Periodontal intervention vs no periodontal intervention in T2DM patients with chronic periodontitis\",\n      \"intervention_description\": \"No periodontal intervention. Patients were randomly assigned to the non-treatment group and monitored over 3 months without any periodontal treatment.\",\n      \"n_in_arm\": 75,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    },\n    {\n      \"arm_label\": \"T2DM-T group\",\n      \"comparison_summary\": \"Periodontal intervention vs no periodontal intervention in T2DM patients with chronic periodontitis\",\n      \"intervention_description\": \"Periodontal intervention included oral hygiene, full-mouth scaling (supragingival and subgingival scaling), root planning, periodontal flap surgery when indicated, and extraction of hopeless teeth, restore of balanced occlusion. Antibiotics (Tinidazole 1.0 g, bid, po. and ampicillin 0.25 g, qid, po.) were prescribed for 3 days before and after periodontal intervention. All periodontal interventions were performed by one periodontist.\",\n      \"n_in_arm\": 82,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two arms** identified: T2DM-NT (no treatment / control) and T2DM-T (periodontal intervention).\n- **n_in_arm**: The paper states 190 total were randomised, but 33 dropped out and their data were excluded from baseline tables. The only per-arm numbers given in the paper are those in Tables 1 & 2 (75 and 82); these are used.\n- **T2DM-T classification** (`SI_plus_systemic_local_antimicrobial`): The intervention includes subgingival scaling/root planing **plus** systemic antibiotics (Tinidazole + ampicillin) prescribed for 3 days before and after treatment.\n- **T2DM-NT classification** (`usual_care`): Explicitly the no-intervention control group.",
+  "stop_reason": "end_turn",
+  "session_id": "652f428d-2041-4b29-862f-b5237fa23fa4",
+  "total_cost_usd": 0.1264002,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 18416,
+    "cache_read_input_tokens": 78484,
+    "output_tokens": 2155,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 18416
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 590,
+        "cache_read_input_tokens": 35284,
+        "cache_creation_input_tokens": 1496,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1496,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2155,
+      "cacheReadInputTokens": 78484,
+      "cacheCreationInputTokens": 18416,
+      "webSearchRequests": 0,
+      "costUSD": 0.1249452,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "a1a1f691-20e6-401b-b58b-aeea60794ea6"
+}

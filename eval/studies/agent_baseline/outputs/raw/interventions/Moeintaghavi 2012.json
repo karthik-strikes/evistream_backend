@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 67652,
+  "duration_api_ms": 68273,
+  "ttft_ms": 2166,
+  "ttft_stream_ms": 2032,
+  "time_to_request_ms": 182,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"periodontal treatment group\",\n      \"comparison_summary\": \"non-surgical periodontal treatment (SRP + OHI + supportive periodontal therapy) vs oral hygiene instructions only (no active periodontal treatment)\",\n      \"intervention_description\": \"Initially, all participants received one session of supra-gingival plaque removal and oral hygiene instructions. The non-surgical periodontal treatment consisted of at least 60 minutes of scaling and root planing using curettes (BioGent Curette, Hu-Friedy, Chicago, IL, USA; Scaler YB, YDM Corporation, Saitama, Japan) and an ultrasonic instrument (Varios 750, NSK, Tochigi, Japan) during 2 or more sessions completed within 42 days after the baseline visit. During the treatment, the therapists provided oral hygiene instructions, professional toothbrushing and mechanical tooth cleaning. Three and 6 months after the baseline visit, participants in the treatment group received periodontal maintenance therapy including oral hygiene instructions and oral prophylaxis for approximately 1 hour during a single session.\",\n      \"n_in_arm\": 20,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"control group\",\n      \"comparison_summary\": \"non-surgical periodontal treatment (SRP + OHI + supportive periodontal therapy) vs oral hygiene instructions only (no active periodontal treatment)\",\n      \"intervention_description\": \"Initially, all participants received one session of supra-gingival plaque removal and oral hygiene instructions. Participants in the control group received only oral hygiene instructions at the baseline and 3 and 6 month visits. After the study completion, the control group participants received scaling and root planing.\",\n      \"n_in_arm\": 20,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two arms** identified: a periodontal treatment group and a control group, both with n=20 randomised (per the CONSORT flowchart; the control group's Table 1 shows N=17 because 3 could not be contacted after randomisation and never received any intervention).\n- **Treatment arm** (`SI_alone`): SRP with hand curettes + ultrasonic scaler (\u226560 min, \u22652 sessions within 42 days), plus OHI/professional toothbrushing during treatment, then supportive periodontal therapy (OHI + oral prophylaxis ~1 h) at 3 and 6 months. No systemic or locally delivered antimicrobials \u2014 classified `SI_alone`.\n- **Control arm** (`usual_care`): The single baseline supragingival plaque removal was given to all participants universally as a starting condition, not as the control's assigned treatment; the control's assigned intervention was OHI only at baseline, 3 months, and 6 months \u2014 classified `usual_care`.\n- Follow-up is 6 months for both arms (assessments at 3 and 6 months).",
+  "stop_reason": "end_turn",
+  "session_id": "029f7522-7b17-4c48-bfd6-126f3b24d128",
+  "total_cost_usd": 0.21692295,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 33781,
+    "cache_read_input_tokens": 92114,
+    "output_tokens": 4076,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 33781
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 784,
+        "cache_read_input_tokens": 48916,
+        "cache_creation_input_tokens": 3229,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3229,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4076,
+      "cacheReadInputTokens": 92114,
+      "cacheCreationInputTokens": 33781,
+      "webSearchRequests": 0,
+      "costUSD": 0.21546795000000002,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "542401eb-bf93-4941-a202-1ef3b55d77d2"
+}

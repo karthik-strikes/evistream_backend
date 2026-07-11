@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 27934,
+  "duration_api_ms": 28416,
+  "ttft_ms": 1904,
+  "ttft_stream_ms": 1872,
+  "time_to_request_ms": 183,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Turkey\",\n  \"setting\": \"university clinic (Department of Metabolic Diseases and Endocrinology and Department of Periodontology, Ankara University Faculty of Medicine and Faculty of Dentistry)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel RCT (treatment vs no-treatment control); single-blind (examining investigator unaware of group assignments)\",\n  \"recruitment_period\": \"NR\",\n  \"funding_source\": \"NR\",\n  \"notes\": \"Patients requiring surgical treatment following 1-month reassessment were excluded from statistical analysis. Some patients in both groups received periapical treatment (root canal or extraction) during the study period.\"\n}\n```\n\n**Key extraction decisions:**\n\n- **Country**: Turkey \u2014 all affiliations (S\u00fcleyman Demirel University/Isparta and Ankara University/Ankara) are in Turkey.\n- **Setting**: University clinic \u2014 joint collaboration between Ankara University Faculty of Medicine and Faculty of Dentistry.\n- **Number of centres**: 1 \u2014 single institution (Ankara University), even though two departments were involved.\n- **Trial design**: 2-arm parallel RCT with single-blinding (examiner unaware of group assignment per the Methods section).\n- **Recruitment period / Funding**: Neither is stated anywhere in the paper.\n- **Notes**: Two notable data limitations \u2014 (1) patients needing surgical treatment after the 1-month check were excluded from analysis (potential selection bias), and (2) periapical lesions were managed differently across groups during the study period.",
+  "stop_reason": "end_turn",
+  "session_id": "2b4234c6-c564-4847-9bf8-218f690faf44",
+  "total_cost_usd": 0.13065405000000002,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 22073,
+    "cache_read_input_tokens": 82411,
+    "output_tokens": 1460,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22073
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 372,
+        "cache_read_input_tokens": 39412,
+        "cache_creation_input_tokens": 1025,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1025,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1460,
+      "cacheReadInputTokens": 82411,
+      "cacheCreationInputTokens": 22073,
+      "webSearchRequests": 0,
+      "costUSD": 0.12941205,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "46611865-cf5a-4c99-8634-2b46b6b2db72"
+}

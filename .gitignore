@@ -77,3 +77,13 @@ storage/uploads/
 storage/processed/
 dspy_components/tasks/dynamic_*/
 dspy_components/tasks/task_*/
+
+# ── Eval harness: track code, exclude secrets / outputs / large data ──────────
+eval/.env
+eval/**/.env
+eval/__pycache__/
+eval/**/__pycache__/
+eval/outputs/
+eval/sheets/
+eval/*.png
+eval/**/*.png

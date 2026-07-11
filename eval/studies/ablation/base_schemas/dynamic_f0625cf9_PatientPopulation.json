@@ -1,0 +1,498 @@
+{
+  "version": 1,
+  "task_name": "dynamic_f0625cf9_PatientPopulation",
+  "schema_name": "dynamic_f0625cf9_PatientPopulation",
+  "_pulled_from": "evistream-dev (wjgwfdmilhhxikqkytdg) · project Periodontitis db2dd1f4-c06a-4511-ae1f-165419004eac · form Patient Population f0625cf9-f7a3-4174-b1e8-92295ae20a10 · status active",
+  "signatures": [
+    {
+      "class_name": "ExtractBaselineDemographics",
+      "docstring": "Extract baseline demographic characteristics for each study arm from a clinical research paper.\n\nForm Questions:\n- age_arm_a: \"What is the mean age (years) of participants in the intervention arm (arm A)?\"\n- age_arm_a_sd: \"What is the standard deviation of age in the intervention arm (arm A)?\"\n- age_arm_b: \"What is the mean age (years) of participants in the control/usual-care arm (arm B)?\"\n- age_arm_b_sd: \"What is the standard deviation of age in the control arm (arm B)?\"\n- pct_female_arm_a: \"What percentage of participants in the intervention arm (arm A) are female?\"\n- pct_female_arm_b: \"What percentage of participants in the control arm (arm B) are female?\"\n\nBaseline demographic data is typically reported in a 'Baseline Characteristics' or 'Patient Demographics' table, often as mean ± SD for continuous variables and counts/percentages for categorical variables.",
+      "input_fields": [
+        {
+          "name": "markdown_content",
+          "type": "str",
+          "desc": "Full markdown content of the clinical research paper to extract baseline demographic data from."
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "age_arm_a",
+          "type": "Dict[str, Any]",
+          "description": "Mean age (years) of the intervention arm (arm A). Use 'NR' if not reported.",
+          "hints": [
+            "Look in the baseline characteristics table, often labelled 'Table 1' or 'Baseline Demographics'",
+            "The intervention arm may be labelled as 'treatment group', 'experimental arm', 'arm A', or the name of the active intervention"
+          ],
+          "rules": [
+            "Extract the numeric mean age value only",
+            "Return as a float or integer (e.g., 54.4 or 54)",
+            "Do not include units or SD in this field",
+            "Use \"NR\" if not reported"
+          ],
+          "examples": [
+            { "value": "54.4", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "age_arm_a_sd",
+          "type": "Dict[str, Any]",
+          "description": "Standard deviation of age in the intervention arm (arm A). Use 'NR' if not reported.",
+          "hints": [
+            "Typically reported alongside the mean as 'mean ± SD' in the baseline characteristics table",
+            "May appear as 'SD', 'std dev', or in parentheses after the mean value"
+          ],
+          "rules": [
+            "Extract the numeric SD value only",
+            "Return as a float or integer (e.g., 5.8)",
+            "Do not include the mean or units in this field",
+            "Use \"NR\" if not reported"
+          ],
+          "examples": [
+            { "value": "5.8", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "age_arm_b",
+          "type": "Dict[str, Any]",
+          "description": "Mean age (years) of the control / usual-care arm (arm B). Use 'NR' if not reported.",
+          "hints": [
+            "Look in the baseline characteristics table for the control, placebo, or usual-care arm",
+            "The control arm may be labelled 'arm B', 'control group', 'placebo', or 'usual care'"
+          ],
+          "rules": [
+            "Extract the numeric mean age value only",
+            "Return as a float or integer (e.g., 52 or 52.0)",
+            "Do not include units or SD in this field",
+            "Use \"NR\" if not reported"
+          ],
+          "examples": [
+            { "value": "52", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "age_arm_b_sd",
+          "type": "Dict[str, Any]",
+          "description": "Standard deviation of age in the control arm (arm B). Use 'NR' if not reported.",
+          "hints": [
+            "Typically reported alongside the mean as 'mean ± SD' in the baseline characteristics table",
+            "May appear as 'SD', 'std dev', or in parentheses after the mean value for the control arm"
+          ],
+          "rules": [
+            "Extract the numeric SD value only",
+            "Return as a float or integer (e.g., 3.3)",
+            "Do not include the mean or units in this field",
+            "Use \"NR\" if not reported"
+          ],
+          "examples": [
+            { "value": "3.3", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "pct_female_arm_a",
+          "type": "Dict[str, Any]",
+          "description": "Percentage of female participants (0-100) in the intervention arm (arm A). Derive from M:F counts if only raw numbers are given. Use 'NR' if not reported.",
+          "hints": [
+            "Look in the baseline characteristics table under 'Sex', 'Gender', or 'Female' rows",
+            "If only raw counts are given (e.g., '45 female out of 80'), calculate: (female_count / total_arm_a) × 100",
+            "May be reported as a percentage directly or as a fraction/count"
+          ],
+          "rules": [
+            "Return as a numeric percentage between 0 and 100 (e.g., 56.3)",
+            "If only raw counts are provided, derive the percentage: (n_female / n_total) × 100, rounded to one decimal place",
+            "Do not include the '%' symbol in the value",
+            "Use \"NR\" if not reported"
+          ],
+          "examples": [
+            { "value": "56.3", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "pct_female_arm_b",
+          "type": "Dict[str, Any]",
+          "description": "Percentage of female participants (0-100) in the control arm (arm B). Use 'NR' if not reported.",
+          "hints": [
+            "Look in the baseline characteristics table under 'Sex', 'Gender', or 'Female' rows for the control arm",
+            "If only raw counts are given, calculate: (female_count / total_arm_b) × 100",
+            "May be reported as a percentage directly or as a fraction/count"
+          ],
+          "rules": [
+            "Return as a numeric percentage between 0 and 100 (e.g., 52.0)",
+            "If only raw counts are provided, derive the percentage: (n_female / n_total) × 100, rounded to one decimal place",
+            "Do not include the '%' symbol in the value",
+            "Use \"NR\" if not reported"
+          ],
+          "examples": [
+            { "value": "52", "source_text": "" }
+          ],
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "class_name": "ClassifyDiabetesAndExtractGlycaemicBaseline",
+      "docstring": "Classify the type of diabetes enrolled in the study and extract baseline HbA1c values for each trial arm.\n\nForm Questions:\n- diabetes_type: \"What type of diabetes do enrolled participants have?\"\n  Options: T1DM, T2DM, mixed, NR\n- baseline_hba1c_arm_a: \"What is the baseline HbA1c (%) for the intervention arm (arm A)?\"\n- baseline_hba1c_arm_b: \"What is the baseline HbA1c (%) for the control arm (arm B)?\"\n\nBaseline glycaemic data is typically reported in the participant characteristics or baseline demographics table. Use the base diabetes type only; qualifiers such as 'poorly controlled' or 'newly diagnosed' should be noted elsewhere, not encoded here.",
+      "input_fields": [
+        {
+          "name": "markdown_content",
+          "type": "str",
+          "desc": "Full markdown content of the clinical research paper from which diabetes type and baseline HbA1c values are to be extracted."
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "diabetes_type",
+          "type": "Dict[str, Any]",
+          "description": "Diabetes type at enrolment. Use the base type only; put qualifiers such as 'poorly controlled' or 'newly diagnosed' in the study notes, not here. Use 'mixed' if both T1DM and T2DM are enrolled.",
+          "hints": [
+            "Look in the eligibility criteria, inclusion/exclusion criteria, or participant characteristics sections",
+            "Check the abstract or study population description for the diabetes type label",
+            "If both T1DM and T2DM participants are enrolled together, select 'mixed'"
+          ],
+          "rules": [
+            "Must be exactly one of: T1DM, T2DM, mixed, NR",
+            "Use exact spelling and capitalisation as listed in options",
+            "Do not encode qualifiers (e.g., 'poorly controlled', 'newly diagnosed') in this field — record only the base type",
+            "Use 'mixed' only when both T1DM and T2DM participants are explicitly enrolled in the same study",
+            "Use \"NR\" if diabetes type cannot be determined from the document"
+          ],
+          "options": ["T1DM", "T2DM", "mixed", "NR"],
+          "examples": [
+            { "value": "T2DM", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "baseline_hba1c_arm_a",
+          "type": "Dict[str, Any]",
+          "description": "Baseline HbA1c (%) for the intervention arm (arm A). Use 'NR' if not reported.",
+          "hints": [
+            "Look in the baseline characteristics table, typically labelled as 'Table 1' or 'Baseline Demographics'",
+            "The intervention arm may be labelled as arm A, treatment group, experimental group, or by the intervention name",
+            "HbA1c values are typically expressed as a percentage (e.g., 7.1%) or in mmol/mol — extract the % value",
+            "If only mmol/mol is reported, note that conversion may be needed; extract the value as given"
+          ],
+          "rules": [
+            "Extract the numeric HbA1c percentage value for the intervention/treatment arm only",
+            "Report as a decimal number (float) in percent units (e.g., 7.1, not 0.071)",
+            "Do not extract post-treatment or follow-up HbA1c — baseline only",
+            "If multiple intervention sub-arms exist, extract the overall or pooled baseline value if available",
+            "Use \"NR\" if baseline HbA1c for the intervention arm is not reported"
+          ],
+          "examples": [
+            { "value": "7.1", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "baseline_hba1c_arm_b",
+          "type": "Dict[str, Any]",
+          "description": "Baseline HbA1c (%) for the control arm (arm B). Use 'NR' if not reported.",
+          "hints": [
+            "Look in the baseline characteristics table alongside arm A values",
+            "The control arm may be labelled as arm B, control group, placebo group, or comparator",
+            "HbA1c values are typically expressed as a percentage — extract the % value",
+            "If only mmol/mol is reported, extract the value as given"
+          ],
+          "rules": [
+            "Extract the numeric HbA1c percentage value for the control/comparator arm only",
+            "Report as a decimal number (float) in percent units (e.g., 8.2, not 0.082)",
+            "Do not extract post-treatment or follow-up HbA1c — baseline only",
+            "If multiple control sub-arms exist, extract the overall or pooled baseline value if available",
+            "Use \"NR\" if baseline HbA1c for the control arm is not reported"
+          ],
+          "examples": [
+            { "value": "8.2", "source_text": "" }
+          ],
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "class_name": "ClassifyMetabolicControl",
+      "docstring": "Classify the baseline metabolic control level of study participants based on previously extracted mean baseline HbA1c values.\n\nForm Questions:\n- metabolic_control_level: \"What is the coarse classification of baseline metabolic control derived from the reported mean baseline HbA1c?\"\n  Options: good, fair, poor, NR\n\nClassification thresholds (standard clinical convention): good = HbA1c < 7.0%, fair = HbA1c 7.0–8.0%, poor = HbA1c > 8.0%. Apply the classification to the mean baseline HbA1c values extracted from the study arms. Use 'NR' if HbA1c is not reported.",
+      "input_fields": [
+        {
+          "name": "markdown_content",
+          "type": "str",
+          "desc": "Full markdown content of the clinical research paper to extract from."
+        },
+        {
+          "name": "baseline_hba1c_arm_a",
+          "type": "Dict[str, Any]",
+          "desc": "Previously extracted mean baseline HbA1c for Arm A with source grounding (contains 'value' and 'source_text' keys)."
+        },
+        {
+          "name": "baseline_hba1c_arm_b",
+          "type": "Dict[str, Any]",
+          "desc": "Previously extracted mean baseline HbA1c for Arm B with source grounding (contains 'value' and 'source_text' keys)."
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "metabolic_control_level",
+          "type": "Dict[str, Any]",
+          "description": "Coarse classification of baseline metabolic control, derived from the reported mean baseline HbA1c (good / fair / poor). Use 'NR' if HbA1c is not reported.",
+          "hints": [
+            "Use the 'value' keys from the baseline_hba1c_arm_a and baseline_hba1c_arm_b input fields to determine the classification",
+            "If both arms report HbA1c, average or use the overall mean to assign a single classification",
+            "Look for baseline characteristics tables or text describing mean HbA1c at study entry"
+          ],
+          "rules": [
+            "Must be exactly one of: good, fair, poor, NR",
+            "Use 'good' if mean baseline HbA1c < 7.0%",
+            "Use 'fair' if mean baseline HbA1c is 7.0% to 8.0% (inclusive)",
+            "Use 'poor' if mean baseline HbA1c > 8.0%",
+            "Use 'NR' if HbA1c is not reported in either arm",
+            "Use exact lowercase spelling as listed in options"
+          ],
+          "options": ["good", "fair", "poor", "NR"],
+          "examples": [
+            { "value": "poor", "source_text": "" }
+          ],
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "class_name": "ExtractEligibilityAndClinicalContext",
+      "docstring": "Extract eligibility criteria and clinical context fields from a clinical research paper, including inclusion/exclusion criteria and patient-level contextual variables.\n\nForm Questions:\n- inclusion_criteria: \"What were the inclusion criteria reported by the paper?\"\n- exclusion_criteria: \"What were the exclusion criteria reported by the paper?\"\n- duration_since_diabetes_dx: \"How long had participants had diabetes at enrolment (time since diagnosis)?\"\n- tobacco_use: \"What was the tobacco/smoking status of participants, or were smokers excluded?\"\n- alcohol_consumption: \"What was the alcohol consumption status of participants?\"",
+      "input_fields": [
+        {
+          "name": "markdown_content",
+          "type": "str",
+          "desc": "Full markdown content of the clinical research paper to extract eligibility and clinical context data from"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "inclusion_criteria",
+          "type": "Dict[str, Any]",
+          "description": "Verbatim inclusion criteria as reported by the paper.",
+          "hints": [
+            "Look in the Methods section under headings such as 'Eligibility Criteria', 'Inclusion Criteria', 'Study Population', or 'Participants'",
+            "May appear as a bulleted or numbered list; concatenate into a single string if needed"
+          ],
+          "rules": [
+            "Extract the inclusion criteria verbatim or as close to verbatim as possible",
+            "Preserve all conditions listed (age, diagnosis, disease duration, clinical thresholds, etc.)",
+            "Use \"NR\" if inclusion criteria are not reported"
+          ],
+          "examples": [
+            { "value": "≥35 yrs, T2DM ≥3 yrs, severe chronic periodontitis, ≥15 teeth", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "exclusion_criteria",
+          "type": "Dict[str, Any]",
+          "description": "Verbatim exclusion criteria as reported by the paper.",
+          "hints": [
+            "Look in the Methods section under headings such as 'Eligibility Criteria', 'Exclusion Criteria', or 'Study Population'",
+            "Often listed immediately after inclusion criteria"
+          ],
+          "rules": [
+            "Extract the exclusion criteria verbatim or as close to verbatim as possible",
+            "Preserve all conditions listed (pregnancy, smoking, BMI thresholds, prior treatments, etc.)",
+            "Use \"NR\" if exclusion criteria are not reported"
+          ],
+          "examples": [
+            { "value": "pregnant, smokers, BMI>35, recent periodontal/antibiotic therapy", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "duration_since_diabetes_dx",
+          "type": "Dict[str, Any]",
+          "description": "Time since diabetes diagnosis, verbatim from the paper (OPTIONAL). Use 'NR' if not reported.",
+          "hints": [
+            "Often stated as part of inclusion criteria (e.g., 'T2DM for at least 3 years') or in the baseline characteristics table",
+            "May appear as a minimum duration threshold or as a mean/median value in the sample description"
+          ],
+          "rules": [
+            "Extract the value verbatim as it appears in the paper (e.g., '≥3 yrs', 'at least 5 years', 'mean 7.2 ± 2.1 years')",
+            "Do not convert units or reformat the value",
+            "Use \"NR\" if not reported"
+          ],
+          "examples": [
+            { "value": "≥3 yrs", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "tobacco_use",
+          "type": "Dict[str, Any]",
+          "description": "Tobacco use status verbatim, or 'none (excluded)' if smokers were excluded by the criteria (OPTIONAL). Use 'NR' if not reported.",
+          "hints": [
+            "Check exclusion criteria for explicit exclusion of smokers or tobacco users",
+            "Check baseline characteristics table for smoking status of enrolled participants",
+            "May appear as 'non-smokers only', 'current smokers excluded', or a percentage of smokers in the sample"
+          ],
+          "rules": [
+            "If smokers were explicitly excluded in the eligibility criteria, output 'none (excluded)'",
+            "If tobacco use status is described for enrolled participants, extract verbatim",
+            "Use \"NR\" if tobacco use is neither described nor addressed in the eligibility criteria"
+          ],
+          "examples": [
+            { "value": "none (excluded)", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "alcohol_consumption",
+          "type": "Dict[str, Any]",
+          "description": "Alcohol use status verbatim (OPTIONAL). Use 'NR' if not reported.",
+          "hints": [
+            "Check exclusion criteria for explicit exclusion of alcohol users",
+            "Check baseline characteristics table for alcohol consumption data",
+            "May appear as a percentage, categorical status, or as an exclusion condition"
+          ],
+          "rules": [
+            "Extract verbatim as reported in the paper",
+            "If alcohol users were explicitly excluded, note that",
+            "Use \"NR\" if alcohol consumption is not reported or addressed"
+          ],
+          "examples": [
+            { "value": "NR", "source_text": "" }
+          ],
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "class_name": "ExtractSampleSizes",
+      "docstring": "Extract sample size information from a clinical research paper, including the number of participants randomised and the number evaluated at follow-up.\n\nForm Questions:\n- n_randomised: \"What is the total number of participants randomised across all arms?\"\n- n_evaluated: \"How many participants were evaluated or analysed at follow-up (and at which timepoint)?\"",
+      "input_fields": [
+        {
+          "name": "markdown_content",
+          "type": "str",
+          "desc": "Full markdown content of the clinical research paper to extract sample size data from"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "n_randomised",
+          "type": "Dict[str, Any]",
+          "description": "Total number of participants randomised across all arms. Use 'NR' if not stated.",
+          "hints": [
+            "Look in the Methods section under 'Participants', 'Randomisation', or 'Study Design'",
+            "Check the CONSORT flow diagram or participant flow description",
+            "The abstract or results section may also state total randomised numbers",
+            "Sum arm-level counts if only per-arm figures are given and no total is stated"
+          ],
+          "rules": [
+            "Extract the total count across all arms as an integer",
+            "If only per-arm counts are given, sum them to derive the total",
+            "Do not include screened or enrolled participants who were not randomised",
+            "Use \"NR\" if the number randomised is not reported anywhere in the document"
+          ],
+          "examples": [
+            { "value": "24", "source_text": "" }
+          ],
+          "source_grounded": true
+        },
+        {
+          "name": "n_evaluated",
+          "type": "Dict[str, Any]",
+          "description": "Number evaluated/analysed at follow-up, which may be heterogeneous across timepoints (e.g. '24 at 6 mths'). Use 'NR' if not stated.",
+          "hints": [
+            "Look in the Results section for analysis populations such as 'per-protocol', 'intention-to-treat', or 'evaluable population'",
+            "Check tables reporting outcomes at specific timepoints",
+            "If multiple timepoints are reported, include all with their respective timepoints",
+            "CONSORT flow diagrams often show numbers analysed at each assessment"
+          ],
+          "rules": [
+            "Report the number analysed along with the associated timepoint when available (e.g. '24 at 6 mths')",
+            "If multiple timepoints are reported, list all (e.g. '30 at 3 mths, 24 at 6 mths')",
+            "Distinguish from the number randomised — only include those actually evaluated or analysed",
+            "Use \"NR\" if the number evaluated is not reported anywhere in the document"
+          ],
+          "examples": [
+            { "value": "24 at 6 mths", "source_text": "" }
+          ],
+          "source_grounded": true
+        }
+      ]
+    }
+  ],
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "ExtractBaselineDemographics",
+        "ClassifyDiabetesAndExtractGlycaemicBaseline",
+        "ExtractEligibilityAndClinicalContext",
+        "ExtractSampleSizes"
+      ],
+      "provides_fields": [
+        "age_arm_a", "age_arm_a_sd", "age_arm_b", "age_arm_b_sd",
+        "pct_female_arm_a", "pct_female_arm_b", "diabetes_type",
+        "baseline_hba1c_arm_a", "baseline_hba1c_arm_b", "inclusion_criteria",
+        "exclusion_criteria", "duration_since_diabetes_dx", "tobacco_use",
+        "alcohol_consumption", "n_randomised", "n_evaluated"
+      ],
+      "requires_fields": []
+    },
+    {
+      "stage": 2,
+      "execution": "sequential",
+      "signatures": ["ClassifyMetabolicControl"],
+      "provides_fields": ["metabolic_control_level"],
+      "requires_fields": ["baseline_hba1c_arm_a", "baseline_hba1c_arm_b"],
+      "waits_for_stage": 1
+    }
+  ],
+  "fallback_structures": {
+    "ExtractSampleSizes": {
+      "n_evaluated": { "value": "NR", "source_text": "NR" },
+      "n_randomised": { "value": "NR", "source_text": "NR" }
+    },
+    "ClassifyMetabolicControl": {
+      "metabolic_control_level": { "value": "NR", "source_text": "NR" }
+    },
+    "ExtractBaselineDemographics": {
+      "age_arm_a": { "value": "NR", "source_text": "NR" },
+      "age_arm_b": { "value": "NR", "source_text": "NR" },
+      "age_arm_a_sd": { "value": "NR", "source_text": "NR" },
+      "age_arm_b_sd": { "value": "NR", "source_text": "NR" },
+      "pct_female_arm_a": { "value": "NR", "source_text": "NR" },
+      "pct_female_arm_b": { "value": "NR", "source_text": "NR" }
+    },
+    "ExtractEligibilityAndClinicalContext": {
+      "tobacco_use": { "value": "NR", "source_text": "NR" },
+      "exclusion_criteria": { "value": "NR", "source_text": "NR" },
+      "inclusion_criteria": { "value": "NR", "source_text": "NR" },
+      "alcohol_consumption": { "value": "NR", "source_text": "NR" },
+      "duration_since_diabetes_dx": { "value": "NR", "source_text": "NR" }
+    },
+    "ClassifyDiabetesAndExtractGlycaemicBaseline": {
+      "diabetes_type": { "value": "NR", "source_text": "NR" },
+      "baseline_hba1c_arm_a": { "value": "NR", "source_text": "NR" },
+      "baseline_hba1c_arm_b": { "value": "NR", "source_text": "NR" }
+    }
+  },
+  "field_to_signature_map": {
+    "age_arm_a": "ExtractBaselineDemographics",
+    "age_arm_b": "ExtractBaselineDemographics",
+    "n_evaluated": "ExtractSampleSizes",
+    "tobacco_use": "ExtractEligibilityAndClinicalContext",
+    "age_arm_a_sd": "ExtractBaselineDemographics",
+    "age_arm_b_sd": "ExtractBaselineDemographics",
+    "n_randomised": "ExtractSampleSizes",
+    "diabetes_type": "ClassifyDiabetesAndExtractGlycaemicBaseline",
+    "pct_female_arm_a": "ExtractBaselineDemographics",
+    "pct_female_arm_b": "ExtractBaselineDemographics",
+    "exclusion_criteria": "ExtractEligibilityAndClinicalContext",
+    "inclusion_criteria": "ExtractEligibilityAndClinicalContext",
+    "alcohol_consumption": "ExtractEligibilityAndClinicalContext",
+    "baseline_hba1c_arm_a": "ClassifyDiabetesAndExtractGlycaemicBaseline",
+    "baseline_hba1c_arm_b": "ClassifyDiabetesAndExtractGlycaemicBaseline",
+    "metabolic_control_level": "ClassifyMetabolicControl",
+    "duration_since_diabetes_dx": "ExtractEligibilityAndClinicalContext"
+  }
+}

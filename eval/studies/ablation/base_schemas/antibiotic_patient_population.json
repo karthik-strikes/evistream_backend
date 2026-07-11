@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "task_name": "dynamic_e1a74cb1_PatientPopulation",
+  "signatures": [
+    {
+      "docstring": "Extract age summary statistics reported in the study population from a research paper.\n\nForm Questions:\n- age_central_tendency_type: \"Which central-tendency statistic does the paper use to summarise age?\"\n  Options: mean, median, NR\n- age_value: \"What is the numeric value of the central-tendency statistic (in years)?\"\n- age_sd: \"What is the standard deviation of age (only applicable when mean is reported)?\"\n- age_range: \"What is the reported age range (min-max)?\"\n\nThese fields capture the age distribution of the study sample as reported in the demographics or participant characteristics section.",
+      "class_name": "ExtractAgeStatistics",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper to extract age statistics from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "age_central_tendency_type",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the participant characteristics, demographics, or baseline table",
+            "Common labels include 'Mean age', 'Median age', or 'Age (mean \u00b1 SD)'"
+          ],
+          "rules": [
+            "Must be exactly one of: mean, median, NR",
+            "Use 'mean' if the paper reports a mean age (with or without SD)",
+            "Use 'median' if the paper reports a median age (with or without IQR)",
+            "Use 'NR' if no central-tendency age statistic is reported anywhere in the paper",
+            "Use exact lowercase spelling as listed in options"
+          ],
+          "options": [
+            "mean",
+            "median",
+            "NR"
+          ],
+          "examples": [
+            {
+              "value": "mean",
+              "source_text": ""
+            }
+          ],
+          "description": "Which central-tendency statistic the paper uses to summarise age. Use 'NR' if no age summary is reported.",
+          "source_grounded": true
+        },
+        {
+          "name": "age_value",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the baseline characteristics table or demographics section",
+            "If per-arm means and sample sizes are given, compute the pooled/overall mean",
+            "Age is typically expressed in years; convert months to years if necessary"
+          ],
+          "rules": [
+            "Extract the numeric value only, as a number (integer or decimal)",
+            "Value must correspond to the statistic type identified in age_central_tendency_type",
+            "If age is reported per arm only and an overall value cannot be computed, use 'NR'",
+            "Use 'NR' if no central-tendency age value is reported"
+          ],
+          "examples": [
+            {
+              "value": "27",
+              "source_text": ""
+            }
+          ],
+          "description": "Numeric value of the central-tendency statistic above (in years). Use 'NR' if not reported. If reported per arm only, give the overall mean if computable, otherwise NR.",
+          "source_grounded": true
+        },
+        {
+          "name": "age_sd",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for '\u00b1 SD' notation adjacent to the mean age value",
+            "May appear as 'SD', 'std dev', or '\u00b1' in baseline tables",
+            "Only extract if age_central_tendency_type is 'mean'; otherwise use 'NR'"
+          ],
+          "rules": [
+            "Extract the numeric SD value only, as a number (integer or decimal)",
+            "Only populate when age_central_tendency_type is 'mean'; use 'NR' for median or NR cases",
+            "Use 'NR' if the SD is not reported even when mean age is given"
+          ],
+          "examples": [
+            {
+              "value": "NR",
+              "source_text": ""
+            }
+          ],
+          "description": "Standard deviation of age (only meaningful when age_central_tendency_type is 'mean'). Use 'NR' if not reported.",
+          "source_grounded": true
+        },
+        {
+          "name": "age_range",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for parenthetical ranges such as '(18\u201365)' or 'range: 18\u201365' near the mean or median age",
+            "May appear in the baseline table, eligibility criteria, or participant description",
+            "Ranges may use en-dash (\u2013), hyphen (-), or 'to' notation"
+          ],
+          "rules": [
+            "Format as 'min-max' using a hyphen, e.g. '18-48'",
+            "Both min and max must be numeric values in years",
+            "Do not include units in the output string",
+            "Use 'NR' if no age range is reported in the paper"
+          ],
+          "examples": [
+            {
+              "value": "18-48",
+              "source_text": ""
+            }
+          ],
+          "description": "Reported age range as 'min-max' (e.g. '18-48'). Use 'NR' if no range is given.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract the sex distribution of study participants as percentages of male and female from the research paper.\n\nForm Questions:\n- pct_male: \"What percentage of participants were male (0-100)?\"\n- pct_female: \"What percentage of participants were female (0-100)?\"\n\nPercentages may be reported directly or must be derived from raw M:F counts. When derived, divide the count for each sex by the total sample size and multiply by 100. The two percentages should sum to 100 when both are computable.",
+      "class_name": "ExtractSexDistribution",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper to extract sex distribution data from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "pct_male",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the participant demographics or baseline characteristics table",
+            "Check the abstract or methods section for sex breakdown",
+            "If raw counts are given (e.g., '55 males out of 170'), compute: (55/170)*100 = 32.35"
+          ],
+          "rules": [
+            "Return a numeric value between 0 and 100 (float allowed)",
+            "If raw male and total counts are provided but no percentage, compute pct_male = (male_count / total_n) * 100, rounded to two decimal places",
+            "Do not round aggressively \u2014 preserve at least two decimal places when derived",
+            "Use \"NR\" if sex distribution is not reported anywhere in the document"
+          ],
+          "examples": [
+            {
+              "value": "32.35",
+              "source_text": ""
+            }
+          ],
+          "description": "Percentage of male participants (0-100). Derive from the M:F counts if the paper reports raw numbers. Use 'NR' if sex is not reported.",
+          "source_grounded": true
+        },
+        {
+          "name": "pct_female",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the participant demographics or baseline characteristics table",
+            "Check the abstract or methods section for sex breakdown",
+            "If pct_male is already computed, derive pct_female as 100 - pct_male",
+            "If raw female and total counts are given (e.g., '115 females out of 170'), compute: (115/170)*100 = 67.65"
+          ],
+          "rules": [
+            "Return a numeric value between 0 and 100 (float allowed)",
+            "When pct_male is known, pct_female must equal 100 - pct_male (rounded to two decimal places)",
+            "If raw female and total counts are provided but no percentage, compute pct_female = (female_count / total_n) * 100, rounded to two decimal places",
+            "Use \"NR\" if sex distribution is not reported anywhere in the document"
+          ],
+          "examples": [
+            {
+              "value": "67.65",
+              "source_text": ""
+            }
+          ],
+          "description": "Percentage of female participants (0-100). Should be 100 - pct_male when both are computable. Use 'NR' if not reported.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract participant eligibility criteria (inclusion and exclusion) as reported in the clinical research paper.\n\nForm Questions:\n- inclusion_criteria: \"What are the inclusion criteria for study participants?\"\n- exclusion_criteria: \"What are the exclusion criteria for study participants?\"\n\nEligibility criteria define who was allowed to participate in the study and who was excluded. These are typically found in the Methods section under headings such as 'Eligibility Criteria', 'Inclusion/Exclusion Criteria', or 'Patient Selection'.",
+      "class_name": "ExtractEligibilityCriteria",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the clinical research paper to extract eligibility criteria from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "inclusion_criteria",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under headings such as 'Inclusion Criteria', 'Eligibility Criteria', or 'Patient Selection'",
+            "Criteria may be listed as bullet points, numbered lists, or embedded in prose",
+            "May appear in a 'Participants' or 'Study Population' subsection"
+          ],
+          "rules": [
+            "Extract the inclusion criteria verbatim or as close to verbatim as possible from the document",
+            "Preserve the original wording, including any medical terminology or diagnostic thresholds",
+            "If multiple criteria are listed, include all of them in the extracted text",
+            "Use 'NR' if the paper does not report inclusion criteria"
+          ],
+          "examples": [
+            {
+              "value": "Patients listed to undergo orthognathic operations",
+              "source_text": ""
+            }
+          ],
+          "description": "Verbatim inclusion criteria as reported by the paper. Use 'NR' or 'not reported' if the paper omits inclusion criteria.",
+          "source_grounded": true
+        },
+        {
+          "name": "exclusion_criteria",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under headings such as 'Exclusion Criteria', 'Eligibility Criteria', or 'Patient Selection'",
+            "Criteria may be listed as bullet points, numbered lists, or embedded in prose",
+            "May appear alongside inclusion criteria in the same subsection"
+          ],
+          "rules": [
+            "Extract the exclusion criteria verbatim or as close to verbatim as possible from the document",
+            "Preserve the original wording, including any medical terminology, drug names, or diagnostic conditions",
+            "If multiple criteria are listed, include all of them in the extracted text",
+            "Use 'NR' if the paper does not report exclusion criteria"
+          ],
+          "examples": [
+            {
+              "value": "use of antibiotics in the month before the operation; lactose intolerance (because the placebo was lactose-based); previous orthognathic operations",
+              "source_text": ""
+            }
+          ],
+          "description": "Verbatim exclusion criteria as reported by the paper. Use 'NR' or 'not reported' if the paper omits exclusion criteria.",
+          "source_grounded": true
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_e1a74cb1_PatientPopulation",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "ExtractAgeStatistics",
+        "ExtractSexDistribution",
+        "ExtractEligibilityCriteria"
+      ],
+      "provides_fields": [
+        "age_central_tendency_type",
+        "age_value",
+        "age_sd",
+        "age_range",
+        "pct_male",
+        "pct_female",
+        "inclusion_criteria",
+        "exclusion_criteria"
+      ],
+      "requires_fields": []
+    }
+  ],
+  "fallback_structures": {
+    "ExtractAgeStatistics": {
+      "age_sd": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "age_range": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "age_value": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "age_central_tendency_type": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractSexDistribution": {
+      "pct_male": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "pct_female": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractEligibilityCriteria": {
+      "exclusion_criteria": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "inclusion_criteria": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    }
+  },
+  "field_to_signature_map": {
+    "age_sd": "ExtractAgeStatistics",
+    "pct_male": "ExtractSexDistribution",
+    "age_range": "ExtractAgeStatistics",
+    "age_value": "ExtractAgeStatistics",
+    "pct_female": "ExtractSexDistribution",
+    "exclusion_criteria": "ExtractEligibilityCriteria",
+    "inclusion_criteria": "ExtractEligibilityCriteria",
+    "age_central_tendency_type": "ExtractAgeStatistics"
+  },
+  "_pulled_from": "project b6328d50-55c5-41f4-b44c-6eed4857b51b \u00b7 form Patient Population (e1a74cb1-2887-4bb1-b6d8-8a71a81c4995) \u00b7 slug antibiotic \u00b7 form_label patient_population"
+}

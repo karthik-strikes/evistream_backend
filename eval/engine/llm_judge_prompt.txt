@@ -1,0 +1,44 @@
+You are evaluating data extraction accuracy for a medical systematic review.
+For each numbered pair, judge whether the AI extracted value and the human ground truth (GT) value describe the SAME factual content.
+
+CORE PRINCIPLE (apply this whenever a rule below is unclear):
+Added DETAIL or SPECIFICITY about the same underlying fact is fine — the values still match.
+But an added DISTINCT ITEM that changes the scope, denominator, set membership, or which thing is being measured breaks the match.
+This is why "ampicillin + placebo" matches "ampicillin" (placebo arm is ignorable detail) but "amoxicillin + ampicillin" does NOT match "amoxicillin" (a second active drug changes the facts).
+
+TIE-BREAK: When you are genuinely uncertain whether the two values describe the same fact, return FALSE. Do not default to TRUE.
+
+Rules:
+- Ignore phrasing differences, synonyms, abbreviations, and level of detail.
+- A LONGER answer whose extra words only add detail about the SAME fact is EQUIVALENT to the shorter one (e.g. AI: "Convenience sample — patients with clinical diagnosis of OSCC were recruited from the OMFS department" ≡ GT: "Convenience sample"; AI: "Incisional biopsy. Specimens were routinely processed for histology..." ≡ GT: "Incisional biopsy"). This asymmetry holds in either direction: a TERSE answer naming the same concept a richer answer describes is also EQUIVALENT.
+- Different ORDERINGS of the same list of conditions/grades/categories are EQUIVALENT (e.g. "mild, moderate, severe dysplasia" ≡ "severe, moderate, mild dysplasia").
+- Brand-name vs reagent-name pairs are EQUIVALENT when they refer to the same modality (e.g. "VELscope" ≡ "tissue autofluorescence"; "ViziLite" ≡ "tissue reflectance"; "methylene blue" ≡ "vital staining with methylene blue").
+- Country aliases are EQUIVALENT ("United States" ≡ "United States of America" ≡ "USA"; "UK" ≡ "United Kingdom").
+- COARSE CATEGORY vs SPECIFIC INSTANCE: when one value is a coarse category and the other is a more specific instance that clearly falls within it, treat them as EQUIVALENT — in EITHER direction (e.g. "hospital" ≡ "university dental college hospital"; "community" ≡ "community health centre"). Only mark FALSE when the specific value belongs to a DIFFERENT category (e.g. "hospital" vs "community health centre").
+- Conflict-of-interest disclosures are EQUIVALENT when both convey the same conclusion (e.g. "Report includes no conflict of interest statements" ≡ "The authors declare that there are no conflicts of interest").
+- Threshold/criterion phrasings that describe the same positive-test rule are EQUIVALENT (e.g. "positive: loss of fluorescence" ≡ "positive: fluorescence loss (dark/brown areas visible through device)"; "positive: stain retention" ≡ "positive: dark blue stain retention").
+- Medical synonyms count as matches (e.g. "consecutive sampling" ≡ "consecutive patients enrolled"; "convenience sample" ≡ "convenience sampling"; SES descriptions in different words match if they identify the same socioeconomic group).
+- ANTIBIOTIC / DRUG names: the same active drug is EQUIVALENT regardless of salt, formulation, or route ("penicillin G" ≡ "procaine penicillin G + aqueous penicillin G"; "amoxicillin-clavulanate" ≡ "amoxicillin-clavulanic acid"). An appended comparator/placebo arm on either side is ignored ("ampicillin" ≡ "ampicillin + saline placebo"). Mark FALSE only when a genuinely DIFFERENT active drug is present on one side but not the other (e.g. "amoxicillin" vs "amoxicillin + ampicillin"; "penicillin G + penicillin V" vs "penicillin G").
+- DOSING FREQUENCY: judge by the core/maintenance dosing interval. If the AI gives the same maintenance interval as GT, treat as EQUIVALENT even when it adds a loading/induction dose, surgical-phase detail (intra-op vs post-op), or route ("single dose at induction, then every 6 hours" ≡ "every 6 hours"; "every 8 hours intra-op, then a single post-op dose" ≡ "every 8 hours"). Mark FALSE only when the core interval itself differs ("single dose" vs "every 6 hours"; "two single doses" vs "every 8 hours").
+- An "Unclear:" or "Unclear (...):" lead-in on either side should be ignored — judge the content that follows it.
+
+Return FALSE when the values describe genuinely different facts. Examples of FALSE:
+- Different denominators (AI: "100 enrolled" vs GT: "52 biopsied").
+- Different test arms confused for one another (AI describes the autofluorescence arm, GT describes the toluidine-blue arm).
+- Different threshold definitions (AI: "dysplasia and carcinoma" vs GT: "dysplasia" — the AI set is broader, so the scope differs).
+- A different active drug on one side (AI: "amoxicillin + metronidazole" vs GT: "amoxicillin").
+- A different core dosing interval (AI: "single dose" vs GT: "every 8 hours").
+- Different categories (AI: "retrospective cohort" vs GT: "randomized controlled trial").
+
+EDGE CASES:
+- If one side is empty, missing, or contains only "Unclear" with no content after it while the other side has a substantive value, return FALSE.
+- If BOTH sides are empty or both are a contentless "Unclear", return TRUE (both convey the same absence of information).
+
+OUTPUT FORMAT:
+- Output ONLY valid JSON. No markdown code fences, no commentary, no leading or trailing text.
+- Use the 0-indexed pair number as the key.
+- Include EVERY pair from 0 to N-1. Never omit a pair, even a difficult one — if you cannot decide, apply the tie-break and return false.
+- Values must be JSON booleans (true / false), not strings.
+
+Example output:
+{"0": true, "1": false, "2": true}

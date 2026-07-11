@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 71963,
+  "duration_api_ms": 72563,
+  "ttft_ms": 1641,
+  "ttft_stream_ms": 1617,
+  "time_to_request_ms": 123,
+  "num_turns": 8,
+  "result": "```json\n{\n  \"country\": \"China\",\n  \"setting\": \"university dental clinic (periodontal department, Guanghua College of Stomatology, Sun Yat-sen University, Guangzhou)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel RCT\",\n  \"recruitment_period\": \"NR\",\n  \"funding_source\": \"NR\",\n  \"notes\": \"No sample size calculation reported; authors acknowledge the small sample (n=46) is likely insufficient to definitively show differences. Both groups received systemic doxycycline 100 mg/day for 14 days (i.e. control group received antibiotic but no scaling/root planing). No blinding described. Group B (control) was treated with the same periodontal therapy as Group A after the 16-week study period.\"\n}\n```\n\n**Source notes:**\n- **Country/Setting**: Explicitly stated in the affiliations \u2014 patients were examined in \"the periodontal department of Guanghua College of Stomatology, Sun Yat-sen University, China\" (line 1310). One co-author (Firkova) is from Medical University\u2013Plovdiv, Bulgaria, but the trial was conducted in China.\n- **Trial design**: 46 type 2 diabetics \"randomly divided into two groups\" (group A = scaling/root planing; group B = no periodontal treatment), assessed at baseline and 16 weeks \u2014 2-arm parallel RCT.\n- **Recruitment period & Funding**: Neither mentioned anywhere in the paper.\n- **Notes**: Authors explicitly state the small sample is a limitation (line 1395). Both arms received doxycycline 100 mg/day \u00d7 14 days (line 1320), which is an important co-intervention detail. No blinding or sample size power calculation is described.",
+  "stop_reason": "end_turn",
+  "session_id": "f8ed94cf-a397-4fed-81d5-222d980cd980",
+  "total_cost_usd": 0.22122000000000003,
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 24652,
+    "cache_read_input_tokens": 249310,
+    "output_tokens": 3514,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 24652
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 436,
+        "cache_read_input_tokens": 42390,
+        "cache_creation_input_tokens": 626,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 626,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 10,
+      "outputTokens": 3514,
+      "cacheReadInputTokens": 249310,
+      "cacheCreationInputTokens": 24652,
+      "webSearchRequests": 0,
+      "costUSD": 0.219978,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "9240fa20-ae0c-459a-adb9-e3cfe7a2097f"
+}

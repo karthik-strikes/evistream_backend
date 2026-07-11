@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 28469,
+  "duration_api_ms": 29103,
+  "ttft_ms": 1764,
+  "ttft_stream_ms": 1738,
+  "time_to_request_ms": 154,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"China\",\n  \"setting\": \"university hospital (Guangdong Provincial Stomatological Hospital, Southern Medical University, Guangzhou)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"3-arm parallel RCT (two treatment groups and one control group)\",\n  \"recruitment_period\": \"November 2008 to October 2009\",\n  \"funding_source\": \"Key Projects in the National Science and Technology Pillar Program in the Eleventh 5-Year Plan Periods, Beijing, China (Grant 2007 BAI 18 B02) and the Science and Technology Planning Project of Guangdong Province, China (Grant 2010B031600117)\",\n  \"notes\": \"Study was underpowered by the authors' own admission \u2014 sample size calculation required ~53 per group for 80% power but only 42\u201343 were analysed per group. No conflicts of interest declared.\"\n}\n```\n\n**Key sourcing notes:**\n- **Country/setting**: Affiliations and Study Design section explicitly state \"Guangdong Provincial Stomatological Hospital, Southern Medical University, Guangzhou, China.\"\n- **Number of centres**: Single institution; no multi-site language anywhere in the paper.\n- **Trial design**: Methods states \"randomized, parallel-control study\" with three arms (Treatment group 1, Treatment group 2, Control group) in a 1:1:1 allocation.\n- **Recruitment period**: Methods/Patients section: \"From November 2008 to October 2009.\"\n- **Funding**: Acknowledgements section, verbatim.\n- **Notes**: Authors explicitly state in Discussion: \"An important limitation of this study is simply that it was underpowered.\" The power calculation (\u00b6 PASS 2008) targeted ~53/group; analysed n was 42\u201343/group.",
+  "stop_reason": "end_turn",
+  "session_id": "db184324-1ce3-4eaf-9b20-21f9cd0ee5c1",
+  "total_cost_usd": 0.1411068,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 24076,
+    "cache_read_input_tokens": 84316,
+    "output_tokens": 1618,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 24076
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 438,
+        "cache_read_input_tokens": 41321,
+        "cache_creation_input_tokens": 1119,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1119,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1618,
+      "cacheReadInputTokens": 84316,
+      "cacheCreationInputTokens": 24076,
+      "webSearchRequests": 0,
+      "costUSD": 0.1398648,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "4384fa6a-003c-4451-b246-875c42b7174b"
+}

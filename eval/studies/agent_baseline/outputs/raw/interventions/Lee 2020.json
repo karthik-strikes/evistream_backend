@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 51646,
+  "duration_api_ms": 52383,
+  "ttft_ms": 1824,
+  "ttft_stream_ms": 1795,
+  "time_to_request_ms": 136,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"SRP group\",\n      \"comparison_summary\": \"SRP vs SRP with additional toothbrushing (SRPAT) vs control (no periodontal treatment)\",\n      \"intervention_description\": \"After a baseline oral examination, oral health education including toothbrush instruction was conducted to eliminate bias in oral health behaviours. In the SRP group, supragingival scaling was performed only on the first visit by 2 trained dentists working together simultaneously. After 2 weeks, root planing was performed to remove the subgingival calculus. At 12 weeks, patients were recalled to re-check their oral health status. If they required additional periodontal treatment, it was done at 12 weeks.\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"12 weeks\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"SRPAT group\",\n      \"comparison_summary\": \"SRP vs SRP with additional toothbrushing (SRPAT) vs control (no periodontal treatment)\",\n      \"intervention_description\": \"After a baseline oral examination, oral health education including toothbrush instruction was conducted to eliminate bias in oral health behaviours. In the SRPAT group, additional toothbrushing (Watanabe method) with a 2-row toothbrush was applied on the first visit by a trained dentist. On the second visit, subgingival calculus was removed as appropriate according to the patient's oral health condition. Additional toothbrushing (Watanabe method) was performed once a week from the first visit through the fifth visit.\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"12 weeks\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"CTR group\",\n      \"comparison_summary\": \"SRP vs SRP with additional toothbrushing (SRPAT) vs control (no periodontal treatment)\",\n      \"intervention_description\": \"The CTR group received no other treatments beyond medical screening for diabetes. However, all groups received oral health education including toothbrush instruction at the baseline visit to eliminate intergroup bias associated with routine oral health behaviours. After the study was completed, the necessary dental treatment was provided to the patients who wished to receive it.\",\n      \"n_in_arm\": 25,\n      \"duration_of_followup\": \"12 weeks\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **3 arms** identified: SRP, SRPAT, CTR \u2014 each with 25 randomised participants per the CONSORT diagram.\n- **Follow-up**: 12 weeks for all arms (paper explicitly states this as the evaluation period; the \"3 months\" label in Table 4 refers to the same endpoint).\n- **SRP group** (`SI_alone`): supragingival scaling on visit 1, root planing after 2 weeks \u2014 constitutes full subgingival instrumentation with no adjunct antimicrobial or rinse.\n- **SRPAT group** (`SI_alone`): SRP plus professional toothbrushing using the Watanabe method weekly for 5 visits. The adjunct is a mechanical toothbrushing technique, not a systemic/local antimicrobial or mouthrinse, so `SI_alone` is the closest category; no allowed category covers \"SI + professional toothbrushing.\"\n- **CTR group** (`usual_care`): no active periodontal treatment beyond diabetes medical screening; received the same oral health education as other groups.",
+  "stop_reason": "end_turn",
+  "session_id": "4b2a5161-dc1b-4e6b-b262-c4df5206b7de",
+  "total_cost_usd": 0.18719685,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 29377,
+    "cache_read_input_tokens": 88627,
+    "output_tokens": 3265,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 29377
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 888,
+        "cache_read_input_tokens": 45429,
+        "cache_creation_input_tokens": 2312,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2312,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3265,
+      "cacheReadInputTokens": 88627,
+      "cacheCreationInputTokens": 29377,
+      "webSearchRequests": 0,
+      "costUSD": 0.18574185000000001,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "93f625d9-3032-4eab-9e58-75f666ddae42"
+}

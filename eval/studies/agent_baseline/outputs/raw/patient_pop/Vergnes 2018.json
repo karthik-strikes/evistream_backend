@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 184384,
+  "duration_api_ms": 184849,
+  "ttft_ms": 2271,
+  "ttft_stream_ms": 1839,
+  "time_to_request_ms": 224,
+  "num_turns": 4,
+  "result": "```json\n{\n  \"age_arm_a\": 55.9,\n  \"age_arm_a_sd\": 12.2,\n  \"age_arm_b\": 55.9,\n  \"age_arm_b_sd\": 12.8,\n  \"pct_female_arm_a\": 40.0,\n  \"pct_female_arm_b\": 37.0,\n  \"diabetes_type\": \"mixed\",\n  \"baseline_hba1c_arm_a\": 7.88,\n  \"baseline_hba1c_arm_b\": 7.82,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"T1DM: control 25.2\u00b111.0 yrs, treatment 25.0\u00b113.9 yrs; T2DM: control 19.9\u00b113.0 yrs, treatment 18.1\u00b111.2 yrs (Table 1); inclusion criterion \u22651 yr before inclusion\",\n  \"tobacco_use\": \"Smokers included; T1DM: control 8/33 (24%), treatment 7/31 (23%); T2DM: control 0/11 (0%), treatment 2/13 (15%)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"type 1 or type 2 diabetes mellitus diagnosed \u22651 year before inclusion; uncontrolled diabetes (HbA1c 7.0%\u20139.5%); diabetes treatment unchanged over previous 3 months; \u22656 permanent natural teeth; periodontitis with \u22654 teeth having \u22651 probed site with PPD \u22654 mm and CAL \u22653 mm\",\n  \"exclusion_criteria\": \"HbA1c not in inclusion range; allergy to antibiotics; too high dental mobility; anti-thrombotic agent use; no periodontitis; insufficient number of teeth; declined to participate; not available for follow-up (from CONSORT flow diagram; no formal exclusion criteria section stated in paper)\",\n  \"n_randomised\": 91,\n  \"n_evaluated\": \"88 (44 per arm) ITT at 3 months (V4) for primary HbA1c outcome; 76 (42 control, 34 treatment) per protocol at 3 months\"\n}\n```\n\n**Extraction notes:**\n\n- **Age and HbA1c** are derived by pooling T1DM and T2DM sub-group values (Table 1); the paper only reports these stratified, not as a single arm total. Combined SDs computed via the pooled-variance formula.\n- **diabetes_type = mixed**: The trial enrolled both T1DM (~70%) and T2DM (~30%).\n- **metabolic_control_level = fair**: Inclusion required HbA1c 7.0\u20139.5% (\"metabolically unbalanced\"); pooled arm means (~7.8%) fall in the fair range (7\u20139%).\n- **tobacco_use**: Smokers were not excluded; prevalence reported per sub-group in Table 1.\n- **exclusion_criteria**: No dedicated exclusion section; reasons drawn from the CONSORT flow diagram's \"excluded\" node.",
+  "stop_reason": "end_turn",
+  "session_id": "a0ae02dd-4ff2-4ff5-99e9-407564193f1a",
+  "total_cost_usd": 0.42297745,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 50111,
+    "cache_read_input_tokens": 144594,
+    "output_tokens": 12657,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 50111
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 785,
+        "cache_read_input_tokens": 56829,
+        "cache_creation_input_tokens": 11646,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 11646,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00181,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 6,
+      "outputTokens": 12657,
+      "cacheReadInputTokens": 144594,
+      "cacheCreationInputTokens": 50111,
+      "webSearchRequests": 0,
+      "costUSD": 0.42116745,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "8e94c60b-bd03-4bd0-aea3-48a56356724c"
+}

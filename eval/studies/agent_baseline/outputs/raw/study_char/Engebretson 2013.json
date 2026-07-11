@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 34179,
+  "duration_api_ms": 36012,
+  "ttft_ms": 2511,
+  "ttft_stream_ms": 2437,
+  "time_to_request_ms": 177,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"USA\",\n  \"setting\": \"Outpatient medical and dental clinics and communities of academic medical centers\",\n  \"number_of_centres\": \"5\",\n  \"trial_design\": \"2-arm, 6-month, single-masked, multicenter randomized clinical trial\",\n  \"recruitment_period\": \"November 2009 to March 2012\",\n  \"funding_source\": \"National Institute of Dental and Craniofacial Research, National Institutes of Health (cooperative agreements U01 DE018902 and U01 DE018886)\",\n  \"notes\": \"Enrollment stopped early due to futility (interim t-test statistic -0.37, below pre-specified threshold); planned sample size was 600 (300 per arm) but only 514 enrolled. Sample size calculation assumed 0.6% (SD 2%) reduction in HbA1c, 90% power, 2-tailed t-test. Multiple conflicts of interest declared by authors (Gelato, Seaquist, Lewis, Katanick, Paquette). Trial registered: NCT00997178.\"\n}\n```\n\nKey extraction decisions:\n- **country**: All 5 academic medical centers (NYU, U Minnesota, U Alabama Birmingham, UT San Antonio, UT Houston, Stony Brook) are in the USA.\n- **setting**: Verbatim from paper \u2014 \"outpatient medical and dental clinics and communities affiliated with 5 academic medical centers.\"\n- **number_of_centres**: Explicitly stated as 5 academic medical centers.\n- **trial_design**: The abstract calls it \"a 6-month, single-masked, multicenter, randomized clinical trial\"; 2-arm (treatment vs. control) is explicit from the intervention/control description.\n- **recruitment_period**: Stated twice \u2014 \"November 2009 and March 2012.\"\n- **funding_source**: Verbatim from Funding/Support section \u2014 NIH/NIDCR cooperative agreements.\n- **notes**: Futility stopping, underpowered final enrollment vs. plan, COIs, and trial registration number.",
+  "stop_reason": "end_turn",
+  "session_id": "723f5784-b648-4ef5-a56a-edd5a9b7ced8",
+  "total_cost_usd": 0.1644216,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 28946,
+    "cache_read_input_tokens": 89007,
+    "output_tokens": 1861,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 28946
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 499,
+        "cache_read_input_tokens": 46010,
+        "cache_creation_input_tokens": 1300,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1300,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1861,
+      "cacheReadInputTokens": 89007,
+      "cacheCreationInputTokens": 28946,
+      "webSearchRequests": 0,
+      "costUSD": 0.1631796,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "19a180cd-6cd7-4a6e-87e9-02a710746d1a"
+}

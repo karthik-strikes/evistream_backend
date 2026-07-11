@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 45726,
+  "duration_api_ms": 47076,
+  "ttft_ms": 3764,
+  "ttft_stream_ms": 3503,
+  "time_to_request_ms": 187,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Hong Kong SAR, China\",\n  \"setting\": \"hospital (Queen Mary Hospital for patient recruitment; Prince Philip Dental Hospital for periodontal screening and treatment; both University of Hong Kong)\",\n  \"number_of_centres\": \"2 (Queen Mary Hospital and Prince Philip Dental Hospital, University of Hong Kong)\",\n  \"trial_design\": \"2-arm parallel RCT (examiner-blinded; 3:2 allocation, Treatment vs Control)\",\n  \"recruitment_period\": \"June 2015 to August 2016\",\n  \"funding_source\": \"Hong Kong Research Grants Council (GRF No. HKU 768411M and 17155216) and Modern Dental Laboratory/HKU Endowment Fund\",\n  \"notes\": \"Small preliminary study (n=18 randomised; 11 treatment, 7 control). Control group received delayed periodontal treatment after 6-month follow-up completion. No significant change in HbA1c between groups (Table 2; baseline ~7.96% vs 7.95%, 6-month 8.81% vs 8.35%, treatment effect 0.45%, p=0.507). Primary outcome was TLR-related gene expression in EPCs, not glycaemic control. Post-hoc sample size calculation using G*Power 3.0 based on gene expression data. No conflict of interest declared.\"\n}\n```\n\nKey sourcing notes:\n- **Country/setting**: Affiliations (line 17\u201319) and Methods section (line 74) \u2014 Queen Mary Hospital (medical recruitment) + Prince Philip Dental Hospital (dental arm), both University of Hong Kong.\n- **Recruitment period**: \"between June 2015 and August 2016\" (line 74).\n- **Trial design**: \"randomly assigned\u2026Treatment group (n=11) and Control group (n=7) according to the ratio of 3:2\"; \"both were blind to the group assignments\" (lines 86\u201387); labelled \"Randomized Clinical Trial\" in the header.\n- **Funding**: Funding information block (lines 27\u201329).\n- **Notes**: HbA1c data extracted from Table 2 (lines 285\u2013288); primary outcome stated as gene expression (line 178); conflict of interest (line 427).",
+  "stop_reason": "end_turn",
+  "session_id": "2e21aa50-9436-4ec3-b37b-2a1399ba93a1",
+  "total_cost_usd": 0.17495565,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 29773,
+    "cache_read_input_tokens": 89383,
+    "output_tokens": 2349,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 29773
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 539,
+        "cache_read_input_tokens": 46388,
+        "cache_creation_input_tokens": 1749,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1749,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2349,
+      "cacheReadInputTokens": 89383,
+      "cacheCreationInputTokens": 29773,
+      "webSearchRequests": 0,
+      "costUSD": 0.17371365,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "5a389e52-5a23-47c8-a65b-5d6c63886c14"
+}

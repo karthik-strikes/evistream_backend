@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 36110,
+  "duration_api_ms": 36695,
+  "ttft_ms": 1879,
+  "ttft_stream_ms": 1848,
+  "time_to_request_ms": 224,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment (n=35)\",\n      \"comparison_summary\": \"Non-surgical periodontal therapy (full-mouth scaling) vs untreated control\",\n      \"intervention_description\": \"Untimed single episode of non-surgical periodontal therapy comprising supra- and subgingival scaling using Gracey curettes (Hu-Friedy, Chicago, USA), and piezoelectric ultrasonic device (Kyungwon Ferrite, Gyeonggi-Do, South Korea) with universal tips. To complete the intervention, a full-mouth dental prophylaxis using a rubber cup and Ainsworth prophylaxis paste (Ainsworth Dental Company, Sydney, Australia) was provided to remove plaque and tooth stains. Local anaesthesia was administered as required. All participants received oral hygiene advice consisting of toothbrush and flossing instructions and were provided with a toothbrush and toothpaste at baseline.\",\n      \"n_in_arm\": 35,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Control (n=27)\",\n      \"comparison_summary\": \"Non-surgical periodontal therapy (full-mouth scaling) vs untreated control\",\n      \"intervention_description\": \"Untreated controls; periodontal intervention was delayed for 12 months in those randomized to the control group. All participants received oral hygiene advice consisting of toothbrush and flossing instructions and were provided with a toothbrush and toothpaste at baseline.\",\n      \"n_in_arm\": 27,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two arms**: treatment (n=35) and control (n=27), per Table 1 and the CONSORT flowchart (Fig. 1).\n- **Treatment arm**: Classified as `SI_alone` \u2014 supra- and subgingival scaling with Gracey curettes and a piezoelectric ultrasonic device, plus polishing. No systemic/local antimicrobials or mouthrinse were administered.\n- **Control arm**: Classified as `usual_care` \u2014 no immediate periodontal treatment; intervention was delayed 12 months. Both groups received oral hygiene advice and toothbrush/toothpaste at baseline, which is standard in both arms and does not elevate the control to an active treatment category.\n- **Follow-up**: 3 months post-intervention for both arms, as stated in the abstract and methods.",
+  "stop_reason": "end_turn",
+  "session_id": "2bd3a537-77c7-4867-b0e4-c346b3f381d7",
+  "total_cost_usd": 0.16397185,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 28079,
+    "cache_read_input_tokens": 88302,
+    "output_tokens": 2048,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 28079
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 644,
+        "cache_read_input_tokens": 45104,
+        "cache_creation_input_tokens": 1339,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1339,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00145,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2048,
+      "cacheReadInputTokens": 88302,
+      "cacheCreationInputTokens": 28079,
+      "webSearchRequests": 0,
+      "costUSD": 0.16252185,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "216ce38f-65b4-4d0e-ad57-3f2061bdbcc9"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 31499,
+  "duration_api_ms": 35314,
+  "ttft_ms": 1753,
+  "ttft_stream_ms": 1711,
+  "time_to_request_ms": 147,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment group\",\n      \"comparison_summary\": \"Non-surgical periodontal therapy (OHI + scaling and root debridement) vs OHI alone\",\n      \"intervention_description\": \"Oral hygiene instruction (OHI), extraction of hopeless teeth, scaling and root debridement with both hand instruments and ultrasonic scaler; review appointments every 4\u20136 weeks to reinforce patients' plaque control\",\n      \"n_in_arm\": 11,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Control group\",\n      \"comparison_summary\": \"Non-surgical periodontal therapy (OHI + scaling and root debridement) vs OHI alone\",\n      \"intervention_description\": \"Oral hygiene instruction (OHI) alone; similar non-surgical periodontal treatment provided after completion of the 6-month study period\",\n      \"n_in_arm\": 7,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Treatment group (n=11):** Received OHI plus non-surgical periodontal therapy \u2014 extraction of hopeless teeth and scaling/root debridement with hand instruments and ultrasonic scaler, with review appointments every 4\u20136 weeks. Classified as `SI_alone` (subgingival instrumentation without systemic/local antimicrobials).\n- **Control group (n=7):** Received OHI alone during the study period; deferred periodontal treatment was provided after the 6-month follow-up. Classified as `usual_care`. (One participant was lost to follow-up but n=7 reflects those randomised.)\n- Follow-up was 6 months for both arms (blood taken at baseline and 6 months per Section 2.1).",
+  "stop_reason": "end_turn",
+  "session_id": "9b1bb969-fc6d-4eb7-a3d2-c7114a62a3fa",
+  "total_cost_usd": 0.16753425,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 29557,
+    "cache_read_input_tokens": 89785,
+    "output_tokens": 1886,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 29557
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 492,
+        "cache_read_input_tokens": 46589,
+        "cache_creation_input_tokens": 1332,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1332,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1886,
+      "cacheReadInputTokens": 89785,
+      "cacheCreationInputTokens": 29557,
+      "webSearchRequests": 0,
+      "costUSD": 0.16607925,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "86c45c12-9504-440c-968b-5008c516cbe5"
+}

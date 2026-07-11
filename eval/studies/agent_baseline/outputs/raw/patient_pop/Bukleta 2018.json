@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 189567,
+  "duration_api_ms": 190579,
+  "ttft_ms": 2237,
+  "ttft_stream_ms": 1736,
+  "time_to_request_ms": 118,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": \"NR\",\n  \"age_arm_a_sd\": \"NR\",\n  \"age_arm_b\": \"NR\",\n  \"age_arm_b_sd\": \"NR\",\n  \"pct_female_arm_a\": \"NR\",\n  \"pct_female_arm_b\": \"NR\",\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 9.59,\n  \"baseline_hba1c_arm_b\": 8.82,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"NR\",\n  \"tobacco_use\": \"NR\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"diagnosed with type 2 DM; baseline HbA1c \u22656.5%; at least 10 teeth in the functional dentition (excluding third molars); clinical diagnosis of periodontal disease with at least one site with a Probing Depth (PD) \u22655 mm, two teeth with attachment loss \u22656 mm; no modification in the pharmacological treatment of diabetes during the study period; aged 30-70 y old\",\n  \"exclusion_criteria\": \"pregnancy or lactation, major diabetic complications, and the use of antibiotic therapy or non-steroidal anti-inflammatory drug therapy within 4 months before the first visit\",\n  \"n_randomised\": 100,\n  \"n_evaluated\": \"100 at 3 months (50 per arm)\"\n}\n```\n\n**Extraction notes:**\n\n- **Age/sex per arm:** Table 1 aggregates all 100 T2DM patients (mean age 59.49 \u00b1 10.82 y; 50M/50F); no per-arm breakdown is provided \u2192 all four fields = NR.\n- **HbA1c arm assignment:** Confirmed from Results text \u2014 arm A (FM-SRP + extraction) baseline 9.59 \u00b1 2.57%; arm B (extraction only) baseline 8.82 \u00b1 3.01%. Both > 8% \u2192 `poor` metabolic control.\n- **Tobacco use:** Smokers were not an exclusion criterion; Table 2 presents a smoker subgroup analysis, but per-arm smoking proportions are not stated \u2192 NR.\n- **n_randomised = 100:** The abstract explicitly states \"100 patients with diabetes were randomly allocated to a treatment group and a control group.\" (The trial also enrolled 60 non-diabetic comparators, but those are not the RCT arms relevant to glycaemic control in diabetes.)",
+  "stop_reason": "end_turn",
+  "session_id": "c5fa4dec-7643-48bb-a35b-35c2aff947e4",
+  "total_cost_usd": 0.33662234999999996,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 31871,
+    "cache_read_input_tokens": 81787,
+    "output_tokens": 12716,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 31871
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 642,
+        "cache_read_input_tokens": 38225,
+        "cache_creation_input_tokens": 12010,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 12010,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 12716,
+      "cacheReadInputTokens": 81787,
+      "cacheCreationInputTokens": 31871,
+      "webSearchRequests": 0,
+      "costUSD": 0.33480734999999995,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "29b032d7-5151-482d-8ce6-53df1cbbbac5"
+}

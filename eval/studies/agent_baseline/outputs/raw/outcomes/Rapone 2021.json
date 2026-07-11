@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 154841,
+  "duration_api_ms": 155747,
+  "ttft_ms": 2073,
+  "ttft_stream_ms": 1958,
+  "time_to_request_ms": 128,
+  "num_turns": 4,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 90,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 90\n    }\n  ]\n}\n```\n\n---\n\n**Extraction notes:**\n\n**Subgroup:** `SI_plus_mouthrinse` \u2014 the intervention was scaling and root planing with subgingival irrigation using chlorhexidine 0.12% antiseptic mouthwash; the control arm received delayed treatment (usual care).\n\n**Why means/SDs are NR for all follow-up rows:** The paper used non-parametric statistics (Mann-Whitney U) because variables failed the Shapiro-Wilk normality test. Table 2 (the only descriptive statistics table) covers **baseline only**. At 3 months and 6 months, the paper reports only **medians** in the results text (e.g., HbA1c IG Mdn=7.25 vs CG Mdn=7.65 at 3 months; IG Mdn=7.2 vs CG Mdn=7.3 at 6 months). No means or SDs are published for any follow-up timepoint.\n\n**N values:** CONSORT diagram and text confirm n=90 analyzed per arm at the 6-month primary endpoint; the same cohort provided 3-month data, so n=90 is used for both timepoints.\n\n**Outcomes covered:** HbA1c, PI, GI, PPD (paper calls it PD/pocket depth), and CAL \u2014 all measured at both 3-month and 6-month follow-ups. BOP is mentioned in a table footnote but has no reported values.",
+  "stop_reason": "end_turn",
+  "session_id": "dde1a72e-d5ad-4719-808e-46950042f228",
+  "total_cost_usd": 0.3632145,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 43090,
+    "cache_read_input_tokens": 141500,
+    "output_tokens": 10501,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 43090
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1514,
+        "cache_read_input_tokens": 52684,
+        "cache_creation_input_tokens": 8770,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 8770,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001644,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 6,
+      "outputTokens": 10501,
+      "cacheReadInputTokens": 141500,
+      "cacheCreationInputTokens": 43090,
+      "webSearchRequests": 0,
+      "costUSD": 0.3615705,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "6a95cf90-2ea6-4d48-aa0b-bf524e6ae92e"
+}

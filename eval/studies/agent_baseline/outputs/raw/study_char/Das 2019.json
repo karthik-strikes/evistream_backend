@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 34773,
+  "duration_api_ms": 35562,
+  "ttft_ms": 2192,
+  "ttft_stream_ms": 2167,
+  "time_to_request_ms": 153,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"India\",\n  \"setting\": \"hospital (Regional Dental College and Hospital, Guwahati, and Guwahati Medical College and Hospital, Guwahati)\",\n  \"number_of_centres\": \"2\",\n  \"trial_design\": \"3-arm parallel RCT (prospective, randomized, parallel arm, double-centered clinical trial)\",\n  \"recruitment_period\": \"February 2009 to September 2010\",\n  \"funding_source\": \"Nil\",\n  \"notes\": \"Subjects not blinded to treatment allocation. Sample size calculation: at least 15 patients per group to achieve 90% power (p<0.05). Conflict of interest: None. Authors acknowledge limitations including small sample size, lack of nondiabetic comparator group, and potential selection bias from block randomisation with unmasked groups.\"\n}\n```\n\nKey sourcing notes:\n- **country/setting/number_of_centres**: Methods section states the trial \"was carried out in the Department of Periodontics, Regional Dental College and Hospital, Guwahati, India in collaboration with the Department of Endocrinology, Guwahati Medical College and Hospital, Guwahati, India\" \u2014 two hospital sites in India.\n- **trial_design**: Verbatim from Methods: \"prospective, randomized, parallel arm, double-centered clinical trial\" with 3 groups (SRP only / SRP + doxycycline / untreated control).\n- **recruitment_period**: Methods: \"The study was performed from February 2009 to September 2010.\"\n- **funding_source**: Front matter: \"Source of support: Nil.\"\n- **notes**: Blinding status (subjects not blinded) and sample-size calculation (\u226515/group, 90% power) are from Methods; conflict of interest and limitations are from the paper's own statements.",
+  "stop_reason": "end_turn",
+  "session_id": "872cef8f-a783-4391-80cb-01ea0f20b09b",
+  "total_cost_usd": 0.14334705,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 23329,
+    "cache_read_input_tokens": 83221,
+    "output_tokens": 1976,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 23329
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 444,
+        "cache_read_input_tokens": 40224,
+        "cache_creation_input_tokens": 1469,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1469,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1976,
+      "cacheReadInputTokens": 83221,
+      "cacheCreationInputTokens": 23329,
+      "webSearchRequests": 0,
+      "costUSD": 0.14210505,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "0ddd78f7-9459-4044-a529-056c94a775b5"
+}

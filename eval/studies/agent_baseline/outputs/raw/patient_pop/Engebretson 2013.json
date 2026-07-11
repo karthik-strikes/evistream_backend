@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 67565,
+  "duration_api_ms": 68039,
+  "ttft_ms": 2530,
+  "ttft_stream_ms": 2077,
+  "time_to_request_ms": 212,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 56.7,\n  \"age_arm_a_sd\": 10.5,\n  \"age_arm_b\": 57.9,\n  \"age_arm_b_sd\": 9.6,\n  \"pct_female_arm_a\": 44.4,\n  \"pct_female_arm_b\": 47.9,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.84,\n  \"baseline_hba1c_arm_b\": 7.78,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"Mean (SD): 12.3 (8.2) y [treatment]; 11.3 (8.4) y [control]; inclusion criterion: >3 months\",\n  \"tobacco_use\": \"Current smokers not excluded; treatment: never 50.2%, former 34.6%, current 15.2%; control: never 56.0%, former 33.5%, current 10.5%\",\n  \"alcohol_consumption\": \"Heavy alcohol consumption excluded (>3 drinks/d for men, >2 drinks/d for women); specific consumption levels not reported\",\n  \"inclusion_criteria\": \"Men and women \u226535 y; physician-diagnosed T2DM >3 months' duration; HbA1c 7.0% to <9.0% at screening; no changes in diabetes medications within prior 3 months; under physician care for diabetes; agreed to not change diabetes medications unless medically indicated; agreed to avoid pregnancy; moderate to advanced chronic periodontitis (clinical attachment loss and probing depth \u22655 mm in \u22652 quadrants); \u226516 natural teeth; no periodontal treatment in prior 6 months; radiographic confirmation of chronic periodontitis\",\n  \"exclusion_criteria\": \"Need for treatment of extensive tooth decay, tooth abscesses, or other oral infection (e.g., teeth needing root canal therapy); limited life expectancy; diabetes-related emergency within 30 days; use of NSAIDs other than daily low-dose aspirin (75\u2013325 mg); immunosuppressive medications; antibiotic use (>7 days within 30 days of enrollment); dialysis; risk of bleeding complications; heavy alcohol consumption (>3 drinks/d for men and >2 drinks/d for women)\",\n  \"n_randomised\": 514,\n  \"n_evaluated\": \"476 completed study (240 treatment, 236 control); 475 with 6-month HbA1c data per protocol (240 treatment, 235 control); 257 per arm in ITT analysis (with imputation)\"\n}\n```\n\n**Key sourcing notes:**\n\n- **Age/SD & sex**: Table 1 \u2014 treatment 56.7 (10.5) y, 114/257 (44.4%) women; control 57.9 (9.6) y, 123/257 (47.9%) women.\n- **Baseline HbA1c**: Table 2 (intent-to-treat baseline) \u2014 treatment 7.84 (SD 0.65)%, control 7.78 (SD 0.60)%.\n- **Metabolic control**: Both arms average ~7.8%, placing them in the \"fair\" category (7\u20138%).\n- **Duration since DX**: Table 1 \u2014 12.3 (8.2) y treatment, 11.3 (8.4) y control.\n- **Tobacco**: Smoking history reported in three categories; current smokers were not excluded.\n- **Alcohol**: Heavy drinkers excluded by protocol; no quantitative consumption data reported for enrolled participants.\n- **n_randomised**: 514 total (257 per arm).\n- **n_evaluated**: 476 completed the study; per-protocol 6-month HbA1c available for 475 (240 + 235).",
+  "stop_reason": "end_turn",
+  "session_id": "a3977527-93e2-4172-a8bc-268a7286dc71",
+  "total_cost_usd": 0.2122658,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 31540,
+    "cache_read_input_tokens": 90136,
+    "output_tokens": 4342,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 31540
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 949,
+        "cache_read_input_tokens": 46576,
+        "cache_creation_input_tokens": 3328,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3328,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4342,
+      "cacheReadInputTokens": 90136,
+      "cacheCreationInputTokens": 31540,
+      "webSearchRequests": 0,
+      "costUSD": 0.2104608,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "3dc1e9e3-cd81-4391-bcb5-c52ca09432e2"
+}

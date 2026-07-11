@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 30384,
+  "duration_api_ms": 30735,
+  "ttft_ms": 2096,
+  "ttft_stream_ms": 2072,
+  "time_to_request_ms": 493,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"ST (n = 12)\",\n      \"comparison_summary\": \"Supragingival scaling vs supra- and subgingival scaling and root planing\",\n      \"intervention_description\": \"Received supragingival scaling using an ultrasonic device and periodontal curettes (Hu-Friedy\u00ae, Chicago, USA). A single appointment lasted ~ 60 minutes. Supportive therapy for biofilm control consisted of professional instructions on oral hygiene given to each patient every month.\",\n      \"n_in_arm\": 12,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"supragingival_only\"\n    },\n    {\n      \"arm_label\": \"IT (n = 12)\",\n      \"comparison_summary\": \"Supragingival scaling vs supra- and subgingival scaling and root planing\",\n      \"intervention_description\": \"Received supra- and subgingival scaling and root planing (in sites with PPD \u2265 4 mm) using an ultrasonic device and periodontal curettes. The procedures were performed under local anesthesia (3% prilocaine with felypressin), in two appointments lasting ~ 120 minutes each. Supportive therapy for biofilm control consisted of professional instructions on oral hygiene given to each patient every month.\",\n      \"n_in_arm\": 12,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    }\n  ]\n}\n```\n\nTwo arms extracted:\n\n- **ST (n=12)** \u2014 Supragingival therapy: single ~60-min session of supragingival scaling with ultrasonic device and curettes, plus monthly oral hygiene instructions. Classified as `supragingival_only`.\n- **IT (n=12)** \u2014 Intensive therapy: supra- and subgingival scaling and root planing (sites with PPD \u22654 mm), under local anaesthesia (3% prilocaine with felypressin), two ~120-min appointments, plus monthly oral hygiene instructions. Classified as `SI_alone`.\n\nBoth followed for 6 months. No antimicrobials or mouthrinse adjuncts were used in either arm, and neither arm serves as a no-treatment control.",
+  "stop_reason": "end_turn",
+  "session_id": "81f0334f-743f-449a-bd95-7a26b0857dc9",
+  "total_cost_usd": 0.11898884999999998,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 17539,
+    "cache_read_input_tokens": 77842,
+    "output_tokens": 1893,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 17539
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 569,
+        "cache_read_input_tokens": 34644,
+        "cache_creation_input_tokens": 1259,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1259,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1893,
+      "cacheReadInputTokens": 77842,
+      "cacheCreationInputTokens": 17539,
+      "webSearchRequests": 0,
+      "costUSD": 0.11753385,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "544225d3-c6d7-4914-8c63-116e2a1440b1"
+}

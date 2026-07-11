@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 63200,
+  "duration_api_ms": 63789,
+  "ttft_ms": 2490,
+  "ttft_stream_ms": 2009,
+  "time_to_request_ms": 149,
+  "num_turns": 7,
+  "result": "Here is the extracted JSON:\n\n```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"group A\",\n      \"comparison_summary\": \"SRP plus systemic doxycycline vs no periodontal treatment (doxycycline only control)\",\n      \"intervention_description\": \"Non-surgical periodontal treatment: five 60-minute appointments on a weekly basis. At the first appointment, intensive oral health instruction and supragingival scaling and polishing were performed. In the following up appointment, oral hygiene was monitored and reinforced. Subgingival scaling and root planning was carried out under topical anesthesia on a quadrant-by-quadrant basis. Each subject was prescribed doxycycline in a dose of 100 mg/day for 14 days.\",\n      \"n_in_arm\": 23,\n      \"duration_of_followup\": \"16 weeks\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"group B\",\n      \"comparison_summary\": \"SRP plus systemic doxycycline vs no periodontal treatment (doxycycline only control)\",\n      \"intervention_description\": \"Temporarily without periodontal treatment; acted as a non-treatment control group for the duration of the study, and then were treated in exactly the same manner as group A. Each subject was prescribed doxycycline in a dose of 100 mg/day for 14 days.\",\n      \"n_in_arm\": 23,\n      \"duration_of_followup\": \"16 weeks\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Group A** is classified as `SI_plus_systemic_local_antimicrobial` \u2014 the treatment combined subgingival SRP (subgingival instrumentation) with systemic doxycycline 100 mg/day \u00d7 14 days prescribed to all subjects.\n- **Group B** is classified as `usual_care` \u2014 explicitly described as \"temporarily without periodontal treatment\" / \"non-treatment control group.\" They did also receive doxycycline (same dose), which the paper acknowledges may have produced some beneficial effect in the control group, but no active periodontal (subgingival) treatment was administered.\n- Both arms had n=23 (confirmed in Table 1) and 16-week follow-up (assessment at 16 weeks post-treatment, per Table 3 and abstract).",
+  "stop_reason": "end_turn",
+  "session_id": "d6551d82-e5a5-415e-8d3d-4e29e0cb9a4f",
+  "total_cost_usd": 0.19809600000000002,
+  "usage": {
+    "input_tokens": 9,
+    "cache_creation_input_tokens": 22162,
+    "cache_read_input_tokens": 194805,
+    "output_tokens": 3671,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22162
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 605,
+        "cache_read_input_tokens": 38314,
+        "cache_creation_input_tokens": 2212,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2212,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 9,
+      "outputTokens": 3671,
+      "cacheReadInputTokens": 194805,
+      "cacheCreationInputTokens": 22162,
+      "webSearchRequests": 0,
+      "costUSD": 0.19664099999999998,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "7dd826ca-d290-486c-8b14-8e65e81cc7a2"
+}

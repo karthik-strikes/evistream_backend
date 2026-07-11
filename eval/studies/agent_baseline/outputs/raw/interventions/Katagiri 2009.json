@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 36949,
+  "duration_api_ms": 37798,
+  "ttft_ms": 2369,
+  "ttft_stream_ms": 2321,
+  "time_to_request_ms": 207,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Intervention group (n = 32)\",\n      \"comparison_summary\": \"Anti-infectious periodontal treatment (SRP + local minocycline) vs. oral hygiene instructions only\",\n      \"intervention_description\": \"Mechanical debridement of the sub-gingival plaque and calculus was performed using piezo-electric ultra sonic scalers, and 10 mg of minocycline ointment (Periofil\u00ae, Showa Yakuhin Co., Tokyo, Japan) was administered topically in every periodontal pocket at the end of each visit. The intensive periodontal treatment was completed over the course of four visits within 2 months. In the follow-up period, additional periodontal treatment including instructions for brushing, supra- and sub-gingival debridement without topical administration of antibiotics were performed, if necessary.\",\n      \"n_in_arm\": 32,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Control group (n = 17)\",\n      \"comparison_summary\": \"Anti-infectious periodontal treatment (SRP + local minocycline) vs. oral hygiene instructions only\",\n      \"intervention_description\": \"Control group participants received instructions for brushing their teeth, including the use of inter-proximal cleaning aids, such as floss and inter-dental brushes, depending on their individual needs.\",\n      \"n_in_arm\": 17,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two randomized arms** only. The CRP-D and CRP-N subgroups are post-randomization splits of the intervention arm (not independently randomised), so they are not included as separate rows.\n- **Intervention arm** (n=32): Subgingival mechanical debridement with piezo-electric ultrasonic scalers plus topical minocycline ointment (Periofil\u00ae 10 mg) instilled into every periodontal pocket at each of four visits over 2 months \u2192 classified as `SI_plus_systemic_local_antimicrobial` (locally delivered antimicrobial adjunct).\n- **Control arm** (n=17): Oral hygiene instructions (tooth-brushing technique, floss, interdental brushes) with no active subgingival instrumentation \u2192 classified as `usual_care`.\n- Follow-up was 6 months post-intensive-treatment for both arms (assessments at 1, 3, and 6 months).\n- Allocation ratio was 2:1 (intervention:control) by envelope randomisation.",
+  "stop_reason": "end_turn",
+  "session_id": "b19ffda6-3590-420d-a05c-6b9c810bd886",
+  "total_cost_usd": 0.1442355,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 22672,
+    "cache_read_input_tokens": 82785,
+    "output_tokens": 2194,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22672
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 680,
+        "cache_read_input_tokens": 39587,
+        "cache_creation_input_tokens": 1449,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1449,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2194,
+      "cacheReadInputTokens": 82785,
+      "cacheCreationInputTokens": 22672,
+      "webSearchRequests": 0,
+      "costUSD": 0.1427805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "47bd51bc-342a-451c-b425-b029e587d87e"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 113643,
+  "duration_api_ms": 114394,
+  "ttft_ms": 2452,
+  "ttft_stream_ms": 2421,
+  "time_to_request_ms": 190,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 7.14,\n      \"sd_arm1\": 0.54,\n      \"n_arm1\": 30,\n      \"mean_arm2\": 7.41,\n      \"sd_arm2\": 0.48,\n      \"n_arm2\": 30\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 7.16,\n      \"sd_arm1\": 0.69,\n      \"n_arm1\": 30,\n      \"mean_arm2\": 7.46,\n      \"sd_arm2\": 0.72,\n      \"n_arm2\": 30\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Source**: Figure 2 (table embedded in the figure caption) \u2014 the only place the paper reports absolute per-arm means and SDs at follow-up timepoints.\n- **2 rows only**: HbA1c at 3 months (\u2192 `3-4_months`) and 6 months (\u2192 `6_months`).\n- **Periodontal parameters (BOP, GI, PPD, CAL)**: Table 3 reports only *change scores* (\u0394 from baseline), not absolute arm means at 6 months \u2014 so no extractable rows for those. PPD and CAL are additionally reported only as percentage distributions across depth/loss categories (not as a single mean mm value).\n- **1-month A1C** (IG=7.19\u00b10.62, CG=7.51\u00b10.73) was excluded because 1 month does not map to any allowed timepoint bin.\n- **Subgroup**: `SI_vs_usual_care` \u2014 the IG received full-mouth SRP with no adjunctive antimicrobials; the CG received supragingival prophylaxis only.\n- **n=30** per arm at all timepoints (ITT population; 7 dropouts handled with LOCF).",
+  "stop_reason": "end_turn",
+  "session_id": "41eec28a-e5ff-45f6-9b73-314c517ce841",
+  "total_cost_usd": 0.22598855,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25089,
+    "cache_read_input_tokens": 80386,
+    "output_tokens": 7075,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25089
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 558,
+        "cache_read_input_tokens": 37003,
+        "cache_creation_input_tokens": 6450,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 6450,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 7075,
+      "cacheReadInputTokens": 80386,
+      "cacheCreationInputTokens": 25089,
+      "webSearchRequests": 0,
+      "costUSD": 0.22433955,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "f6102994-ec06-46d5-aa8a-3bb9207e5cc2"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 44605,
+  "duration_api_ms": 45386,
+  "ttft_ms": 2367,
+  "ttft_stream_ms": 1935,
+  "time_to_request_ms": 137,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 6.99,\n      \"sd_arm1\": 0.77,\n      \"n_arm1\": 19,\n      \"mean_arm2\": 7.41,\n      \"sd_arm2\": 1.32,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 3.09,\n      \"sd_arm1\": 0.63,\n      \"n_arm1\": 19,\n      \"mean_arm2\": 3.92,\n      \"sd_arm2\": 0.56,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 3.62,\n      \"sd_arm1\": 0.84,\n      \"n_arm1\": 19,\n      \"mean_arm2\": 4.36,\n      \"sd_arm2\": 0.81,\n      \"n_arm2\": 20\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **3 rows** total \u2014 one per outcome reported in Table 2 at the single post-baseline timepoint (3 months \u2192 `3-4_months`).\n- **arm1** = intervention group (full-mouth subgingival + supragingival scaling, n=19 completers).\n- **arm2** = control group (no active treatment / usual care, n=20 completers).\n- **Subgroup** = `SI_vs_usual_care` (control received no periodontal intervention).\n- BOP, PI, and GI were not measured or reported; no rows created for those.\n- HbA1c SD for arm1: the text says 0.75 but Table 2 (the authoritative results table) shows **0.77** \u2014 Table 2 value used.",
+  "stop_reason": "end_turn",
+  "session_id": "89d01d4b-a18f-4525-a0f6-b86b3363ae80",
+  "total_cost_usd": 0.15434,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 22460,
+    "cache_read_input_tokens": 81920,
+    "output_tokens": 2925,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 22460
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 571,
+        "cache_read_input_tokens": 38533,
+        "cache_creation_input_tokens": 2291,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2291,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2925,
+      "cacheReadInputTokens": 81920,
+      "cacheCreationInputTokens": 22460,
+      "webSearchRequests": 0,
+      "costUSD": 0.152691,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "31278a75-7444-496d-bf20-3d60f6119cbc"
+}

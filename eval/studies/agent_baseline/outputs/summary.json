@@ -1,0 +1,49 @@
+{
+  "model": "claude-sonnet-4-6",
+  "papers": 29,
+  "forms": [
+    "interventions",
+    "outcomes",
+    "patient_pop",
+    "study_char"
+  ],
+  "sessions_total": 116,
+  "failures": 0,
+  "grand_cost_usd": 23.5643,
+  "wall_clock_s_last_run": 316.2,
+  "mean_cost_per_session_usd": 0.2031,
+  "per_form": {
+    "interventions": {
+      "sessions": 29,
+      "ok": 29,
+      "failed": 0,
+      "cost_usd": 4.863,
+      "duration_ms_total": 1360328.0,
+      "turns_total": 92.0
+    },
+    "outcomes": {
+      "sessions": 29,
+      "ok": 29,
+      "failed": 0,
+      "cost_usd": 8.1636,
+      "duration_ms_total": 3707557.0,
+      "turns_total": 94.0
+    },
+    "patient_pop": {
+      "sessions": 29,
+      "ok": 29,
+      "failed": 0,
+      "cost_usd": 6.0889,
+      "duration_ms_total": 2337792.0,
+      "turns_total": 93.0
+    },
+    "study_char": {
+      "sessions": 29,
+      "ok": 29,
+      "failed": 0,
+      "cost_usd": 4.4489,
+      "duration_ms_total": 1094033.0,
+      "turns_total": 95.0
+    }
+  }
+}

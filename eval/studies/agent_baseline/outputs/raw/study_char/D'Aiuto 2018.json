@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 45152,
+  "duration_api_ms": 46115,
+  "ttft_ms": 2430,
+  "ttft_stream_ms": 2397,
+  "time_to_request_ms": 211,
+  "num_turns": 4,
+  "result": "```json\n{\n  \"country\": \"UK\",\n  \"setting\": \"University hospital and primary care (Eastman Dental Hospital/UCL as single treatment centre; participants recruited from 4 hospitals and 15 medical or dental practices in Greater London)\",\n  \"number_of_centres\": \"1 (single-centre; recruited from 4 hospitals and 15 medical or dental practices in Greater London)\",\n  \"trial_design\": \"2-arm, 12-month, single-centre, parallel-group, investigator-masked, randomised trial\",\n  \"recruitment_period\": \"October 1, 2008 to October 31, 2012\",\n  \"funding_source\": \"Diabetes UK (grants 08/0003594 and 08/0003741) and UK Department of Health's National Institute for Health Research Biomedical Research Centre at University College London/University College London Hospitals\",\n  \"notes\": \"Sample size calculation: minimum 129 participants per group to detect a 1 percentage point difference in HbA1c (SD 2.1) at 12 months, \u03b1=0.05, 95% power, assuming 10% loss to follow-up. Trial was retrospectively registered on ISRCTN registry (ISRCTN83229304) on June 18, 2010. No competing interests declared.\"\n}\n```\n\nKey sourcing notes:\n- **country/setting**: Affiliations and Methods section \u2014 UCL Eastman Dental Hospital, London, UK; recruitment from Eastman Dental Hospital, University College Hospital, Ealing and St Mary's Hospitals, and 15 GP/dental practices in Greater London.\n- **number_of_centres**: Title and Methods both explicitly state \"single-centre\" for treatment delivery, despite multi-site recruitment.\n- **trial_design**: Verbatim from Methods: \"12 month, single-centre, parallel-group, investigator-masked, randomised trial\" with two arms (IPT vs CPT, 1:1).\n- **recruitment_period**: Results section \u2014 \"Between Oct 1, 2008, and Oct 31, 2012.\"\n- **funding_source**: Acknowledgements section.\n- **notes**: Statistical analysis section (sample size) and registration note in Methods; Declaration of interests.",
+  "stop_reason": "end_turn",
+  "session_id": "75af7ce9-2be1-44d8-bc47-0598f81b05c0",
+  "total_cost_usd": 0.21135585,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 34803,
+    "cache_read_input_tokens": 141082,
+    "output_tokens": 2484,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 34803
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 526,
+        "cache_read_input_tokens": 51380,
+        "cache_creation_input_tokens": 1787,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1787,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 6,
+      "outputTokens": 2484,
+      "cacheReadInputTokens": 141082,
+      "cacheCreationInputTokens": 34803,
+      "webSearchRequests": 0,
+      "costUSD": 0.21011385000000005,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "98aeb9f4-ab29-40c0-af3e-9f0ac258dfae"
+}

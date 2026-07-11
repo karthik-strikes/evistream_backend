@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 67677,
+  "duration_api_ms": 68362,
+  "ttft_ms": 2560,
+  "ttft_stream_ms": 2092,
+  "time_to_request_ms": 169,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 52.72,\n  \"age_arm_a_sd\": 8.00,\n  \"age_arm_b\": 52.82,\n  \"age_arm_b_sd\": 6.38,\n  \"pct_female_arm_a\": 40.0,\n  \"pct_female_arm_b\": 50.0,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 9.11,\n  \"baseline_hba1c_arm_b\": 8.88,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"\u22651 year\",\n  \"tobacco_use\": \"Not excluded; 2/50 smokers in SRP+MET+OHI arm, 2/50 in SRP+OHI arm, 4/50 in control arm (8/150 total)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"Age 35\u201365 years; \u226516 natural teeth; moderate to severe periodontitis (\u22652 interproximal sites with \u22655 mm PPD or \u22654 mm CAL); HbA1c \u22656.5% and <14% at baseline; known T2DM \u22651 year; on insulin and/or oral glycaemic therapy\",\n  \"exclusion_criteria\": \"Type-1 DM; HbA1c \u22646.5% (pre-diabetic); T2DM <1 year; HbA1c \u226514%; pacemaker; life-threatening condition; on high-dose NSAIDs; physical/mental disability; no periodontitis on examination; <16 teeth; did not consent\",\n  \"n_randomised\": 150,\n  \"n_evaluated\": \"150 at 1 mth, 97 at 3 mths, 74 at 6 mths\"\n}\n```\n\n**Key extraction notes:**\n\n- **Arm A** = SRP + MET + OHI (Test Group-1, primary active intervention); **Arm B** = OHI + DT (control)\n- Age and HbA1c values sourced from **Table 1** (all-randomised baseline, n=50/arm)\n- Female % derived from raw counts: 20/50 = 40% (arm A), 25/50 = 50% (arm B)\n- `metabolic_control_level` = **poor**: mean HbA1c ~9% in both arms; paper explicitly states >half had HbA1c >8%\n- Smokers were **not excluded** \u2014 8 smokers were enrolled across the three arms (2+2+4); no restriction in eligibility criteria\n- `n_evaluated` reflects the three timepoints: 150 (1 month, 100% retention), 97 (3 months), 74 (6 months)",
+  "stop_reason": "end_turn",
+  "session_id": "c6285c8a-2d0c-4120-ba0c-f9292ba61a63",
+  "total_cost_usd": 0.19864215000000002,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 27885,
+    "cache_read_input_tokens": 86178,
+    "output_tokens": 4426,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 27885
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 730,
+        "cache_read_input_tokens": 42618,
+        "cache_creation_input_tokens": 3631,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3631,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4426,
+      "cacheReadInputTokens": 86178,
+      "cacheCreationInputTokens": 27885,
+      "webSearchRequests": 0,
+      "costUSD": 0.19682715,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "e5289891-8d09-47e1-b4b1-ea2719b5671f"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 146932,
+  "duration_api_ms": 147748,
+  "ttft_ms": 1912,
+  "ttft_stream_ms": 1882,
+  "time_to_request_ms": 203,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 7.1,\n      \"sd_arm1\": 1.2,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 7.1,\n      \"sd_arm2\": 1.2,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 1.96,\n      \"sd_arm1\": 5.97,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 4.88,\n      \"sd_arm2\": 5.88,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 1.18,\n      \"sd_arm1\": 1.66,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 14.85,\n      \"sd_arm2\": 46.32,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 1.76,\n      \"sd_arm1\": 0.19,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 2.02,\n      \"sd_arm2\": 0.71,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 2.73,\n      \"sd_arm1\": 0.70,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 2.56,\n      \"sd_arm2\": 0.97,\n      \"n_arm2\": 17\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **5 rows** covering HbA1c, PI, BOP (Gingival Bleeding Index mapped to BOP), PPD, and CAL (Probing Attachment Loss/PAL mapped to CAL).\n- **Timepoint**: Both 2-month and 3-month follow-ups exist, but both map to `3-4_months`. The **3-month (final visit)** data were used as the primary endpoint, avoiding duplicate-bin rows.\n- **Subgroup `SI_plus_mouthrinse`**: The NSPT arm received full-mouth scaling/root planing **plus** 0.12% chlorhexidine mouthrinse for 14 days \u2014 an antiseptic mouthrinse addition \u2014 compared to OHI-only controls.\n- **N**: 15 completers in NSPT, 17 in OHI (as reported at final visit).\n- All values sourced directly from Tables 2, 3, and 4.",
+  "stop_reason": "end_turn",
+  "session_id": "86a556ee-7a16-4857-ba83-55e7d3bb4655",
+  "total_cost_usd": 0.3064541,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 33694,
+    "cache_read_input_tokens": 86192,
+    "output_tokens": 10172,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 33694
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 853,
+        "cache_read_input_tokens": 42807,
+        "cache_creation_input_tokens": 9251,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 9251,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 10172,
+      "cacheReadInputTokens": 86192,
+      "cacheCreationInputTokens": 33694,
+      "webSearchRequests": 0,
+      "costUSD": 0.3048051,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "3519f2ba-ef7f-4109-832e-648dd306d82a"
+}

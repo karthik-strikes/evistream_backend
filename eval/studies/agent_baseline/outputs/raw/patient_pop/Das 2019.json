@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 57155,
+  "duration_api_ms": 57734,
+  "ttft_ms": 2309,
+  "ttft_stream_ms": 1815,
+  "time_to_request_ms": 163,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 38,\n  \"age_arm_a_sd\": 11,\n  \"age_arm_b\": 40,\n  \"age_arm_b_sd\": 12,\n  \"pct_female_arm_a\": 41,\n  \"pct_female_arm_b\": 35,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.58,\n  \"baseline_hba1c_arm_b\": 8.35,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"NR\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"Subjects with type 2 DM; Diabetics presented with moderate to severe periodontitis (where 30% or more of the teeth have \u22654 mm clinical attachment loss); Subjects \u226530 years of age regardless of gender; Subjects with no evidence of other oral and systemic diseases; Subjects under treatment of an endocrinologist\",\n  \"exclusion_criteria\": \"Subjects with uncontrolled DM; Subjects who have undergone periodontal therapy during last 6 months; Subjects administered antibiotic during last 3 months; Subjects with <20 natural teeth; Subjects allergic to tetracycline and its derivatives; Pregnant and lactating mothers; Persons consuming any form of tobacco\",\n  \"n_randomised\": 51,\n  \"n_evaluated\": \"51 at 3 months\"\n}\n```\n\n**Extraction notes:**\n\n- This is a 3-arm RCT. Arm A = Group I (SRP alone, the primary periodontal intervention); Arm B = Group III (control, no treatment). Group II (SRP + doxycycline) is a second active arm not mapped here.\n- Age and SD are integers as reported in Table 1 (38\u00b111 and 40\u00b112).\n- Female % derived from reported counts: 7/17 = 41% (arm A); 6/17 = 35% (arm B).\n- HbA1c values from Table 3 Day 0 rows: 7.58% and 8.35% \u2014 both in the fair range (7\u20139%).\n- Duration since diabetes diagnosis not reported anywhere in the paper.\n- Tobacco use: smokers explicitly excluded (\"Persons consuming any form of tobacco\").\n- All 51 randomised participants completed the 3-month follow-up (0 lost per CONSORT flowchart).",
+  "stop_reason": "end_turn",
+  "session_id": "8e3425d4-6d73-4131-ad67-8cc048f61189",
+  "total_cost_usd": 0.17635125,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25343,
+    "cache_read_input_tokens": 84350,
+    "output_tokens": 3612,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25343
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 629,
+        "cache_read_input_tokens": 40790,
+        "cache_creation_input_tokens": 2917,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2917,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3612,
+      "cacheReadInputTokens": 84350,
+      "cacheCreationInputTokens": 25343,
+      "webSearchRequests": 0,
+      "costUSD": 0.17453625,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "d91046de-47ea-47a5-9c2a-a632d80bc3bd"
+}

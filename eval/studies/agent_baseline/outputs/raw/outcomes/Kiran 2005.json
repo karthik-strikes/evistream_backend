@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 66566,
+  "duration_api_ms": 67850,
+  "ttft_ms": 1760,
+  "ttft_stream_ms": 1722,
+  "time_to_request_ms": 204,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 6.51,\n      \"sd_arm1\": 0.80,\n      \"n_arm1\": 22,\n      \"mean_arm2\": 7.31,\n      \"sd_arm2\": 2.08,\n      \"n_arm2\": 22\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 0.29,\n      \"sd_arm1\": 0.17,\n      \"n_arm1\": 22,\n      \"mean_arm2\": 1.54,\n      \"sd_arm2\": 0.88,\n      \"n_arm2\": 22\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 0.26,\n      \"sd_arm1\": 0.18,\n      \"n_arm1\": 22,\n      \"mean_arm2\": 0.84,\n      \"sd_arm2\": 0.51,\n      \"n_arm2\": 22\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 1.80,\n      \"sd_arm1\": 0.25,\n      \"n_arm1\": 22,\n      \"mean_arm2\": 2.26,\n      \"sd_arm2\": 0.63,\n      \"n_arm2\": 22\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.80,\n      \"sd_arm1\": 1.03,\n      \"n_arm1\": 22,\n      \"mean_arm2\": 2.87,\n      \"sd_arm2\": 1.03,\n      \"n_arm2\": 22\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 23.90,\n      \"sd_arm1\": 12.73,\n      \"n_arm1\": 22,\n      \"mean_arm2\": 51.91,\n      \"sd_arm2\": 27.38,\n      \"n_arm2\": 22\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **6 rows** total, all at the 3-month follow-up (`3-4_months`), all `SI_vs_usual_care` (arm 1 = full-mouth scaling & root planing; arm 2 = no periodontal treatment).\n- All values taken directly from **Table 3** (PI, GI, PPD, CAL, BOP) and **Table 4** (HbA1c) at the 3rd-month timepoint.\n- n=22 per arm from Table 1 (no per-timepoint n is reported in Tables 3\u20134; this is the stated group size with no attrition explicitly quantified in the tables).\n- The GI control SD at 3 months is 0.51 per Table 3 (the narrative text says 0.52 \u2014 a minor transcription discrepancy; the table value was used as primary source).",
+  "stop_reason": "end_turn",
+  "session_id": "3e16c2a9-0517-4288-8e07-cfafe7612f83",
+  "total_cost_usd": 0.18873674999999998,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 24981,
+    "cache_read_input_tokens": 83180,
+    "output_tokens": 4563,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 24981
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 947,
+        "cache_read_input_tokens": 39797,
+        "cache_creation_input_tokens": 3548,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3548,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001644,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4563,
+      "cacheReadInputTokens": 83180,
+      "cacheCreationInputTokens": 24981,
+      "webSearchRequests": 0,
+      "costUSD": 0.18709274999999997,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "b1c7dee3-143a-48e7-a696-55d22a4a0be3"
+}

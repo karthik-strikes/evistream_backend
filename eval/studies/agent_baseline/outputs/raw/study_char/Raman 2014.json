@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 29095,
+  "duration_api_ms": 29825,
+  "ttft_ms": 1582,
+  "ttft_stream_ms": 1554,
+  "time_to_request_ms": 128,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Malaysia\",\n  \"setting\": \"university clinic (outpatient Diabetes Clinic, University of Malaya Medical Centre; Periodontology Clinic, Faculty of Dentistry, University of Malaya)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel RCT (not double-blinded)\",\n  \"recruitment_period\": \"May 2010 to April 2011\",\n  \"funding_source\": \"University of Malaya Research grants P0027/2009B and RG344/11\",\n  \"notes\": \"Sample size calculated for 80% power to detect 1% difference in HbA1c; 15 subjects per arm required, 20 recruited per arm to allow for dropout. Authors acknowledge trial was not double-blinded as a limitation. No conflicts of interest declared.\"\n}\n```\n\n**Source notes per field:**\n- **country**: All author affiliations are at University of Malaya, Kuala Lumpur, Malaysia.\n- **setting**: Participants screened from \"outpatient Diabetes Clinic of the University of Malaya Medical Centre\" and treated at the \"Periodontology Clinic at the Faculty of Dentistry, University of Malaya\" \u2014 same institution, single site.\n- **number_of_centres**: Single institution (University of Malaya).\n- **trial_design**: Title calls it \"a randomised clinical trial\"; 2 arms (NSPT vs OHI); parallel groups; paper explicitly states it \"was not double-blinded.\"\n- **recruitment_period**: Results section: \"Screening and treatment of subjects commenced from May 2010 till April 2011.\"\n- **funding_source**: Funding section and Acknowledgements both state University of Malaya grants P0027/2009B and RG344/11.\n- **notes**: Sample size calculation in Methods; blinding limitation in Discussion; competing interests statement confirms no conflicts.",
+  "stop_reason": "end_turn",
+  "session_id": "ec7d4b2e-b35e-4fb0-bf0e-380437420c09",
+  "total_cost_usd": 0.14378535,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25059,
+    "cache_read_input_tokens": 85407,
+    "output_tokens": 1529,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25059
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 456,
+        "cache_read_input_tokens": 42412,
+        "cache_creation_input_tokens": 1011,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1011,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1529,
+      "cacheReadInputTokens": 85407,
+      "cacheCreationInputTokens": 25059,
+      "webSearchRequests": 0,
+      "costUSD": 0.14254335,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "49c7922a-c2db-4a48-8bd7-a076306f7397"
+}

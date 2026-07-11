@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 52043,
+  "duration_api_ms": 52857,
+  "ttft_ms": 2014,
+  "ttft_stream_ms": 1914,
+  "time_to_request_ms": 173,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": \"NR\",\n  \"age_arm_a_sd\": \"NR\",\n  \"age_arm_b\": \"NR\",\n  \"age_arm_b_sd\": \"NR\",\n  \"pct_female_arm_a\": \"NR\",\n  \"pct_female_arm_b\": \"NR\",\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.9,\n  \"baseline_hba1c_arm_b\": 8.08,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"NR\",\n  \"tobacco_use\": \"NR\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"Patients aged above 30 years of either sex, with type 2 DM; Absence of any major diabetic complications; Moderate to advanced periodontitis (30% or more of the teeth examined having \u22654 mm probing depth); No evidence of any systemic disease other than diabetes being a risk factor for periodontitis\",\n  \"exclusion_criteria\": \"Patients with uncontrolled DM; Patients who have undergone periodontal treatment in the 6 month period prior to the study; History of antibiotic administration within the last 3 months; Less than 16 remaining natural teeth\",\n  \"n_randomised\": 45,\n  \"n_evaluated\": \"45 at 3 months\"\n}\n```\n\n**Extraction notes:**\n\n- **Arm mapping:** This is a 3-arm trial. Arm A = Group A (SRP only, the primary periodontal intervention); Arm B = Group C (no treatment, control). Group B (SRP + doxycycline) is a second intervention arm not captured in this two-arm schema.\n- **Age/sex:** No per-arm (or overall) age or sex breakdown is reported anywhere in the paper. Inclusion criteria state \"aged above 30 years of either sex\" but no baseline demographic table exists.\n- **HbA1c:** From Table 2 \u2014 Group A baseline 7.9 \u00b1 0.7%; Group C (control) baseline 8.08 \u00b1 0.7%. Both fall in the \"fair\" metabolic control range (~7\u20139%).\n- **Tobacco/alcohol:** Neither smoking nor alcohol status is mentioned in the inclusion/exclusion criteria or elsewhere in the paper.\n- **n_evaluated:** Table 3 shows n=15 for each group at the end of the study, consistent with no reported dropouts (45 total at 3 months).",
+  "stop_reason": "end_turn",
+  "session_id": "e1e31657-4bd9-4f6b-b91f-ff06660b3dba",
+  "total_cost_usd": 0.14690205,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 19581,
+    "cache_read_input_tokens": 79011,
+    "output_tokens": 3196,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 19581
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 634,
+        "cache_read_input_tokens": 35449,
+        "cache_creation_input_tokens": 2496,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2496,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3196,
+      "cacheReadInputTokens": 79011,
+      "cacheCreationInputTokens": 19581,
+      "webSearchRequests": 0,
+      "costUSD": 0.14508705,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "8c6dabb1-b91b-4eaf-9431-cd52f368da09"
+}

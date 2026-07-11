@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 117137,
+  "duration_api_ms": 117782,
+  "ttft_ms": 1623,
+  "ttft_stream_ms": 1597,
+  "time_to_request_ms": 129,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 6.7,\n      \"sd_arm1\": 2.0,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 8.1,\n      \"sd_arm2\": 2.6,\n      \"n_arm2\": 15\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 18.1,\n      \"sd_arm1\": 15.1,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 63.7,\n      \"sd_arm2\": 15.3,\n      \"n_arm2\": 15\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 4.2,\n      \"sd_arm1\": 4.7,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 33.8,\n      \"sd_arm2\": 15.9,\n      \"n_arm2\": 15\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 1.9,\n      \"sd_arm1\": 0.3,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 3.1,\n      \"sd_arm2\": 0.6,\n      \"n_arm2\": 15\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 2.1,\n      \"sd_arm1\": 0.3,\n      \"n_arm1\": 15,\n      \"mean_arm2\": 3.3,\n      \"sd_arm2\": 0.7,\n      \"n_arm2\": 15\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **5 rows** extracted, all at the single reported follow-up timepoint (3 months / 12 weeks \u2192 `3-4_months`).\n- **Subgroup = `SI_plus_antimicrobial`**: arm 1 received SI (ultrasonic scaling + SRP) plus subgingival 10% povidone iodine irrigation (local antimicrobial) and chlorhexidine 0.2% mouthrinse; arm 2 received delayed treatment = no active periodontal therapy during the study (usual care). The povidone iodine subgingival irrigation is the primary antimicrobial adjunct.\n- **BOP**: the paper's GBI (Ainamo & Bay gingival bleeding index, % bleeding sites) maps to `BOP`; no L\u00f6e\u2013Silness GI was reported.\n- **n = 15 per arm** at 3 months (4 drop-outs removed post-randomisation, 2 per arm).\n- No 6-week data appear in the paper's tables; only the 3-month endpoint is tabulated.\n- All values are sourced from Table 2 (periodontal parameters) and Fig. 2 / in-text results (HbA1c).",
+  "stop_reason": "end_turn",
+  "session_id": "caa89c91-8444-4e4b-85f3-3d1ee288f678",
+  "total_cost_usd": 0.24418930000000005,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 27334,
+    "cache_read_input_tokens": 82376,
+    "output_tokens": 7688,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 27334
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 918,
+        "cache_read_input_tokens": 38995,
+        "cache_creation_input_tokens": 6703,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 6703,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001639,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 7688,
+      "cacheReadInputTokens": 82376,
+      "cacheCreationInputTokens": 27334,
+      "webSearchRequests": 0,
+      "costUSD": 0.24255030000000005,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "62619c74-f4a4-45bc-b174-0127cbe67aa8"
+}

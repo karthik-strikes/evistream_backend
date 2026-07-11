@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 68042,
+  "duration_api_ms": 69294,
+  "ttft_ms": 2451,
+  "ttft_stream_ms": 1865,
+  "time_to_request_ms": 162,
+  "num_turns": 4,
+  "result": "```json\n{\n  \"age_arm_a\": 58.2,\n  \"age_arm_a_sd\": 9.7,\n  \"age_arm_b\": 55.5,\n  \"age_arm_b_sd\": 10.0,\n  \"pct_female_arm_a\": 38,\n  \"pct_female_arm_b\": 37,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 8.1,\n  \"baseline_hba1c_arm_b\": 8.1,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"Mean 8.3 (SD 7.4) years (IPT); mean 8.7 (SD 8.4) years (CPT); \u22656 months required for inclusion\",\n  \"tobacco_use\": \"Current: 18 (14%) IPT, 19 (15%) CPT; Former: 40 (30%) IPT, 42 (32%) CPT; Never: 75 (56%) IPT, 70 (53%) CPT\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"type 2 diabetes (WHO diagnostic criteria) for 6 months or longer, moderate-to-severe periodontitis (\u226520 periodontal pockets with probing pocket depths of >4 mm and marginal alveolar bone loss of >30%), and at least 15 teeth\",\n  \"exclusion_criteria\": \"uncontrolled systemic diseases other than diabetes (cardiovascular diseases [including hypertension], liver diseases, pulmonary diseases, end-stage renal failure, or neoplasm); hepatitis B or HIV infection; chronic treatment (>2 weeks) with drugs known to affect periodontal tissues (phenytoin or ciclosporin); chronic systemic antibiotic treatment; and pregnancy or lactation\",\n  \"n_randomised\": 264,\n  \"n_evaluated\": \"264 ITT (133 IPT, 131 CPT); 244 per-protocol at 12 months (121 IPT, 123 CPT); 20 (8%) lost to follow-up by 12 months\"\n}\n```\n\n**Key extraction notes:**\n\n- **Arm A = IPT** (intensive periodontal treatment, n=133); **Arm B = CPT** (control periodontal treatment, n=131)\n- **Age**: Table 1 gives 58.2 (SD 9.7) for IPT and 55.5 (SD 10.0) for CPT\n- **Sex**: 51/133 females (38%) in IPT; 48/131 females (37%) in CPT \u2014 paper rounds to these percentages\n- **HbA1c**: Both arms reported identically as 8.1% (SD 1.7) at baseline; classified as **poor** (>8%)\n- **Tobacco**: Smokers were not excluded \u2014 smoking status was a minimisation variable; current/former/never breakdown reported from Table 1\n- **Alcohol**: Not mentioned anywhere in the paper\n- **n_evaluated**: ITT used last-measure-carried-forward (all 264 included); per-protocol at 12 months = 244 (12 lost from IPT, 8 from CPT)",
+  "stop_reason": "end_turn",
+  "session_id": "be867c74-b651-45ea-be15-f12da4279126",
+  "total_cost_usd": 0.2461256,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 36826,
+    "cache_read_input_tokens": 142817,
+    "output_tokens": 4224,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 36826
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 806,
+        "cache_read_input_tokens": 51987,
+        "cache_creation_input_tokens": 3203,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3203,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 6,
+      "outputTokens": 4224,
+      "cacheReadInputTokens": 142817,
+      "cacheCreationInputTokens": 36826,
+      "webSearchRequests": 0,
+      "costUSD": 0.2443206,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "2e245e96-58a3-4329-9194-0cb50c1e3b9f"
+}

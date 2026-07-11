@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 37033,
+  "duration_api_ms": 38120,
+  "ttft_ms": 2076,
+  "ttft_stream_ms": 2043,
+  "time_to_request_ms": 160,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Test group (n = 44)\",\n      \"comparison_summary\": \"Immediate SRP + systemic antibiotics (amoxicillin + metronidazole) + chlorhexidine irrigation + OHI vs delayed periodontal therapy (no active treatment during follow-up)\",\n      \"intervention_description\": \"Full-mouth SRP performed in a single two-hour session using ultrasonic apparatus (Cavitron Select SPC, Dentsply professional) and Gracey curettes (Hu-Friedy); local anaesthesia applied when needed; SRP associated with subgingival irrigation by chlorhexidine 0.12% mouthwash (Peridex oral rinse, 3M ESPE Dental Products); immediately after SRP, systemic antibiotics started: metronidazole 400 mg three times daily for 2 weeks and amoxicillin 500 mg three times daily for 2 weeks; oral hygiene instructions (OHI); free dental care products for periodontal maintenance during 3-month follow-up\",\n      \"n_in_arm\": 44,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Control group (n = 44)\",\n      \"comparison_summary\": \"Immediate SRP + systemic antibiotics (amoxicillin + metronidazole) + chlorhexidine irrigation + OHI vs delayed periodontal therapy (no active treatment during follow-up)\",\n      \"intervention_description\": \"Delayed periodontal therapy: no periodontal interventions were performed during the 3-month follow-up period. After the end of the follow-up period, the same procedures as the test group (full-mouth SRP, antibiotics combination, OHI) were applied for ethical reasons.\",\n      \"n_in_arm\": 44,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **2 arms** identified: test group (immediate therapy) and control group (delayed/no treatment during follow-up).\n- **Test group** (`SI_plus_systemic_local_antimicrobial`): One-stage full-mouth SRP in a single 2-hour session with ultrasonic + curettes, chlorhexidine 0.12% subgingival irrigation, plus systemic amoxicillin 500 mg + metronidazole 400 mg (both TID \u00d7 2 weeks), and OHI. The chlorhexidine here was used as an irrigant adjunct to SRP rather than a standalone mouthrinse regimen, and the dominant active adjunct is the systemic antibiotic combination, so `SI_plus_systemic_local_antimicrobial` is the correct category.\n- **Control group** (`usual_care`): Received no active periodontal treatment during the 3-month follow-up (delayed therapy was given only after the trial ended, for ethical reasons).",
+  "stop_reason": "end_turn",
+  "session_id": "913c1c2f-f335-4fa2-8f34-ade1d3f56b27",
+  "total_cost_usd": 0.1518852,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 23770,
+    "cache_read_input_tokens": 83759,
+    "output_tokens": 2410,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 23770
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 767,
+        "cache_read_input_tokens": 40563,
+        "cache_creation_input_tokens": 1571,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1571,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2410,
+      "cacheReadInputTokens": 83759,
+      "cacheCreationInputTokens": 23770,
+      "webSearchRequests": 0,
+      "costUSD": 0.15043020000000001,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "3675e9b4-38b3-4eae-a174-feda9facc543"
+}

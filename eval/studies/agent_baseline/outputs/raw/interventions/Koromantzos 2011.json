@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 31960,
+  "duration_api_ms": 32712,
+  "ttft_ms": 2088,
+  "ttft_stream_ms": 2021,
+  "time_to_request_ms": 134,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"intervention group (IG)\",\n      \"comparison_summary\": \"SRP vs supragingival prophylaxis (delayed SRP control)\",\n      \"intervention_description\": \"non-surgical periodontal therapy in the form of full-mouth scaling and root planing (SRP), in two sessions, 1 week apart, with the use of an ultrasonic scaler (Minipiezon Electromedical Systems EMS, Nyon, Switzerland) and hand instruments, under local anaesthesia. All subjects received oral hygiene instructions after each visit, while the IG received additional supportive SRP at each visit, if judged necessary (presence of sites with BOP and/or increased PPD).\",\n      \"n_in_arm\": 30,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"control group (CG)\",\n      \"comparison_summary\": \"SRP vs supragingival prophylaxis (delayed SRP control)\",\n      \"intervention_description\": \"periodontal prophylaxis at baseline, in the form of supragingival removal of all deposits (plaque and calculus) with an ultrasonic scaler. SRP was performed in the CG after the completion of the study (after the 6-month visit).\",\n      \"n_in_arm\": 30,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"supragingival_only\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **IG (SI_alone):** Full-mouth SRP in two sessions 1 week apart, ultrasonic scaler + hand instruments, local anaesthesia, plus OHI and supportive SRP at recall visits if indicated. No antibiotics were used (explicitly stated in the Discussion).\n- **CG (supragingival_only):** Baseline supragingival prophylaxis only (plaque and calculus removal with ultrasonic scaler); actual SRP was deferred until after the 6-month endpoint \u2014 making this a delayed/minimal-treatment control, classified as `supragingival_only`.\n- Both arms: n=30, 6-month follow-up.",
+  "stop_reason": "end_turn",
+  "session_id": "3e09725e-580c-4966-9e34-67fe572849dc",
+  "total_cost_usd": 0.1293399,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 19806,
+    "cache_read_input_tokens": 80008,
+    "output_tokens": 1973,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 19806
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 553,
+        "cache_read_input_tokens": 36812,
+        "cache_creation_input_tokens": 1358,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1358,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1973,
+      "cacheReadInputTokens": 80008,
+      "cacheCreationInputTokens": 19806,
+      "webSearchRequests": 0,
+      "costUSD": 0.12788490000000002,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "fd1413db-b69d-45b9-b12e-1018b7e080c0"
+}

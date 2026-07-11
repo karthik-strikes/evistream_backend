@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 39149,
+  "duration_api_ms": 42062,
+  "ttft_ms": 2662,
+  "ttft_stream_ms": 2124,
+  "time_to_request_ms": 165,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Test Group-1 (SRP+MET+OHI)\",\n      \"comparison_summary\": \"SRP+MET+OHI vs SRP+OHI vs OHI only (control)\",\n      \"intervention_description\": \"SRP through a combination of ultrasonic scaling (average 60 min on medium intensity full mouth in single sitting) and hand instrumentation (using sharpened and sterilized curesttes) to smoothen irregular areas of root surface until the surfaces were smooth followed by MET 400 mg \u00d7 3 for 10 days along with warm salt water rinses for 3\u20135 days and OHI\",\n      \"n_in_arm\": 50,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Test Group-2 (SRP+OHI)\",\n      \"comparison_summary\": \"SRP+MET+OHI vs SRP+OHI vs OHI only (control)\",\n      \"intervention_description\": \"Participants in test group-2 received the same intervention as test group-1 except MET [i.e., SRP through a combination of ultrasonic scaling (average 60 min on medium intensity full mouth in single sitting) and hand instrumentation (using sharpened and sterilized curesttes) to smoothen irregular areas of root surface until the surfaces were smooth, along with warm salt water rinses for 3\u20135 days and OHI]\",\n      \"n_in_arm\": 50,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Control Group-3 (OHI+DT)\",\n      \"comparison_summary\": \"SRP+MET+OHI vs SRP+OHI vs OHI only (control)\",\n      \"intervention_description\": \"The control-group received only OHI and was provided periodontal therapy at end of trial\",\n      \"n_in_arm\": 50,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\nThree arms extracted from Qureshi et al. 2021 (BMC Oral Health), a three-arm parallel RCT (n=150, 50/arm):\n\n- **Test Group-1**: SRP (ultrasonic + hand instrumentation, full-mouth single sitting ~60 min) + systemic metronidazole 400 mg \u00d73 for 10 days + warm salt water rinses + OHI \u2192 `SI_plus_systemic_local_antimicrobial`\n- **Test Group-2**: Same SRP + OHI (no metronidazole) \u2192 `SI_alone`\n- **Control Group-3**: OHI only (delayed periodontal therapy offered at end of trial) \u2192 `usual_care`\n\nAll arms followed to 6 months (with interim assessments at 1 and 3 months).",
+  "stop_reason": "end_turn",
+  "session_id": "8b56d9c4-b725-49b1-a92b-4d5ce5e930ae",
+  "total_cost_usd": 0.15912915,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25475,
+    "cache_read_input_tokens": 85443,
+    "output_tokens": 2433,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25475
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 778,
+        "cache_read_input_tokens": 42249,
+        "cache_creation_input_tokens": 1590,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1590,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2433,
+      "cacheReadInputTokens": 85443,
+      "cacheCreationInputTokens": 25475,
+      "webSearchRequests": 0,
+      "costUSD": 0.15767415,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "bb4e2752-2212-4909-b5ca-8e2d7b3e77e5"
+}

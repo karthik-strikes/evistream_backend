@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 21853,
+  "duration_api_ms": 22451,
+  "ttft_ms": 1904,
+  "ttft_stream_ms": 1878,
+  "time_to_request_ms": 128,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Japan\",\n  \"setting\": \"university hospital (outpatient medical and dental clinics, Okayama University Hospital)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm, single-masked, parallel-design, single centre, randomized clinical trial\",\n  \"recruitment_period\": \"April 2014 to March 2016\",\n  \"funding_source\": \"Ministry of Health, Labour and Welfare: 25110601\",\n  \"notes\": \"Sample size calculated assuming \u22650.8% (SD 0.8%) reduction in HbA1c at 3 months; 17 per group required for 80% power (alpha=0.05, 2-tailed unpaired t-test), inflated to 20 per group assuming 15% attrition. No competing interests declared.\"\n}\n```\n\n**Sources within the paper:**\n- **country/setting/centres**: Affiliations (Okayama University, Japan) and Methods (\"single center \u2026 Okayama University Hospital\"; \"outpatient medical and dental clinics in Japan\")\n- **trial_design**: Methods \u2013 Trial design section: \"single-masked, parallel-design, single center, randomized clinical trial\" with two arms (control vs. periodontal treatment)\n- **recruitment_period**: Abstract and Results: \"enrolled between April 2014 and March 2016\"\n- **funding_source**: Funding statement: \"supported by a grant from the Ministry of Health, Labour and Welfare: 25110601\"\n- **notes**: Sample size section (Methods) and Competing interests statement",
+  "stop_reason": "end_turn",
+  "session_id": "c65c3717-5b72-4f11-83ce-2645b73b84dd",
+  "total_cost_usd": 0.16226055,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 31049,
+    "cache_read_input_tokens": 91716,
+    "output_tokens": 1137,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 31049
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 380,
+        "cache_read_input_tokens": 48717,
+        "cache_creation_input_tokens": 696,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 696,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1137,
+      "cacheReadInputTokens": 91716,
+      "cacheCreationInputTokens": 31049,
+      "webSearchRequests": 0,
+      "costUSD": 0.16101855,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "ea7855d7-6671-4477-9c73-9cb89fc96f70"
+}

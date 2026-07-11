@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 108564,
+  "duration_api_ms": 109398,
+  "ttft_ms": 1883,
+  "ttft_stream_ms": 1853,
+  "time_to_request_ms": 133,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 0.29,\n      \"sd_arm1\": 0.12,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 1.65,\n      \"sd_arm2\": 0.31,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 0.28,\n      \"sd_arm1\": 0.09,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 1.68,\n      \"sd_arm2\": 0.34,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 0.66,\n      \"sd_arm1\": 0.27,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 1.70,\n      \"sd_arm2\": 0.30,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 0.64,\n      \"sd_arm1\": 0.26,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 1.75,\n      \"sd_arm2\": 0.32,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.17,\n      \"sd_arm1\": 0.43,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 3.10,\n      \"sd_arm2\": 0.56,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.15,\n      \"sd_arm1\": 0.42,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 3.13,\n      \"sd_arm2\": 0.57,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.77,\n      \"sd_arm1\": 0.62,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 3.40,\n      \"sd_arm2\": 0.62,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.75,\n      \"sd_arm1\": 0.62,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 3.44,\n      \"sd_arm2\": 0.64,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 39.07,\n      \"sd_arm1\": 11.68,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 76.99,\n      \"sd_arm2\": 11.26,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 38.96,\n      \"sd_arm1\": 11.62,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 78.88,\n      \"sd_arm2\": 11.84,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 7.49,\n      \"sd_arm1\": 1.83,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 7.96,\n      \"sd_arm2\": 2.65,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 7.29,\n      \"sd_arm1\": 1.61,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 8.06,\n      \"sd_arm2\": 2.72,\n      \"n_arm2\": 50\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- All 12 rows drawn from **Table 3** (the primary RCT comparison: Treatment group [SRP, n=50] vs No-treatment group [usual care, n=50]).\n- **n=50 at all timepoints** \u2014 the paper used ITT with last-observation-carried-forward for the 9 withdrawals after 3 months (5 from T, 4 from NT), preserving n=50 per arm.\n- **Subgroup = SI_vs_usual_care** throughout \u2014 the intervention was SRP (subgingival instrumentation) only, with no systemic antimicrobial or mouthrinse added.\n- PPD extracted as the continuous mean mm value (not the % site-distribution breakdowns).\n- BOP reported as % of sites with bleeding on probing.\n- PESA and PISA were not extracted as they are not in the allowed outcome list.",
+  "stop_reason": "end_turn",
+  "session_id": "c38050f4-f639-4397-a62b-d212800313b5",
+  "total_cost_usd": 0.29247995000000004,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 36421,
+    "cache_read_input_tokens": 91424,
+    "output_tokens": 8454,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 36421
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1643,
+        "cache_read_input_tokens": 48041,
+        "cache_creation_input_tokens": 6744,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 6744,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 8454,
+      "cacheReadInputTokens": 91424,
+      "cacheCreationInputTokens": 36421,
+      "webSearchRequests": 0,
+      "costUSD": 0.29083095000000003,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "ac679886-a5ec-4db3-a3f7-a4d87d933c7e"
+}

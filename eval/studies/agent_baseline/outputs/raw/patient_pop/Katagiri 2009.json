@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 63299,
+  "duration_api_ms": 63890,
+  "ttft_ms": 1904,
+  "ttft_stream_ms": 1492,
+  "time_to_request_ms": 124,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 60.3,\n  \"age_arm_a_sd\": 9.9,\n  \"age_arm_b\": 59.0,\n  \"age_arm_b_sd\": 4.8,\n  \"pct_female_arm_a\": 34.4,\n  \"pct_female_arm_b\": 64.7,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.2,\n  \"baseline_hba1c_arm_b\": 6.9,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"Intervention: 11.3 \u00b1 6.4 years (median 6, range 3\u201325); Control: 8.8 \u00b1 7.5 years (median 9.0, range 1\u201330)\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"age of 39\u201375 years, HbA1c 6.5\u201310.0%, without severe diabetic complications, no evidence of systemic diseases other than diabetes as a risk factor for periodontitis, no systemic antibiotics during the preceding 3 months, no pregnancy or lactation, no allergy to tetracycline, no smoking, and no modifications in the treatment of diabetes during the preceding 2 months; at least 11 remaining teeth, at least two pocket sites with probing depth 4 mm or more (indicated as mild to severe periodontitis), no periodontal treatment during the preceding 6 months\",\n  \"exclusion_criteria\": \"NR\",\n  \"n_randomised\": 49,\n  \"n_evaluated\": \"32 (intervention) and 17 (control) at 6 months\"\n}\n```\n\n**Key extraction notes:**\n\n- Ages and SDs from Table 1A: intervention 60.3 \u00b1 9.9, control 59.0 \u00b1 4.8.\n- Sex: intervention 21M/11F \u2192 34.4% female; control 6M/11F \u2192 64.7% female.\n- Diabetes type: explicitly T2DM throughout.\n- HbA1c: intervention 7.2 \u00b1 0.9%, control 6.9 \u00b1 0.9% \u2192 classified as **fair** (intervention arm sits in the 7\u20138% band).\n- Smoking excluded by inclusion criteria (\"no smoking\"); alcohol not mentioned \u2192 NR.\n- Exclusion criteria not listed as a separate section; negatives are embedded within inclusion criteria \u2192 NR.\n- 63 recruited \u2192 49 fulfilled criteria and were randomised (32 intervention : 17 control by 2:1 envelope method); no dropouts reported; all 49 analysed through 6 months.",
+  "stop_reason": "end_turn",
+  "session_id": "4a90269a-1e2c-478a-9e8a-efae268bf364",
+  "total_cost_usd": 0.1810373,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 24886,
+    "cache_read_input_tokens": 83516,
+    "output_tokens": 4056,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 24886
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 694,
+        "cache_read_input_tokens": 39954,
+        "cache_creation_input_tokens": 3296,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3296,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4056,
+      "cacheReadInputTokens": 83516,
+      "cacheCreationInputTokens": 24886,
+      "webSearchRequests": 0,
+      "costUSD": 0.1792323,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "493de2c9-b229-41a7-9f27-5815801340c2"
+}

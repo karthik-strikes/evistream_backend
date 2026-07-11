@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 169259,
+  "duration_api_ms": 171181,
+  "ttft_ms": 1921,
+  "ttft_stream_ms": 1877,
+  "time_to_request_ms": 140,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 4.59,\n      \"sd_arm1\": 0.72,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 5.03,\n      \"sd_arm2\": 0.69,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 7.10,\n      \"sd_arm1\": 0.64,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 7.75,\n      \"sd_arm2\": 0.58,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 1.59,\n      \"sd_arm1\": 0.18,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 2.19,\n      \"sd_arm2\": 1.08,\n      \"n_arm2\": 20\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 1.05,\n      \"sd_arm1\": 0.04,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 1.86,\n      \"sd_arm2\": 0.04,\n      \"n_arm2\": 20\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Arm 1** = Group A: scaling (SI) + 0.12% chlorhexidine mouthwash + brushing (n=20)\n- **Arm 2** = Group C: brushing only (usual-care control, n=20)\n- Group B (mouthwash + brushing, no scaling) was excluded as arm 2 because it is an active comparator, not a usual-care/no-treatment arm\n- **Subgroup**: `SI_plus_mouthrinse` \u2014 the intervention arm (A) combines SI with an antiseptic (CHX) mouthrinse vs usual care (C)\n- **Timepoint**: 3 months post-intervention \u2192 `3-4_months`; all 60 participants completed the study\n- **FBS** (fasting blood sugar) was not extracted \u2014 not in the allowed outcome types\n- **CAL** (clinical attachment level) was not reported in this paper\n- Values are from Table 1, \"2nd\" (post-intervention) rows: PPD, HbA1c, GI score, PI score",
+  "stop_reason": "end_turn",
+  "session_id": "a5747375-3c0a-431f-b6bb-a212f7e9bdab",
+  "total_cost_usd": 0.28573554999999995,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25279,
+    "cache_read_input_tokens": 78001,
+    "output_tokens": 11059,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25279
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1964,
+        "cache_read_input_tokens": 34616,
+        "cache_creation_input_tokens": 9027,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 9027,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001639,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 11059,
+      "cacheReadInputTokens": 78001,
+      "cacheCreationInputTokens": 25279,
+      "webSearchRequests": 0,
+      "costUSD": 0.28409654999999995,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "b0d04c21-395e-4d3e-9331-b8d83357acf9"
+}

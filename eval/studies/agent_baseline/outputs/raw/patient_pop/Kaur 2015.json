@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 66268,
+  "duration_api_ms": 66733,
+  "ttft_ms": 2753,
+  "ttft_stream_ms": 2299,
+  "time_to_request_ms": 176,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 51.82,\n  \"age_arm_a_sd\": 5.85,\n  \"age_arm_b\": 52.94,\n  \"age_arm_b_sd\": 6.03,\n  \"pct_female_arm_a\": 56.0,\n  \"pct_female_arm_b\": 48.0,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 8.17,\n  \"baseline_hba1c_arm_b\": 7.87,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"8.57 \u00b1 6.39 years (treatment group); 7.05 \u00b1 4.43 years (no-treatment group)\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"age 45-60 years, presence of \u226512 teeth (excluding third molars), no change in medication use (oral hypoglycemics, insulin, etc.) during the 2 months before the study or during the study, and a clinical diagnosis of moderate or severe generalized chronic periodontitis\",\n  \"exclusion_criteria\": \"cardiovascular disease, chronic respiratory disease, rheumatoid arthritis, or any other systemic disease that could influence the course of periodontal disease; pregnant or lactating; current or ex-smokers; major diabetic complications; history of systemic antibiotic use within the previous 3 months or periodontal treatment during the previous 6 months\",\n  \"n_randomised\": 100,\n  \"n_evaluated\": \"100 (ITT) at 6 months\"\n}\n```\n\n**Key extraction notes:**\n\n- **Arm A** = Treatment group (SRP, n=50); **Arm B** = No-treatment/control group (n=50) \u2014 from Table 1.\n- **Age/SD**: directly from Table 1 (51.82 \u00b1 5.85 vs 52.94 \u00b1 6.03).\n- **% female**: derived from M:F counts in Table 1 \u2014 28/50 = 56% (arm A), 24/50 = 48% (arm B).\n- **HbA1c**: 8.17 \u00b1 2.49% (arm A) and 7.87 \u00b1 2.56% (arm B) from Table 1/Table 3 baseline rows. Both arms are mixed good/poor subgroups; overall means fall in the 7\u20139% range \u2192 classified as **fair**.\n- **Tobacco**: current and ex-smokers were explicitly excluded by the eligibility criteria.\n- **n_randomised**: 100 T2DM participants (the 25 NoDM participants were a comparator group, not randomised to the diabetic RCT arms).\n- **n_evaluated**: 9 withdrew after 3 months (5 T-group, 4 NT-group) but all 100 were included via ITT (last-observation-carried-forward).",
+  "stop_reason": "end_turn",
+  "session_id": "38be4bab-9d2e-4731-a8cb-dd5e3cae25db",
+  "total_cost_usd": 0.2159369,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 33176,
+    "cache_read_input_tokens": 91773,
+    "output_tokens": 4145,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 33176
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 756,
+        "cache_read_input_tokens": 48215,
+        "cache_creation_input_tokens": 3325,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3325,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001805,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4145,
+      "cacheReadInputTokens": 91773,
+      "cacheCreationInputTokens": 33176,
+      "webSearchRequests": 0,
+      "costUSD": 0.2141319,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "8567ff4e-f023-4efd-9096-6b3ab0cd882d"
+}

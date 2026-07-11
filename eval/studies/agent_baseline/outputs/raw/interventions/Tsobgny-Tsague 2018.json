@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 59012,
+  "duration_api_ms": 59138,
+  "ttft_ms": 1806,
+  "ttft_stream_ms": 1776,
+  "time_to_request_ms": 182,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment group (Group 1)\",\n      \"comparison_summary\": \"Immediate NSPT (SRP + subgingival povidone iodine irrigation + chlorhexidine mouthrinse) vs delayed periodontal treatment (control)\",\n      \"intervention_description\": \"Full mouth debridement performed in a single visit consisting of scaling, root scaling and planning using a magneto-restrictive ultrasonic device (Denjoy Dus-1A, Changsha, China) and Gracey's curettes, followed by subgingival irrigation with 10% povidone iodine solution. Additionally, all subjects received dental floss and chlorhexidine gluconate 0.2% as mouthwash (10 ml twice daily for 5 days). All subjects instructed in oral hygiene methods using the modified Bass technique for tooth brushing with a soft bristled toothbrush. All participants also received a standardized education session on diabetes management and dental hygiene. Pharmacological treatment was unchanged.\",\n      \"n_in_arm\": 17,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Control group (Group 2)\",\n      \"comparison_summary\": \"Immediate NSPT (SRP + subgingival povidone iodine irrigation + chlorhexidine mouthrinse) vs delayed periodontal treatment (control)\",\n      \"intervention_description\": \"No interventional periodontal treatment was given during the 3-month follow-up, apart from oral hygiene instructions. All participants received the same standardized education session on diabetes management and dental hygiene. Pharmacological treatment was unchanged. At the end of the study, all participants in the control group received the same periodontal treatment as the treatment group (delayed treatment).\",\n      \"n_in_arm\": 17,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two arms**: treatment (Group 1) and delayed-treatment control (Group 2), each with n=17 randomised (n=15 analysed after 2 dropouts per arm).\n- **Treatment arm** classified as `SI_plus_systemic_local_antimicrobial`: the key adjunct is subgingival 10% povidone iodine irrigation (a locally-delivered antimicrobial), in addition to full-mouth SRP. A chlorhexidine 0.2% mouthrinse was also given for 5 days, but the povidone iodine is the primary distinguishing feature discussed by the authors.\n- **Control arm** classified as `usual_care`: no active periodontal instrumentation during the 3-month study period \u2014 only oral hygiene instruction and the shared education session. Treatment was deferred until after the study ended.\n- Follow-up is 3 months (primary HbA1c outcome; periodontal parameters also assessed at 6 and 12 weeks).",
+  "stop_reason": "end_turn",
+  "session_id": "d93f5db4-4b73-4865-8834-320cd27bd6c1",
+  "total_cost_usd": 0.1680039,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 23276,
+    "cache_read_input_tokens": 82013,
+    "output_tokens": 3643,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 23276
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 754,
+        "cache_read_input_tokens": 38813,
+        "cache_creation_input_tokens": 2827,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2827,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3643,
+      "cacheReadInputTokens": 82013,
+      "cacheCreationInputTokens": 23276,
+      "webSearchRequests": 0,
+      "costUSD": 0.1665489,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "fd65b46e-b984-40ec-b03e-b75d5b841bfc"
+}

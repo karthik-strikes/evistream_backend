@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 34744,
+  "duration_api_ms": 35773,
+  "ttft_ms": 1679,
+  "ttft_stream_ms": 1653,
+  "time_to_request_ms": 187,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment group\",\n      \"comparison_summary\": \"SRP plus chlorhexidine oral rinse vs oral hygiene instructions only (no active periodontal treatment)\",\n      \"intervention_description\": \"Initial treatment consisted of at least 160 minutes of scaling and root planing using currettes and ultrasonic instruments with local anesthesia during 2 or more sessions completed within 42 days of the baseline visit. After treatment, the therapist provided oral hygiene instructions and dispensed chlorhexidine gluconate (0.12% oral rinse, twice daily for 2 weeks), toothbrush, toothpaste, and dental floss. Three and 6 months after the baseline visit, participants in the treatment group received oral hygiene instructions and scaling and root planing for approximately 1 hour during a single session.\",\n      \"n_in_arm\": 257,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_mouthrinse\"\n    },\n    {\n      \"arm_label\": \"Control group\",\n      \"comparison_summary\": \"SRP plus chlorhexidine oral rinse vs oral hygiene instructions only (no active periodontal treatment)\",\n      \"intervention_description\": \"Participants in the control group received only oral hygiene instructions at the baseline and 3- and 6-month visits. Following their 6-month visit, control group participants were offered scaling and root planing.\",\n      \"n_in_arm\": 257,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **Two arms**: treatment (n=257) and control (n=257), 514 randomised total.\n- **Treatment arm**: SRP with curettes and ultrasonic instruments under local anaesthesia (\u2265160 min over \u22652 sessions within 42 days), followed by chlorhexidine gluconate 0.12% rinse twice daily for 2 weeks, plus supportive SRP sessions (~1 hr each) at 3 and 6 months. Classified as `SI_plus_mouthrinse` because chlorhexidine oral rinse was a required adjunct dispensed to all treatment participants.\n- **Control arm**: Oral hygiene instructions only at baseline, 3 months, and 6 months \u2014 no active periodontal instrumentation during the trial period. Classified as `usual_care`.\n- Follow-up is 6 months for both arms (primary outcome timepoint stated throughout the paper).",
+  "stop_reason": "end_turn",
+  "session_id": "bc313282-6f77-4121-8357-f6f89e4a7b80",
+  "total_cost_usd": 0.17096864999999997,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 29331,
+    "cache_read_input_tokens": 89408,
+    "output_tokens": 2179,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 29331
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 632,
+        "cache_read_input_tokens": 46210,
+        "cache_creation_input_tokens": 1485,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1485,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2179,
+      "cacheReadInputTokens": 89408,
+      "cacheCreationInputTokens": 29331,
+      "webSearchRequests": 0,
+      "costUSD": 0.16951364999999996,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "7e746062-527a-4e6a-a920-a3b9fd991841"
+}

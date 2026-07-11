@@ -1,0 +1,759 @@
+{
+  "version": 1,
+  "task_name": "dynamic_a618311e_OralCancerOutcomes",
+  "signatures": [
+    {
+      "docstring": "Extract analytic context fields that situate the outcome data within the correct test arm and study design, including the linked index test, unit of analysis, sequence of tests, and time interval between tests.\n\nForm Questions:\n- linked_index_test: \"What is the label of the index-test arm to which this outcome row belongs?\"\n- unit_of_analysis: \"Is the 2\u00d72 table counting patients or lesions?\"\n  Options: Patient, Lesion\n- sequence_of_tests: \"In what order were the index test(s) and reference standard performed?\"\n- time_interval_rs_it: \"What was the time interval between the index test and the reference standard (biopsy)?\"\n\nThese fields establish the analytic framework needed to correctly interpret and link 2\u00d72 outcome data to the appropriate test arm and study design context.",
+      "class_name": "EstablishAnalyticContext",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the diagnostic accuracy study paper from which analytic context fields are to be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "linked_index_test",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for the index test name or label in the Methods section, typically under 'Index Tests', 'Study Arms', or 'Interventions'",
+            "In multi-arm studies, identify the specific arm label used consistently throughout the paper",
+            "The label should match exactly what was recorded in the Index Test form for this study"
+          ],
+          "rules": [
+            "Copy the label verbatim as it appears in the paper, preserving capitalisation and punctuation",
+            "Must exactly match the index_test_arm_label used in the Index Test form",
+            "For single-arm studies, use the sole index test name",
+            "Use \"NR\" if the index test label cannot be determined"
+          ],
+          "examples": [
+            {
+              "value": "Vital Staining (1% Toluidine Blue)",
+              "source_text": ""
+            }
+          ],
+          "description": "Label of the index-test arm to which this outcome row belongs \u2014 must exactly match the index_test_arm_label in the Index Test form (e.g., 'Vital Staining (1% Toluidine Blue)'). Required for multi-arm studies to correctly link outcome rows to test arms.",
+          "source_grounded": true
+        },
+        {
+          "name": "unit_of_analysis",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Check the Methods section under 'Study Population', 'Participants', or 'Statistical Analysis' for whether the unit is patients or lesions",
+            "Look for phrases like 'per patient', 'per lesion', 'lesion-level analysis', or 'patient-level analysis'",
+            "If the paper reports multiple lesions per patient and analyses them individually, select 'Lesion'"
+          ],
+          "rules": [
+            "Must be exactly one of: 'Patient' or 'Lesion'",
+            "Use exact spelling and capitalisation as listed in options",
+            "Use \"NR\" if the unit of analysis cannot be determined from the paper"
+          ],
+          "options": [
+            "Patient",
+            "Lesion"
+          ],
+          "examples": [
+            {
+              "value": "Patient",
+              "source_text": ""
+            }
+          ],
+          "description": "Whether the 2\u00d72 table counts patients or lesions. Studies enrolling one lesion per patient use 'Patient'; studies enrolling multiple lesions per patient use 'Lesion'. This determines which N fields are relevant.",
+          "source_grounded": true
+        },
+        {
+          "name": "sequence_of_tests",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Procedures', 'Protocol', or 'Data Collection'",
+            "Check for phrases describing the order of examination, staining, and biopsy",
+            "In vital-staining studies, staining (index test) typically precedes biopsy (reference standard) \u2014 confirm this from the text"
+          ],
+          "rules": [
+            "Describe the sequence clearly, naming both the index test and reference standard",
+            "For multi-test studies, list all tests in the order they were performed",
+            "Quote or closely paraphrase the paper's description of the procedure sequence",
+            "Use \"NR\" if the sequence is not reported"
+          ],
+          "examples": [
+            {
+              "value": "Index test before reference standard.",
+              "source_text": ""
+            }
+          ],
+          "description": "Order in which the index test(s) and reference standard were performed (e.g., 'Index test before reference standard', 'Reference test before index test'). For multi-test studies list all tests in order. Quote or paraphrase from the paper.",
+          "source_grounded": true
+        },
+        {
+          "name": "time_interval_rs_it",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Procedures', 'Protocol', or 'Biopsy'",
+            "Check for phrases like 'immediately after', 'same session', 'same day', or specific time durations between staining and biopsy",
+            "In vital-staining studies, the biopsy is often performed in the same clinical session immediately after staining"
+          ],
+          "rules": [
+            "Report the time interval as stated in the paper, including units (e.g., minutes, hours, days)",
+            "If the biopsy was performed immediately after the index test in the same session, state this explicitly (e.g., 'Same session \u2014 biopsy performed immediately after staining')",
+            "Use \"NR\" if the time interval is not reported"
+          ],
+          "examples": [
+            {
+              "value": "NR",
+              "source_text": ""
+            }
+          ],
+          "description": "Time interval between the index test and the reference standard (biopsy). In most vital-staining studies the biopsy is performed on the same day immediately after staining \u2014 note this if evident. Use NR if not reported.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract counts of patients and lesions who received only one of the two tests (index test or reference standard) to assess missing-data asymmetry in a diagnostic accuracy study.\n\nForm Questions:\n- n_patients_rs_not_it: \"How many patients received the reference standard (biopsy) but NOT the index test?\"\n- n_patients_it_not_rs: \"How many patients received the index test but NOT the reference standard?\"\n- n_lesions_it_not_rs: \"How many lesions received the index test but NOT the reference standard (lesion-level studies only)?\"\n- n_lesions_rs_not_it: \"How many lesions received the reference standard but NOT the index test (lesion-level studies only)?\"\n\nThese fields capture one-sided test receipt to evaluate differential verification bias and missing-data patterns. The unit_of_analysis context field indicates whether the study analyses patients or lesions, which determines whether lesion-level fields are applicable.",
+      "class_name": "CollectMissingSampleCounts",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the diagnostic accuracy research paper to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        },
+        {
+          "desc": "Previously extracted unit_of_analysis with source grounding from another signature (contains 'value' and 'source_text' keys), indicating whether the study analyses patients or lesions",
+          "name": "unit_of_analysis",
+          "type": "Dict[str, Any]"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "n_patients_rs_not_it",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the flow diagram, participant flow section, CONSORT/STARD diagram descriptions, or methods section for counts of patients who underwent biopsy but not the index test",
+            "Check footnotes or exclusion tables that describe why some biopsied patients lacked index test results",
+            "May appear as a discrepancy between total biopsied patients and total patients with index test results"
+          ],
+          "rules": [
+            "Report the integer count as a string value",
+            "Report '0' if the paper explicitly states none were missing",
+            "Report 'assumed 0' if the paper implies all biopsied patients also received the index test but does not state it explicitly",
+            "Report 'NR (probably N)' if the number can be estimated from context, replacing N with the estimate",
+            "Use 'NR' if the count is entirely unknown and cannot be estimated",
+            "Do not confuse with patients excluded before any testing"
+          ],
+          "examples": [
+            {
+              "value": "0",
+              "source_text": ""
+            }
+          ],
+          "description": "Number of patients who received the reference standard (biopsy) but NOT the index test, used to assess missing-data asymmetry.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_patients_it_not_rs",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the flow diagram, participant flow section, or methods/results for counts of patients who had the index test but did not proceed to biopsy",
+            "Check for descriptions of patients with negative index test results who were not biopsied, or patients lost before biopsy",
+            "May appear as a discrepancy between total index-tested patients and total biopsied patients"
+          ],
+          "rules": [
+            "Report the integer count as a string value",
+            "Report '0' if the paper explicitly states none were missing",
+            "Report 'assumed 0' if implied but not explicitly stated",
+            "Report an estimate with a note if the number can be inferred from context",
+            "Use 'NR' if the count is entirely unknown",
+            "Do not confuse with patients excluded before any testing"
+          ],
+          "examples": [
+            {
+              "value": "0",
+              "source_text": ""
+            }
+          ],
+          "description": "Number of patients who received the index test but NOT the reference standard, used to assess differential verification bias.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_lesions_it_not_rs",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Only relevant when unit_of_analysis indicates lesion-level analysis",
+            "Look in the methods, results, or flow diagram for lesion-level counts describing lesions detected by the index test but not confirmed by biopsy or reference standard",
+            "May appear in tables comparing index test lesion counts to histopathology lesion counts"
+          ],
+          "rules": [
+            "Report the integer count as a string value",
+            "Use 'NR' if not reported or if the unit of analysis is patients rather than lesions",
+            "Report '0' if the paper explicitly states no lesions were missing reference standard verification",
+            "Report 'assumed 0' if implied but not explicitly stated"
+          ],
+          "examples": [
+            {
+              "value": "NR",
+              "source_text": ""
+            }
+          ],
+          "description": "Number of lesions that received the index test but not the reference standard, applicable only in lesion-level analysis studies.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_lesions_rs_not_it",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Only relevant when unit_of_analysis indicates lesion-level analysis",
+            "Look in the methods, results, or flow diagram for lesion-level counts describing lesions confirmed by biopsy or reference standard but not evaluated by the index test",
+            "May appear in tables comparing histopathology lesion counts to index test lesion counts"
+          ],
+          "rules": [
+            "Report the integer count as a string value",
+            "Use 'NR' if not reported or if the unit of analysis is patients rather than lesions",
+            "Report '0' if the paper explicitly states no lesions were missing index test evaluation",
+            "Report 'assumed 0' if implied but not explicitly stated"
+          ],
+          "examples": [
+            {
+              "value": "NR",
+              "source_text": ""
+            }
+          ],
+          "description": "Number of lesions that received the reference standard but not the index test, applicable only in lesion-level analysis studies.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract diagnostic accuracy data (2\u00d72 contingency table counts and derived statistics) from a diagnostic test accuracy study, using previously extracted index test and unit of analysis as context.\n\nForm Questions:\n- outcome_target_condition: \"What is the exact outcome/target condition definition used to classify disease-positive and disease-negative in the 2\u00d72 table?\"\n- tp: \"How many true positives (index test positive AND reference standard positive) are reported?\"\n- fp: \"How many false positives (index test positive BUT reference standard negative) are reported?\"\n- fn: \"How many false negatives (index test negative BUT reference standard positive) are reported?\"\n- tn: \"How many true negatives (index test negative AND reference standard negative) are reported?\"\n- reported_sensitivity: \"What sensitivity (%) did the authors report?\"\n- reported_sensitivity_ci: \"What is the 95% confidence interval for reported sensitivity?\"\n- reported_specificity: \"What specificity (%) did the authors report?\"\n- reported_specificity_ci: \"What is the 95% confidence interval for reported specificity?\"\n- reported_prevalence: \"What is the prevalence of the target condition in the study population?\"\n\nThese fields capture the core diagnostic accuracy data needed for meta-analysis. The linked_index_test and unit_of_analysis context fields identify which test and counting unit (patient vs. lesion) the 2\u00d72 table refers to.",
+      "class_name": "ExtractDiagnosticAccuracyData",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the diagnostic accuracy study from which data are to be extracted",
+          "name": "markdown_content",
+          "type": "str"
+        },
+        {
+          "desc": "Previously extracted index test with source grounding from another signature (contains 'value' and 'source_text' keys); used to identify which test's 2\u00d72 table to extract",
+          "name": "linked_index_test",
+          "type": "Dict[str, Any]"
+        },
+        {
+          "desc": "Previously extracted unit of analysis (e.g., patient-level or lesion-level) with source grounding from another signature (contains 'value' and 'source_text' keys); used to correctly interpret cell counts in the 2\u00d72 table",
+          "name": "unit_of_analysis",
+          "type": "Dict[str, Any]"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "outcome_target_condition",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Outcome', 'Reference Standard', 'Histopathology', or 'Diagnosis' subsections",
+            "The definition often appears near the description of the reference standard or biopsy classification",
+            "Copy verbatim if the paper states the classification explicitly"
+          ],
+          "rules": [
+            "State both the disease-positive category (e.g., 'dysplasia, carcinoma in situ and squamous cell carcinoma') and the disease-negative category (e.g., 'hyperplasia, inflammation and normal mucosa')",
+            "Copy verbatim from the document when clearly stated",
+            "Use \"NR\" if the target condition definition is not reported"
+          ],
+          "examples": [
+            {
+              "value": "Disease positive are dysplasia, carcinoma in situ and squamous cell carcinoma. Disease negative are hyperplasia, inflammation and normal mucosa",
+              "source_text": ""
+            }
+          ],
+          "description": "Exact outcome definition used to classify disease-positive and disease-negative in the 2\u00d72 table, stating what is considered positive and what is considered negative.",
+          "source_grounded": true
+        },
+        {
+          "name": "tp",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a 2\u00d72 contingency table, confusion matrix, or cross-tabulation in the Results section",
+            "May be labelled 'TP', 'true positive', or derivable from sensitivity \u00d7 number of disease-positive cases",
+            "Check tables, figures, or supplementary material for cell counts"
+          ],
+          "rules": [
+            "Extract the integer count of true positives directly from the reported 2\u00d72 table",
+            "Do not calculate from sensitivity/specificity unless the paper explicitly derives the count",
+            "Value must be a non-negative integer",
+            "Use \"NR\" if the 2\u00d72 cell counts are not reported"
+          ],
+          "examples": [
+            {
+              "value": "52",
+              "source_text": ""
+            }
+          ],
+          "description": "True positives: patients (or lesions) who tested positive on the index test AND had the target condition confirmed by the reference standard.",
+          "source_grounded": true
+        },
+        {
+          "name": "fp",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a 2\u00d72 contingency table or confusion matrix in the Results section",
+            "May be labelled 'FP', 'false positive', or derivable from (1 \u2212 specificity) \u00d7 number of disease-negative cases",
+            "Check tables, figures, or supplementary material for cell counts"
+          ],
+          "rules": [
+            "Extract the integer count of false positives directly from the reported 2\u00d72 table",
+            "Do not calculate from specificity unless the paper explicitly derives the count",
+            "Value must be a non-negative integer",
+            "Use \"NR\" if the 2\u00d72 cell counts are not reported"
+          ],
+          "examples": [
+            {
+              "value": "6",
+              "source_text": ""
+            }
+          ],
+          "description": "False positives: patients (or lesions) who tested positive on the index test but did NOT have the target condition on biopsy.",
+          "source_grounded": true
+        },
+        {
+          "name": "fn",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a 2\u00d72 contingency table or confusion matrix in the Results section",
+            "May be labelled 'FN', 'false negative', or derivable from (1 \u2212 sensitivity) \u00d7 number of disease-positive cases",
+            "Check tables, figures, or supplementary material for cell counts"
+          ],
+          "rules": [
+            "Extract the integer count of false negatives directly from the reported 2\u00d72 table",
+            "Do not calculate from sensitivity unless the paper explicitly derives the count",
+            "Value must be a non-negative integer",
+            "Use \"NR\" if the 2\u00d72 cell counts are not reported"
+          ],
+          "examples": [
+            {
+              "value": "4",
+              "source_text": ""
+            }
+          ],
+          "description": "False negatives: patients (or lesions) who tested negative on the index test but DID have the target condition on biopsy.",
+          "source_grounded": true
+        },
+        {
+          "name": "tn",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a 2\u00d72 contingency table or confusion matrix in the Results section",
+            "May be labelled 'TN', 'true negative', or derivable from specificity \u00d7 number of disease-negative cases",
+            "Check tables, figures, or supplementary material for cell counts"
+          ],
+          "rules": [
+            "Extract the integer count of true negatives directly from the reported 2\u00d72 table",
+            "Do not calculate from specificity unless the paper explicitly derives the count",
+            "Value must be a non-negative integer",
+            "Use \"NR\" if the 2\u00d72 cell counts are not reported"
+          ],
+          "examples": [
+            {
+              "value": "5",
+              "source_text": ""
+            }
+          ],
+          "description": "True negatives: patients (or lesions) who tested negative on the index test AND did not have the target condition on biopsy.",
+          "source_grounded": true
+        },
+        {
+          "name": "reported_sensitivity",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Results section, abstract, or summary tables for sensitivity values",
+            "May be labelled 'sensitivity', 'true positive rate', or 'recall'",
+            "If reported as a proportion (e.g., 0.9286), convert to percentage by multiplying by 100"
+          ],
+          "rules": [
+            "Express as a numeric percentage value without the '%' symbol (e.g., 92.86 not '92.86%')",
+            "Do not append a '%' symbol",
+            "Use a float if the reported value has decimal places",
+            "Use \"NR\" if sensitivity is not reported"
+          ],
+          "examples": [
+            {
+              "value": "92.86",
+              "source_text": ""
+            }
+          ],
+          "description": "Sensitivity as reported by the study authors, expressed as a percentage (e.g., 92.86 means 92.86%).",
+          "source_grounded": true
+        },
+        {
+          "name": "reported_sensitivity_ci",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look adjacent to the reported sensitivity value for a confidence interval in parentheses or brackets",
+            "May be expressed as '(85.10\u201397.20)', '85.10 to 97.20', or '85.10, 97.20'",
+            "Check footnotes or supplementary tables if not in the main text"
+          ],
+          "rules": [
+            "Format as 'lower\u2013upper' using an en-dash (e.g., '85.10\u201397.20')",
+            "Express bounds as percentages without '%' symbol",
+            "Use \"NR\" if the confidence interval is not reported"
+          ],
+          "examples": [
+            {
+              "value": "NR",
+              "source_text": ""
+            }
+          ],
+          "description": "95% confidence interval for reported sensitivity, formatted as 'lower\u2013upper' (e.g., '85.10\u201397.20').",
+          "source_grounded": true
+        },
+        {
+          "name": "reported_specificity",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Results section, abstract, or summary tables for specificity values",
+            "May be labelled 'specificity', 'true negative rate', or '1 \u2212 false positive rate'",
+            "If reported as a proportion (e.g., 0.4545), convert to percentage by multiplying by 100"
+          ],
+          "rules": [
+            "Express as a numeric percentage value without the '%' symbol (e.g., 45.45 not '45.45%')",
+            "Do not append a '%' symbol",
+            "Use a float if the reported value has decimal places",
+            "Use \"NR\" if specificity is not reported"
+          ],
+          "examples": [
+            {
+              "value": "45.45",
+              "source_text": ""
+            }
+          ],
+          "description": "Specificity as reported by the study authors, expressed as a percentage (e.g., 45.45 means 45.45%).",
+          "source_grounded": true
+        },
+        {
+          "name": "reported_specificity_ci",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look adjacent to the reported specificity value for a confidence interval in parentheses or brackets",
+            "May be expressed as '(30.10\u201361.20)', '30.10 to 61.20', or '30.10, 61.20'",
+            "Check footnotes or supplementary tables if not in the main text"
+          ],
+          "rules": [
+            "Format as 'lower\u2013upper' using an en-dash (e.g., '30.10\u201361.20')",
+            "Express bounds as percentages without '%' symbol",
+            "Use \"NR\" if the confidence interval is not reported"
+          ],
+          "examples": [
+            {
+              "value": "NR",
+              "source_text": ""
+            }
+          ],
+          "description": "95% confidence interval for reported specificity, formatted as 'lower\u2013upper' (e.g., '30.10\u201361.20').",
+          "source_grounded": true
+        },
+        {
+          "name": "reported_prevalence",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Results or Participants section for the proportion or percentage of participants with the target condition",
+            "May be derivable from the 2\u00d72 table as (TP + FN) / (TP + FP + FN + TN)",
+            "For multi-arm papers, report study-level prevalence; if arm-level prevalences are given separately, list all",
+            "If OPMD and OSCC prevalences are reported separately, include both alongside the combined estimate"
+          ],
+          "rules": [
+            "Report as a descriptive string that may include multiple estimates (e.g., 'Oral cancer and OPMD - 51.7%; Oral cancer - 6.5%; OPMD - 45.2%')",
+            "Include the raw counts in parentheses if available (e.g., '83.6% (56/67)')",
+            "For multi-arm papers, prefix each estimate with the arm label (e.g., 'TB: 83.6% (56/67); AA: 73.5% (61/83)')",
+            "Use \"NR\" if prevalence cannot be reported or derived"
+          ],
+          "examples": [
+            {
+              "value": "TB: 83.6% (56/67); AA: 73.5% (61/83); Both: 82.1% (23/28)",
+              "source_text": ""
+            }
+          ],
+          "description": "Prevalence of the target condition in the study population as reported or derivable from the data, which may include multiple estimates if the paper reports prevalence for OPMD and OSCC separately.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Record reviewer annotations, general study-level notes, and the data source for an extracted outcome row in a systematic review.\n\nForm Questions:\n- comments_outcomes: \"What reviewer notes apply to this outcome row (e.g., study arm assignment, dual-threshold issues, patient overlap between arms, meta-analysis notes)?\"\n- general_notes: \"What additional free-text notes at the study or arm level are not captured elsewhere (e.g., methodological concerns, reviewer consensus, threshold anomalies, data-source clarifications)?\"\n- data_source: \"What is the origin of this extracted data row (e.g., newly extracted for this review or sourced from a prior review dataset)?\"\n\nThis signature depends on previously extracted TP, FP, FN, and TN values to provide context for the reviewer annotations.",
+      "class_name": "RecordReviewerNotesAndSource",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the systematic review document or data extraction form to extract reviewer notes and source information from.",
+          "name": "markdown_content",
+          "type": "str"
+        },
+        {
+          "desc": "Previously extracted true positive count with source grounding from another signature (contains 'value' and 'source_text' keys).",
+          "name": "tp",
+          "type": "Dict[str, Any]"
+        },
+        {
+          "desc": "Previously extracted false positive count with source grounding from another signature (contains 'value' and 'source_text' keys).",
+          "name": "fp",
+          "type": "Dict[str, Any]"
+        },
+        {
+          "desc": "Previously extracted false negative count with source grounding from another signature (contains 'value' and 'source_text' keys).",
+          "name": "fn",
+          "type": "Dict[str, Any]"
+        },
+        {
+          "desc": "Previously extracted true negative count with source grounding from another signature (contains 'value' and 'source_text' keys).",
+          "name": "tn",
+          "type": "Dict[str, Any]"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "comments_outcomes",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for inline reviewer annotations, footnotes, or comment fields associated with the specific outcome row",
+            "Check for notes about patient overlap, arm assignment, or meta-analysis flags near the TP/FP/FN/TN values"
+          ],
+          "rules": [
+            "Extract the reviewer's verbatim comment or annotation for this outcome row",
+            "Use \"NA\" (not \"NR\") when the reviewer explicitly indicates no notes are needed or when no comment field is present",
+            "Use \"NR\" only if the comments field is entirely absent from the document with no indication either way",
+            "Do not conflate outcome-row comments with general study-level notes"
+          ],
+          "examples": [
+            {
+              "value": "There might be overlap of patients in different arms.",
+              "source_text": ""
+            }
+          ],
+          "description": "Reviewer notes about this outcome row \u2014 e.g., which study arm the data belong to, dual-threshold issues, overlap between arms, or notes for meta-analysis. Use NA if no notes are needed.",
+          "source_grounded": true
+        },
+        {
+          "name": "general_notes",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a dedicated 'General Notes', 'Study Notes', or 'Reviewer Notes' section separate from per-outcome comments",
+            "Check for consensus statements, threshold comparison remarks, or methodological caveats at the study or arm level"
+          ],
+          "rules": [
+            "Extract the full free-text note verbatim as written by the reviewer",
+            "Use \"NA\" (not \"NR\") when the reviewer explicitly indicates no additional notes are needed",
+            "Use \"NR\" only if the general notes field is entirely absent from the document",
+            "Do not include outcome-row-specific comments here; those belong in comments_outcomes"
+          ],
+          "examples": [
+            {
+              "value": "Reference Standard: Mild dysplasia is considered - no dysplasia in this case which is different from other study thresholds.",
+              "source_text": ""
+            }
+          ],
+          "description": "Any additional free-text notes at the study or arm level not captured by other fields \u2014 methodological concerns, reviewer consensus notes (e.g., 'Carolina and Tanya reached a consensus'), threshold anomalies compared to other studies, or data-source clarifications. Use NA if no notes.",
+          "source_grounded": true
+        },
+        {
+          "name": "data_source",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a 'Data Source', 'Source', or 'Extracted by' label near the outcome row or at the top of the extraction form",
+            "Check for references to prior review names (e.g., author surnames like 'Walsh' or 'Lingen') or institutional labels (e.g., 'Upenn')"
+          ],
+          "rules": [
+            "Extract the data source label or description verbatim as it appears in the document",
+            "If the source is a prior review, include the reviewer/study name as written",
+            "Use \"NR\" if the data source is not reported or cannot be determined"
+          ],
+          "examples": [
+            {
+              "value": "New data extracted by Upenn",
+              "source_text": ""
+            }
+          ],
+          "description": "Origin of the extracted data row \u2014 whether it was newly extracted for this review or sourced from a prior review dataset (e.g., 'New data extracted by Upenn', 'Walsh', 'Lingen').",
+          "source_grounded": true
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_a618311e_OralCancerOutcomes",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "EstablishAnalyticContext"
+      ],
+      "provides_fields": [
+        "linked_index_test",
+        "unit_of_analysis",
+        "sequence_of_tests",
+        "time_interval_rs_it"
+      ],
+      "requires_fields": []
+    },
+    {
+      "stage": 2,
+      "execution": "parallel",
+      "signatures": [
+        "CollectMissingSampleCounts",
+        "ExtractDiagnosticAccuracyData"
+      ],
+      "provides_fields": [
+        "n_patients_rs_not_it",
+        "n_patients_it_not_rs",
+        "n_lesions_it_not_rs",
+        "n_lesions_rs_not_it",
+        "outcome_target_condition",
+        "tp",
+        "fp",
+        "fn",
+        "tn",
+        "reported_sensitivity",
+        "reported_sensitivity_ci",
+        "reported_specificity",
+        "reported_specificity_ci",
+        "reported_prevalence"
+      ],
+      "requires_fields": [
+        "unit_of_analysis",
+        "linked_index_test"
+      ],
+      "waits_for_stage": 1
+    },
+    {
+      "stage": 3,
+      "execution": "sequential",
+      "signatures": [
+        "RecordReviewerNotesAndSource"
+      ],
+      "provides_fields": [
+        "comments_outcomes",
+        "general_notes",
+        "data_source"
+      ],
+      "requires_fields": [
+        "fn",
+        "tn",
+        "fp",
+        "tp"
+      ],
+      "waits_for_stage": 2
+    }
+  ],
+  "fallback_structures": {
+    "EstablishAnalyticContext": {
+      "unit_of_analysis": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "linked_index_test": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "sequence_of_tests": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "time_interval_rs_it": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "CollectMissingSampleCounts": {
+      "n_lesions_it_not_rs": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_lesions_rs_not_it": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_patients_it_not_rs": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_patients_rs_not_it": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "RecordReviewerNotesAndSource": {
+      "data_source": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "general_notes": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "comments_outcomes": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractDiagnosticAccuracyData": {
+      "fn": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "fp": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "tn": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "tp": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "reported_prevalence": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "reported_sensitivity": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "reported_specificity": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "reported_sensitivity_ci": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "reported_specificity_ci": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "outcome_target_condition": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    }
+  },
+  "field_to_signature_map": {
+    "fn": "ExtractDiagnosticAccuracyData",
+    "fp": "ExtractDiagnosticAccuracyData",
+    "tn": "ExtractDiagnosticAccuracyData",
+    "tp": "ExtractDiagnosticAccuracyData",
+    "data_source": "RecordReviewerNotesAndSource",
+    "general_notes": "RecordReviewerNotesAndSource",
+    "unit_of_analysis": "EstablishAnalyticContext",
+    "comments_outcomes": "RecordReviewerNotesAndSource",
+    "linked_index_test": "EstablishAnalyticContext",
+    "sequence_of_tests": "EstablishAnalyticContext",
+    "n_lesions_it_not_rs": "CollectMissingSampleCounts",
+    "n_lesions_rs_not_it": "CollectMissingSampleCounts",
+    "reported_prevalence": "ExtractDiagnosticAccuracyData",
+    "time_interval_rs_it": "EstablishAnalyticContext",
+    "n_patients_it_not_rs": "CollectMissingSampleCounts",
+    "n_patients_rs_not_it": "CollectMissingSampleCounts",
+    "reported_sensitivity": "ExtractDiagnosticAccuracyData",
+    "reported_specificity": "ExtractDiagnosticAccuracyData",
+    "reported_sensitivity_ci": "ExtractDiagnosticAccuracyData",
+    "reported_specificity_ci": "ExtractDiagnosticAccuracyData",
+    "outcome_target_condition": "ExtractDiagnosticAccuracyData"
+  },
+  "_pulled_from": "project ca68ea03-abd0-48bd-b180-c474a5d5c398 \u00b7 form Oral Cancer \u2014 Outcomes (a618311e-32a1-437e-baa6-b4fcd3d8a6a7) \u00b7 slug oral_cancer \u00b7 form_label outcomes"
+}

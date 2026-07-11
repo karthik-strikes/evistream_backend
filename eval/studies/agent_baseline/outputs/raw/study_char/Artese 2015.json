@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 37626,
+  "duration_api_ms": 38494,
+  "ttft_ms": 1949,
+  "ttft_stream_ms": 1924,
+  "time_to_request_ms": 142,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Brazil\",\n  \"setting\": \"university clinic\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel RCT\",\n  \"recruitment_period\": \"February 2011 to December 2013\",\n  \"funding_source\": \"Funda\u00e7\u00e3o de Amparo \u00e0 Pesquisa do Estado de S\u00e3o Paulo \u2013 FAPESP, S\u00e3o Paulo, Brazil (protocol numbers 2011/06982-4;10057-4;18618-5)\",\n  \"notes\": \"HbA1c data presented in a scatter plot figure only (Figure 1), not in a tabulated form \u2014 values cannot be directly extracted. All 24 randomised participants completed the 6-month follow-up (no dropouts). Sample size calculated assuming 90% power and 5% significance, requiring 11 per group; 12 per group recruited to allow for dropouts. No conflicts of interest declared.\"\n}\n```\n\nKey sourcing notes:\n- **country/setting**: Affiliations list USP School of Dentistry (periodontics) and USP Institute of Biomedical Sciences; blood analysis done at the University Hospital (HU) \u2014 all one university campus in S\u00e3o Paulo, Brazil.\n- **recruitment_period**: Stated explicitly in the Methods: \"recruited between February 2011 and December 2013.\"\n- **trial_design**: 24 patients \"randomly allocated to two treatment groups\" via computer-generated random numbers and sealed opaque envelopes; examiners were blinded; parallel (no crossover).\n- **funding_source**: From the Acknowledgements section verbatim.\n- **notes**: HbA1c reported only in Figure 1 (scatter plots with medians/quartiles), which is a relevant data-extraction limitation for a meta-analysis.",
+  "stop_reason": "end_turn",
+  "session_id": "07e39925-7721-44c0-95b0-2c94eec21d2d",
+  "total_cost_usd": 0.11727660000000001,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 17420,
+    "cache_read_input_tokens": 77432,
+    "output_tokens": 1831,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 17420
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 423,
+        "cache_read_input_tokens": 34437,
+        "cache_creation_input_tokens": 1347,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1347,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1831,
+      "cacheReadInputTokens": 77432,
+      "cacheCreationInputTokens": 17420,
+      "webSearchRequests": 0,
+      "costUSD": 0.11603460000000002,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "24ac488a-c746-4a03-973c-dece0cc9b2bf"
+}

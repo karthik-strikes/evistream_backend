@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 44457,
+  "duration_api_ms": 45001,
+  "ttft_ms": 1765,
+  "ttft_stream_ms": 1728,
+  "time_to_request_ms": 136,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"NSPT group\",\n      \"comparison_summary\": \"NSPT (full mouth debridement + CHX mouthrinse) vs OHI alone\",\n      \"intervention_description\": \"All subjects were instructed in oral hygiene methods using a soft bristled toothbrush, a compact-tuft toothbrush, interdental brushes and dental floss (TePe\u00ae oral hygiene education set) utilizing the modified Bass technique. Plaque scores were reviewed at weekly intervals to achieve scores of 20% or below to a maximum of 3 weeks. Assigned treatment was full mouth debridement, which consisted of scaling and root planing, done in a single visit using an ultrasonic scaler (SATELEC P5 Newtron XS, Acteon, Merignac, France) and Gracey curettes (Hu-Friedy, Chicago, USA). Additionally, all subjects in the NSPT group were given a 0.12% Chlorhexidine mouthrinse (Hexipro\u00ae, Evapharm, Kuala Lumpur, Malaysia); instructed to rinse three times a day using 15 ml each time for a period of 14 days commencing immediately after completion of full mouth debridement. At each monthly recall visit, participants were reviewed, re-motivated, and received professional prophylaxis comprising scaling and polishing.\",\n      \"n_in_arm\": 20,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_mouthrinse\"\n    },\n    {\n      \"arm_label\": \"OHI group\",\n      \"comparison_summary\": \"NSPT (full mouth debridement + CHX mouthrinse) vs OHI alone\",\n      \"intervention_description\": \"All subjects were instructed in oral hygiene methods using a soft bristled toothbrush, a compact-tuft toothbrush, interdental brushes and dental floss (TePe\u00ae oral hygiene education set) utilizing the modified Bass technique. No interventional treatment was given to the OHI group apart from oral hygiene instructions and motivation. At each monthly recall visit, participants were reviewed and re-motivated (no professional prophylaxis).\",\n      \"n_in_arm\": 20,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **NSPT group** (`SI_plus_mouthrinse`): Full-mouth SRP in a single visit (ultrasonic + Gracey curettes) plus 0.12% CHX mouthrinse for 14 days post-treatment, plus OHI and monthly recall with professional prophylaxis. The CHX mouthrinse adjunct places this in `SI_plus_mouthrinse` rather than `SI_alone`.\n- **OHI group** (`usual_care`): OHI only \u2014 no subgingival instrumentation, no professional debridement, no prophylaxis at recall. Serves as the control arm.\n- `n_in_arm = 20` for both: the paper states \"20 subjects per arm (40 in total)\" were randomised; completers (15 and 17) are the analysed subset.\n- Follow-up is 3 months for both arms (final visit at 3 months post-therapy).",
+  "stop_reason": "end_turn",
+  "session_id": "2c44e1a3-f555-4abd-8cf7-632c47dd68dd",
+  "total_cost_usd": 0.16609454999999998,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 26099,
+    "cache_read_input_tokens": 85811,
+    "output_tokens": 2734,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 26099
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 821,
+        "cache_read_input_tokens": 42615,
+        "cache_creation_input_tokens": 1848,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1848,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2734,
+      "cacheReadInputTokens": 85811,
+      "cacheCreationInputTokens": 26099,
+      "webSearchRequests": 0,
+      "costUSD": 0.16463955,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "aa353b20-76ca-4199-9888-78b5759c8b57"
+}

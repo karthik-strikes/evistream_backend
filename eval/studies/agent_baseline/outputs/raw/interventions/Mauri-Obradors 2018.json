@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 36031,
+  "duration_api_ms": 36756,
+  "ttft_ms": 1706,
+  "ttft_stream_ms": 1676,
+  "time_to_request_ms": 145,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"TG (treatment group)\",\n      \"comparison_summary\": \"SRP plus OHI vs supragingival scaling plus OHI\",\n      \"intervention_description\": \"Oral hygiene instructions using the modified Bass technique + full-mouth debridement consisting of scaling and root planing (SRP) using an ultrasonic scaler (Satelec P5 Newtron XS, Acteon, Merignac, France) and Gracey curettes. At 3-month control visit, mouth debridement was conducted when needed (presence of points of bleeding and/or increased PPD).\",\n      \"n_in_arm\": 42,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"CG (control group)\",\n      \"comparison_summary\": \"SRP plus OHI vs supragingival scaling plus OHI\",\n      \"intervention_description\": \"Oral hygiene instructions using the modified Bass technique + supragingival removal of plaque and calculus using an ultrasonic scaler (Satelec P5 Newtron XS, Acteon, Merignac, France).\",\n      \"n_in_arm\": 48,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"supragingival_only\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **TG** (n=42): Full-mouth SRP with ultrasonic scaler + Gracey curettes, plus OHI (modified Bass technique). Classified as `SI_alone` \u2014 subgingival instrumentation without any adjunctive antimicrobials.\n- **CG** (n=48): Supragingival removal of plaque and calculus using ultrasonic scaler only, plus OHI. Classified as `supragingival_only`. The paper explicitly excludes SRP and limits this arm to coronal/supragingival debridement.\n- Both arms had 6-month follow-up with assessments at baseline, 3 months, and 6 months.\n- No antimicrobials, mouthrinses, or local drug delivery were used in either arm.",
+  "stop_reason": "end_turn",
+  "session_id": "8668bf9b-8499-41ae-b998-b8d54e817291",
+  "total_cost_usd": 0.15907994999999997,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 26629,
+    "cache_read_input_tokens": 86704,
+    "output_tokens": 2116,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 26629
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 559,
+        "cache_read_input_tokens": 43504,
+        "cache_creation_input_tokens": 1489,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1489,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 2116,
+      "cacheReadInputTokens": 86704,
+      "cacheCreationInputTokens": 26629,
+      "webSearchRequests": 0,
+      "costUSD": 0.15762494999999999,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "759e6f35-0ffc-487a-a3ef-0c8d967200a9"
+}

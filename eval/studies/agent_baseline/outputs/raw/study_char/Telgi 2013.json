@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 26719,
+  "duration_api_ms": 27435,
+  "ttft_ms": 1803,
+  "ttft_stream_ms": 1737,
+  "time_to_request_ms": 147,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"India\",\n  \"setting\": \"Diabetic centre (dental clinic wing), Moradabad\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"3-arm parallel RCT; examiner and participants both blinded\",\n  \"recruitment_period\": \"NR\",\n  \"funding_source\": \"NR\",\n  \"notes\": \"Sample size estimated from pilot study: 15 per group (alpha=0.05, 80% power); 20 per group recruited to allow for attrition. No conflict of interest declared. Limitations noted by authors: sample too small to analyse moderate/severe periodontitis separately; systemic inflammation markers not measured; long-term follow-up (\u22656 months) not included; drug dosage not recorded.\"\n}\n```\n\nKey extraction decisions:\n- **Setting**: Patients were screened at a Diabetic Centre in Moradabad; oral examinations conducted in its dental clinic wing \u2014 a single-institution hospital/clinic setting.\n- **Trial design**: 3 arms (scaling+mouthwash+brushing vs. mouthwash+brushing vs. brushing only); the paper explicitly states \"the examiner and participants were both blinded.\"\n- **Recruitment period**: No dates mentioned.\n- **Funding**: No funding statement appears; conflict of interest section only states \"no potential conflict of interest.\"",
+  "stop_reason": "end_turn",
+  "session_id": "6be03067-b71b-4e79-9be8-967b16faae0a",
+  "total_cost_usd": 0.10850925,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 16863,
+    "cache_read_input_tokens": 77220,
+    "output_tokens": 1390,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 16863
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 325,
+        "cache_read_input_tokens": 34223,
+        "cache_creation_input_tokens": 1004,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1004,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1390,
+      "cacheReadInputTokens": 77220,
+      "cacheCreationInputTokens": 16863,
+      "webSearchRequests": 0,
+      "costUSD": 0.10726725000000001,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "4ac5b495-4a96-4381-bb54-1680e06864da"
+}

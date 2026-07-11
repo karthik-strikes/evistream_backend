@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 78930,
+  "duration_api_ms": 79556,
+  "ttft_ms": 3294,
+  "ttft_stream_ms": 3269,
+  "time_to_request_ms": 144,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 55.95,\n  \"age_arm_a_sd\": 11.21,\n  \"age_arm_b\": 52.82,\n  \"age_arm_b_sd\": 12.27,\n  \"pct_female_arm_a\": 54.5,\n  \"pct_female_arm_b\": 63.6,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 7.31,\n  \"baseline_hba1c_arm_b\": 7.00,\n  \"metabolic_control_level\": \"fair\",\n  \"duration_since_diabetes_dx\": \"Treatment group mean 9.32 \u00b1 8.36 years; control group mean 8.05 \u00b1 5.90 years\",\n  \"tobacco_use\": \"5 smokers in treatment group, 2 smokers in control group (not excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"(1) type 2 DM with HbA1c 6%\u20138%; (2) creatinine <1.4 mg/dl; (3) liver function tests not up to three times the normal range; (4) no major diabetic complications; (5) no history of systemic antibiotic administration within the last 3 months; (6) no periodontal treatment 6 months prior to the study\",\n  \"exclusion_criteria\": \"NR\",\n  \"n_randomised\": 44,\n  \"n_evaluated\": \"44 at 3 months\"\n}\n```\n\n**Key extraction notes:**\n\n- **Ages**: From Table 1 \u2014 treatment 55.95 \u00b1 11.21 yrs, control 52.82 \u00b1 12.27 yrs.\n- **Sex**: Derived from raw counts (12 women/22 = 54.5% for arm A; 14/22 = 63.6% for arm B). The paper's own text rounds to 55%/64% while Table 1 shows 54%/64%; derived values used.\n- **HbA1c**: From Table 4 \u2014 treatment 7.31 \u00b1 0.74%, control 7.00 \u00b1 0.72%. The paper explicitly states \"Both groups showed moderate metabolic control at baseline,\" mapping to **fair** (HbA1c 6\u20138%, inclusion criterion confirmed this range).\n- **Tobacco**: Smokers were present (not excluded) \u2014 5 in treatment, 2 in control.\n- **Exclusion criteria**: No separate exclusion criteria section exists; the inclusion list contains the only stated criteria.\n- **n_evaluated**: Tables 3 and 4 label both groups as n=22 throughout, giving 44 at 3 months. (A note that \"data concerning patients who had surgical treatment were excluded\" appears but the tables retain n=22, suggesting none were ultimately excluded or this applied only within-arm.)",
+  "stop_reason": "end_turn",
+  "session_id": "46ce3b51-925e-4392-b132-cd2df8f90a03",
+  "total_cost_usd": 0.19374055,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25559,
+    "cache_read_input_tokens": 83531,
+    "output_tokens": 4734,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25559
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 720,
+        "cache_read_input_tokens": 39971,
+        "cache_creation_input_tokens": 3952,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3952,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 16,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.00181,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4734,
+      "cacheReadInputTokens": 83531,
+      "cacheCreationInputTokens": 25559,
+      "webSearchRequests": 0,
+      "costUSD": 0.19193055000000003,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "59b966af-83fb-407d-8cce-a31e6f066376"
+}

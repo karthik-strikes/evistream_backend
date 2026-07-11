@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 30903,
+  "duration_api_ms": 31787,
+  "ttft_ms": 1934,
+  "ttft_stream_ms": 1906,
+  "time_to_request_ms": 143,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"China\",\n  \"setting\": \"community health center\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel RCT\",\n  \"recruitment_period\": \"June 2014 to December 2014\",\n  \"funding_source\": \"Xiamen Health Bureau (grant number: WSK 2012-01) and the National Institute of Hospital Administration (the hierarchical medical treatment policy in diabetes project)\",\n  \"notes\": \"Adipokine data (TNF-\u03b1, IL-6, APN, FGF21) presented in figures only; exact numerical values not extractable from tables. No sample size calculation reported. Authors declared no conflicts of interest.\"\n}\n```\n\n**Key extraction notes:**\n\n- **Country/Setting**: Conducted at Xiamen Lianqian Community Health Center, Xiamen, China (single site; corresponding author at Wuhan University but the trial ran at Xiamen).\n- **Trial design**: 44 participants randomised 1:1 to intervention (periodontal therapy, n=22) vs. control (no intervention, n=22); parallel-group RCT. No blinding of participants described.\n- **Recruitment period**: Screening occurred \"between June 2014 and December 2014\" (Methods/Subjects section).\n- **Funding**: Two funders named in Acknowledgements \u2014 Xiamen Health Bureau and the National Institute of Hospital Administration.\n- **Notes**: Adipokine outcomes were graph-only (no table with exact means/SDs), so those values cannot be precisely extracted. No power/sample-size calculation is reported. No competing interests declared.",
+  "stop_reason": "end_turn",
+  "session_id": "541c51a5-3466-439c-a041-00bb92add1b0",
+  "total_cost_usd": 0.12624475000000002,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 20829,
+    "cache_read_input_tokens": 81130,
+    "output_tokens": 1502,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 20829
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 387,
+        "cache_read_input_tokens": 38135,
+        "cache_creation_input_tokens": 1058,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1058,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001252,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1502,
+      "cacheReadInputTokens": 81130,
+      "cacheCreationInputTokens": 20829,
+      "webSearchRequests": 0,
+      "costUSD": 0.12499275,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "02cd03ed-ae91-4ada-9e98-820f87239f90"
+}

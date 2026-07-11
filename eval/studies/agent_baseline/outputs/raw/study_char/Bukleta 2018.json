@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 58472,
+  "duration_api_ms": 58969,
+  "ttft_ms": 1712,
+  "ttft_stream_ms": 1685,
+  "time_to_request_ms": 190,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"Kosovo\",\n  \"setting\": \"Hospital and dental clinic (endocrinology department of Peja's Regional Hospital and Dental Polyclinic of Peja)\",\n  \"number_of_centres\": \"2 (Peja's Regional Hospital and Dental Polyclinic, Peja, Kosovo)\",\n  \"trial_design\": \"4-arm open-label parallel-group randomized clinical trial (T2DM tooth extraction only vs. T2DM tooth extraction + FM-SRP; non-diabetic tooth extraction only vs. non-diabetic tooth extraction + FM-SRP)\",\n  \"recruitment_period\": \"2015-2016\",\n  \"funding_source\": \"NR\",\n  \"notes\": \"Study described as a 'preliminary report'. HbA1c and hs-CRP results are primarily presented as box plots (Figures 2 and 3); some numerical values are reported in the text. Sample size calculation reported: effect size d=0.5, alpha error probability 0.08, power 0.8, resulting in 26 patients per group. No conflicts of interest declared. Registered on ClinicalTrials.gov (NCT02874963). Slovenian Human Resources Development and Scholarship Fund (SHRDSF) acknowledged for providing a scholarship to one author (Dr. Dashnor Bukleta), not stated as a research funder.\"\n}\n```\n\n**Key extraction decisions:**\n\n- **Country**: Kosovo \u2014 the study was explicitly conducted at Peja's Regional Hospital and Dental Polyclinic of Peja, Kosovo. Co-author affiliations in Slovenia and Italy do not reflect the study site.\n- **Setting**: Two sites \u2014 the hospital endocrinology department and the dental polyclinic, both in Peja.\n- **Trial design**: 4 arms total (2 T2DM arms + 2 non-diabetic arms), open-label, parallel-group. The abstract focuses on the 100 diabetic patients (50/50), but the full study enrolled 160 patients across 4 groups.\n- **Recruitment period**: Stated as \"conducted during 2015-2016\".\n- **Funding**: No research funder named; the SHRDSF scholarship acknowledgment is for one author personally, not the study.\n- **Notes**: Flags the \"preliminary report\" label, graph-only primary outcomes (limiting numerical extraction), sample size calculation details, trial registration, and COI status.",
+  "stop_reason": "end_turn",
+  "session_id": "e9929b76-149f-4e68-99ac-4845345d17d5",
+  "total_cost_usd": 0.15678345,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 21933,
+    "cache_read_input_tokens": 80659,
+    "output_tokens": 3272,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 21933
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 573,
+        "cache_read_input_tokens": 37660,
+        "cache_creation_input_tokens": 2637,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2637,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3272,
+      "cacheReadInputTokens": 80659,
+      "cacheCreationInputTokens": 21933,
+      "webSearchRequests": 0,
+      "costUSD": 0.15554145,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "c49098ed-715a-405b-aef9-89d74f793909"
+}

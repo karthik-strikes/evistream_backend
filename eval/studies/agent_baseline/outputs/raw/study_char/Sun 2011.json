@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 28368,
+  "duration_api_ms": 30340,
+  "ttft_ms": 1806,
+  "ttft_stream_ms": 1778,
+  "time_to_request_ms": 172,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"country\": \"China\",\n  \"setting\": \"hospital (The Second Affiliated Hospital, College of Medicine, Zhejiang University)\",\n  \"number_of_centres\": \"1\",\n  \"trial_design\": \"2-arm parallel RCT, unblinded\",\n  \"recruitment_period\": \"August 2008 to November 2010\",\n  \"funding_source\": \"Zhejiang Science and Technology Projects (2009C33168), Natural Science Foundation of Zhejiang Province (Y2100077), Zhejiang Education Committee Projects (Y201017607), National Natural Science Foundation of China (30872884) and Zhejiang Health Bureau Fund (2009A104)\",\n  \"notes\": \"Study was not blinded; 33 of 190 enrolled patients did not complete the study (12 withdrew for personal reasons, 21 had late follow-up visits >3 months) and their data were excluded from baseline tables; no sample size calculation reported; no conflict of interest declared by authors\"\n}\n```\n\n**Key sources within `paper.md`:**\n- **country/setting/centres**: Affiliations (line 40) \u2014 all authors at The Second Affiliated Hospital, Zhejiang University, China; Discussion (line 186) confirms \"performed at a single facility.\"\n- **trial_design**: Methods state patients \"were randomly divided into two groups\" (line 68); Discussion confirms \"The study was not blinded\" (line 186).\n- **recruitment_period**: Subjects section (line 64) \u2014 \"enrolled from August 2008 to November 2010.\"\n- **funding_source**: Acknowledgement section (line 198).\n- **notes**: Dropout details (line 68); no COI statement (line 194); no power/sample-size calculation mentioned anywhere.",
+  "stop_reason": "end_turn",
+  "session_id": "10cda547-fa55-4945-86b6-f51f76dc4a45",
+  "total_cost_usd": 0.1152264,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 17814,
+    "cache_read_input_tokens": 78073,
+    "output_tokens": 1583,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 17814
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 417,
+        "cache_read_input_tokens": 35076,
+        "cache_creation_input_tokens": 1102,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1102,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1167,
+      "outputTokens": 15,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001242,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1583,
+      "cacheReadInputTokens": 78073,
+      "cacheCreationInputTokens": 17814,
+      "webSearchRequests": 0,
+      "costUSD": 0.11398439999999999,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "92a8b005-bb2b-4468-9096-b26700870b73"
+}

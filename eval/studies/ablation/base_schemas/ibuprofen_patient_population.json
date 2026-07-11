@@ -1,0 +1,137 @@
+{
+  "form_name": "CD015432 \u2014 Patient Population",
+  "signatures": [
+    {
+      "class_name": "IbuPatientPopulation",
+      "output_fields": [
+        {
+          "field_name": "age_central_tendency_type",
+          "field_type": "select",
+          "field_description": "How the paper summarises participant age. 'mean' = mean (usually \u00b1 SD); 'median' = median (usually with IQR/range); 'range' = only an age range is given, no central value. Use 'NR' if age is not reported at all.",
+          "example": "mean",
+          "options": [
+            "mean",
+            "median",
+            "range",
+            "NR"
+          ],
+          "multiple": false,
+          "examples": [
+            {
+              "value": "mean",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Check the Methods or Results section, typically in a demographics or baseline characteristics table, for how age is reported for the ibuprofen arm"
+          ],
+          "rules": [
+            "Must be exactly one of the listed options",
+            "Use \"NR\" if age is not reported at all"
+          ],
+          "name": "age_central_tendency_type",
+          "description": "How the paper summarises participant age. 'mean' = mean (usually \u00b1 SD); 'median' = median (usually with IQR/range); 'range' = only an age range is given, no central value. Use 'NR' if age is not reported at all.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "age_value",
+          "field_type": "number",
+          "field_description": "The central age value (mean or median, in the unit the paper reports \u2014 usually years, occasionally months) for the ibuprofen arm. Leave 'NR' when only an age range is reported. Record the number only; note the unit in age_range if it is months.",
+          "example": "7.4",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "7.4",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Look at the baseline demographics table or text describing the ibuprofen/treatment group's age",
+            "If the unit is months rather than years, still record the numeric value here and note the unit in age_range"
+          ],
+          "rules": [
+            "Record only the numeric central value (mean or median), no units",
+            "Leave as \"NR\" when only an age range is reported with no central value",
+            "Use \"NR\" if age is not reported"
+          ],
+          "name": "age_value",
+          "description": "The central age value (mean or median, in the unit the paper reports \u2014 usually years, occasionally months) for the ibuprofen arm. Leave 'NR' when only an age range is reported. Record the number only; note the unit in age_range if it is months.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "age_sd",
+          "field_type": "number",
+          "field_description": "Standard deviation of age for the ibuprofen arm, when the paper reports age as mean \u00b1 SD. Use 'NR' if not reported (e.g. median/IQR or range studies).",
+          "example": "1.9",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "1.9",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Typically appears immediately after the mean age, formatted as 'mean \u00b1 SD'"
+          ],
+          "rules": [
+            "Record only the numeric SD value, no units",
+            "Use \"NR\" if not reported (e.g. when median/IQR or range is used instead)"
+          ],
+          "name": "age_sd",
+          "description": "Standard deviation of age for the ibuprofen arm, when the paper reports age as mean \u00b1 SD. Use 'NR' if not reported (e.g. median/IQR or range studies).",
+          "source_grounded": true
+        },
+        {
+          "field_name": "age_range",
+          "field_type": "text",
+          "field_description": "Reported age range or IQR for the ibuprofen arm, written as 'min-max unit' with a single hyphen (e.g. '3-5.2 years', '13-18 years'). Use 'NR' if not reported.",
+          "example": "3-5.2 years",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "3-5.2 years",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Look for phrasing like 'range' or 'IQR' near the age data for the ibuprofen group"
+          ],
+          "rules": [
+            "Format as 'min-max unit' using a single hyphen between min and max",
+            "Include the unit (years or months) in the string",
+            "Use \"NR\" if not reported"
+          ],
+          "name": "age_range",
+          "description": "Reported age range or IQR for the ibuprofen arm, written as 'min-max unit' with a single hyphen (e.g. '3-5.2 years', '13-18 years'). Use 'NR' if not reported.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "n_randomised",
+          "field_type": "number",
+          "field_description": "Total number of participants randomised across all arms. Use 'NR' if not stated.",
+          "example": "59",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "59",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Look in the Methods or Results section, often near 'randomised', 'randomized', or 'enrolled'",
+            "Check the CONSORT flow diagram or participant flow description if present",
+            "Sum across all arms if only per-arm counts are given and no overall total is explicitly stated"
+          ],
+          "rules": [
+            "Extract as a whole number representing the total across all randomised arms",
+            "Do not confuse with number screened, enrolled, or completing the study unless explicitly described as randomised",
+            "Use \"NR\" if not stated"
+          ],
+          "name": "n_randomised",
+          "description": "Total number of participants randomised across all arms. Use 'NR' if not stated.",
+          "source_grounded": true
+        }
+      ]
+    }
+  ]
+}

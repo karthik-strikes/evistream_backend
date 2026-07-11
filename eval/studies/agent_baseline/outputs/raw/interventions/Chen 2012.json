@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 68966,
+  "duration_api_ms": 69450,
+  "ttft_ms": 3382,
+  "ttft_stream_ms": 3323,
+  "time_to_request_ms": 454,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment group 1\",\n      \"comparison_summary\": \"SRP + subgingival debridement at maintenance vs SRP + supragingival prophylaxis at maintenance vs no treatment\",\n      \"intervention_description\": \"Non-surgical periodontal treatment consisting of scaling and root planing under local anesthesia at baseline and additional subgingival debridement at the 3-month follow-up. Completed within 24 hours by an experienced periodontist without administration of antibiotics or local antimicrobials, using standard rigid periodontal curets (Gracey curets, Hu-Friedy) and ultrasonic instrumentation (Odontoson, Goof, Herlev, Denmark). Oral hygiene instructions provided at baseline and reinforced at each follow-up visit.\",\n      \"n_in_arm\": 45,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Treatment group 2\",\n      \"comparison_summary\": \"SRP + supragingival prophylaxis at maintenance vs SRP + subgingival debridement at maintenance vs no treatment\",\n      \"intervention_description\": \"Non-surgical periodontal treatment (scaling and root planing under local anesthesia) at the initial visit and only supragingival prophylaxis, with no intervention in deep periodontal pockets, at the 3-month follow-up. Completed within 24 hours by an experienced periodontist without administration of antibiotics or local antimicrobials, using standard rigid periodontal curets (Gracey curets, Hu-Friedy) and ultrasonic instrumentation (Odontoson, Goof, Herlev, Denmark). Oral hygiene instructions provided at baseline and reinforced at each follow-up visit.\",\n      \"n_in_arm\": 45,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Control group\",\n      \"comparison_summary\": \"No treatment vs non-surgical periodontal treatment\",\n      \"intervention_description\": \"No treatment measure or formal oral hygiene instructions until the end of the study.\",\n      \"n_in_arm\": 44,\n      \"duration_of_followup\": \"6 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **3 arms** from Chen et al. 2012 (J Periodontol 83:435-443): Treatment group 1, Treatment group 2, and Control group.\n- **n_in_arm** uses the randomised counts (45/45/44 = 134 total), not the analysed counts (42/43/41 = 126 after 8 withdrawals), consistent with ITT reporting conventions.\n- Both treatment groups receive **initial SRP** (subgingival, under local anaesthesia, no antibiotics or antimicrobials) and are therefore classified **SI_alone**. They differ only in the maintenance procedure at 3 months: Group 1 gets additional subgingival debridement; Group 2 gets supragingival prophylaxis only. Because both groups' index treatment is SRP and neither maintenance adds an antimicrobial, `SI_alone` is the best-fit category for both.\n- The control group received **no periodontal treatment and no oral hygiene instructions** throughout, fitting `usual_care`.\n- Follow-up is **6 months** for all arms (with assessments at 1.5, 3, and 6 months post-baseline).",
+  "stop_reason": "end_turn",
+  "session_id": "809eecda-2119-4032-9bcc-c2bd37f50e50",
+  "total_cost_usd": 0.19442985,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 26701,
+    "cache_read_input_tokens": 84737,
+    "output_tokens": 4494,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 26701
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 895,
+        "cache_read_input_tokens": 41537,
+        "cache_creation_input_tokens": 3528,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3528,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 4494,
+      "cacheReadInputTokens": 84737,
+      "cacheCreationInputTokens": 26701,
+      "webSearchRequests": 0,
+      "costUSD": 0.19297485,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "68ff3a82-c3f1-4907-99c9-b67096fec60f"
+}

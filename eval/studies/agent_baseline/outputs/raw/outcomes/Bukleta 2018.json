@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 205186,
+  "duration_api_ms": 205875,
+  "ttft_ms": 1797,
+  "ttft_stream_ms": 1761,
+  "time_to_request_ms": 183,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 8.03,\n      \"sd_arm1\": 1.67,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 7.69,\n      \"sd_arm2\": 2.09,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 5.08,\n      \"sd_arm1\": 1.10,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 5.24,\n      \"sd_arm2\": 2.17,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": -7.32,\n      \"sd_arm1\": 1.31,\n      \"n_arm1\": 50,\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 58.67,\n      \"sd_arm1\": 22.76,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 79.41,\n      \"sd_arm2\": 20.97,\n      \"n_arm2\": 50\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 28.94,\n      \"sd_arm1\": 21.65,\n      \"n_arm1\": 50,\n      \"mean_arm2\": 51.01,\n      \"sd_arm2\": 34.02,\n      \"n_arm2\": 50\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **5 rows** total: one per outcome (HbA1c, PPD, CAL, PI, BOP) \u00d7 1 timepoint (3 months) \u00d7 1 comparison.\n- **Subgroup = `SI_plus_mouthrinse`**: the FM-SRP arm also received Listerine antiseptic mouthrinse 3\u00d7/day for 3 weeks; the control arm received tooth extraction only.\n- All values are 3-month follow-up means \u00b1 SDs taken directly from the Results text (format: baseline vs. 3-month).\n- **CAL (MAL)**: the paper reports only the FM-SRP arm's 3-month value (\u22127.32\u00b11.31, expressed as negative attachment loss); the control arm's 3-month value is not given (NR). The n=50 per arm is known from the study design.\n- No GI was reported; hs-CRP is not an allowed outcome type and was excluded.",
+  "stop_reason": "end_turn",
+  "session_id": "787d425f-6574-41cb-971f-978bc197d9eb",
+  "total_cost_usd": 0.36635270000000003,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 33156,
+    "cache_read_input_tokens": 81429,
+    "output_tokens": 14395,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 33156
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 853,
+        "cache_read_input_tokens": 38046,
+        "cache_creation_input_tokens": 13474,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 13474,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 14395,
+      "cacheReadInputTokens": 81429,
+      "cacheCreationInputTokens": 33156,
+      "webSearchRequests": 0,
+      "costUSD": 0.3647037,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "00c69932-2580-4b4e-81d1-adede01985b4"
+}

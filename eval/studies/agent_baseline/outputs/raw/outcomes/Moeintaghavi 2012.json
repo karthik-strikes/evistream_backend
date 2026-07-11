@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 77640,
+  "duration_api_ms": 79126,
+  "ttft_ms": 4369,
+  "ttft_stream_ms": 4345,
+  "time_to_request_ms": 182,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 7.4,\n      \"sd_arm1\": 1.4,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 7.7,\n      \"sd_arm2\": 1.1,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.2,\n      \"sd_arm1\": 0.6,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 2.5,\n      \"sd_arm2\": 0.8,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.4,\n      \"sd_arm1\": 0.6,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 2.7,\n      \"sd_arm2\": 1.0,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 24.1,\n      \"sd_arm1\": 22.3,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 25.1,\n      \"sd_arm2\": 16.7,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 39.6,\n      \"sd_arm1\": 17.6,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 42.6,\n      \"sd_arm2\": 22.6,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 7.4,\n      \"sd_arm1\": 1.3,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 7.6,\n      \"sd_arm2\": 1.1,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.2,\n      \"sd_arm1\": 0.5,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 2.6,\n      \"sd_arm2\": 0.9,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 2.4,\n      \"sd_arm1\": 0.6,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 2.8,\n      \"sd_arm2\": 1.0,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 23.1,\n      \"sd_arm1\": 23.2,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 28.7,\n      \"sd_arm2\": 22.0,\n      \"n_arm2\": 17\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_vs_usual_care\",\n      \"mean_arm1\": 37.6,\n      \"sd_arm1\": 16.4,\n      \"n_arm1\": 20,\n      \"mean_arm2\": 44.9,\n      \"sd_arm2\": 25.5,\n      \"n_arm2\": 17\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **10 rows** total: 5 outcomes \u00d7 2 timepoints (3 months \u2192 `3-4_months`; 6 months \u2192 `6_months`)\n- **Arm 1** = periodontal treatment group (scaling & root planing + OHI); **Arm 2** = control (OHI only / usual care)\n- **Subgroup** = `SI_vs_usual_care` throughout \u2014 control received no active periodontal instrumentation\n- **N** = 20 (arm 1) / 17 (arm 2) at both timepoints per the ITT analysis with LOCF imputation (Table 2 headers)\n- **PI** rows = Plaque Control Record (PCR %), the only plaque measure reported; mapped to `PI` as the closest allowed synonym\n- No GI was reported in this paper",
+  "stop_reason": "end_turn",
+  "session_id": "1b386e2f-95c2-45a4-8398-eecc49c879e6",
+  "total_cost_usd": 0.25537384999999996,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 35469,
+    "cache_read_input_tokens": 92487,
+    "output_tokens": 6197,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 35469
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1400,
+        "cache_read_input_tokens": 49104,
+        "cache_creation_input_tokens": 4729,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 4729,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 6197,
+      "cacheReadInputTokens": 92487,
+      "cacheCreationInputTokens": 35469,
+      "webSearchRequests": 0,
+      "costUSD": 0.25372485,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "1e59b744-6908-4936-8b3b-f2f82ed95ae4"
+}

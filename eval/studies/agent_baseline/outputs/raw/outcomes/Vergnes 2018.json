@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 66835,
+  "duration_api_ms": 67974,
+  "ttft_ms": 2196,
+  "ttft_stream_ms": 2166,
+  "time_to_request_ms": 121,
+  "num_turns": 4,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 7.86,\n      \"sd_arm1\": 0.73,\n      \"n_arm1\": 44,\n      \"mean_arm2\": 7.77,\n      \"sd_arm2\": 0.66,\n      \"n_arm2\": 44\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 1.89,\n      \"sd_arm1\": 0.41,\n      \"n_arm1\": 39,\n      \"mean_arm2\": 2.18,\n      \"sd_arm2\": 0.52,\n      \"n_arm2\": 40\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 2.48,\n      \"sd_arm1\": 0.85,\n      \"n_arm1\": 39,\n      \"mean_arm2\": 2.61,\n      \"sd_arm2\": 0.83,\n      \"n_arm2\": 40\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 13.8,\n      \"sd_arm1\": 12.5,\n      \"n_arm1\": 39,\n      \"mean_arm2\": 25.6,\n      \"sd_arm2\": 17.1,\n      \"n_arm2\": 40\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **4 rows** extracted: HbA1c, PPD, CAL, BOP \u2014 all at the single 3-month follow-up (V4). All from the \"all types of diabetes\" combined ITT analysis (Tables 2 & 3).\n- **Arm 1** = immediate periodontal treatment (SRP + amoxicillin + chlorhexidine mouthwash + OHI); **Arm 2** = delayed/no-treatment control.\n- **Subgroup = `SI_plus_antimicrobial`**: the intervention added systemic amoxicillin (2 g/day \u00d7 7 days) on top of SRP; a subgingival chlorhexidine mouthwash was also used, but the systemic antibiotic is the primary adjunct.\n- **PI and GI**: not reported \u2014 the paper explicitly states plaque indicators were not collected during periodontal examinations.\n- **BOP** values are percentages (% sites bleeding); means and SDs extracted directly from Table 3.",
+  "stop_reason": "end_turn",
+  "session_id": "f91fea25-06ea-468e-9990-2389d08f1ce9",
+  "total_cost_usd": 0.26622840000000003,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 41658,
+    "cache_read_input_tokens": 144063,
+    "output_tokens": 4342,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 41658
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 749,
+        "cache_read_input_tokens": 56642,
+        "cache_creation_input_tokens": 3380,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 3380,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001644,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 6,
+      "outputTokens": 4342,
+      "cacheReadInputTokens": 144063,
+      "cacheCreationInputTokens": 41658,
+      "webSearchRequests": 0,
+      "costUSD": 0.2645844,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "94864da9-aa79-41fa-9b7a-558737798dd8"
+}

@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 315357,
+  "duration_api_ms": 316236,
+  "ttft_ms": 1984,
+  "ttft_stream_ms": 1927,
+  "time_to_request_ms": 165,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 0.14,\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 257,\n      \"mean_arm2\": 0.11,\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 257\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": 0.17,\n      \"sd_arm1\": 1.0,\n      \"n_arm1\": 257,\n      \"mean_arm2\": 0.11,\n      \"sd_arm2\": 1.0,\n      \"n_arm2\": 257\n    },\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": -0.4,\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 240,\n      \"mean_arm2\": -0.1,\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 235\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": -19.0,\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": 240,\n      \"mean_arm2\": -5.9,\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": 235\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": \"NR\",\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": \"NR\"\n    },\n    {\n      \"outcome_type\": \"GI\",\n      \"timepoint\": \"6_months\",\n      \"subgroup\": \"SI_plus_mouthrinse\",\n      \"mean_arm1\": \"NR\",\n      \"sd_arm1\": \"NR\",\n      \"n_arm1\": \"NR\",\n      \"mean_arm2\": \"NR\",\n      \"sd_arm2\": \"NR\",\n      \"n_arm2\": \"NR\"\n    }\n  ]\n}\n```\n\n---\n\n**Extraction notes:**\n\n- **Subgroup**: `SI_plus_mouthrinse` \u2014 treatment arm received SRP + chlorhexidine gluconate 0.12% oral rinse; control received oral hygiene instructions only (no periodontal treatment).\n\n- **HbA1c (3 months)**: Mean changes from Table 2 ITT analysis. SD not reported (only 95% CI from regression model: treatment 0.02\u20130.27, control \u22120.02\u20130.24). N = 257 each (imputed ITT).\n\n- **HbA1c (6 months)**: Mean changes and SDs from the abstract (raw ITT values: treatment +0.17 SD 1.0, control +0.11 SD 1.0, n=257). Table 2 reports model-adjusted means of 0.15 and 0.09 without SDs.\n\n- **PPD and BOP (6 months)**: Mean changes from per-protocol analysis reported in the text (PPD: \"improved by 0.4 mm\" treatment vs 0.1 mm control; BOP: \"decreased by 19.0%\" vs 5.9%). Recorded as negative change (decreases). SDs NR (only 95% CI from regression). N = 240/235 (per-protocol).\n\n- **CAL and GI (6 months)**: Paper reports only adjusted between-group differences (CAL 0.25 mm; GI 0.27) \u2014 individual arm means not given; all fields NR. These outcomes were assessed (Figure 3, eTable 2 in supplement not available).\n\n- **PI (plaque score)**: Measured and shown in Figure 3 (per-protocol) but only as approximate graph readings without tabulated values or SDs; not extractable as reliable numerical data.\n\n- **3-month periodontal outcomes**: No arm-level numerical data in the main paper text; eTable 2 (supplement) not available.",
+  "stop_reason": "end_turn",
+  "session_id": "d49b8a00-cd08-466d-9b50-7cf55cb7b86c",
+  "total_cost_usd": 0.5052875,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 46856,
+    "cache_read_input_tokens": 89795,
+    "output_tokens": 20065,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 46856
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 1185,
+        "cache_read_input_tokens": 46406,
+        "cache_creation_input_tokens": 18814,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 18814,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 20065,
+      "cacheReadInputTokens": 89795,
+      "cacheCreationInputTokens": 46856,
+      "webSearchRequests": 0,
+      "costUSD": 0.5036385,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "c9797d5a-425a-44e8-b518-7ab4e21284b5"
+}

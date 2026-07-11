@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 32289,
+  "duration_api_ms": 32816,
+  "ttft_ms": 1892,
+  "ttft_stream_ms": 1866,
+  "time_to_request_ms": 150,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Group I (SRP)\",\n      \"comparison_summary\": \"SRP vs SRP+doxycycline vs no treatment (control)\",\n      \"intervention_description\": \"The subjects in group I received oral hygiene instructions and full mouth SRP.\",\n      \"n_in_arm\": 17,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_alone\"\n    },\n    {\n      \"arm_label\": \"Group II (SRP + Doxycycline)\",\n      \"comparison_summary\": \"SRP+doxycycline vs SRP vs no treatment (control)\",\n      \"intervention_description\": \"The subjects in group II received doxycycline (DOXT, Dr Reddy's Lab. Ltd, Hyderabad, India) (total dose 1,600 mg in equally divided 16 doses, start as 100 mg BD followed by OD for 14 days) in addition to the same therapy as that of group I (oral hygiene instructions and full mouth SRP).\",\n      \"n_in_arm\": 17,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Group III (control)\",\n      \"comparison_summary\": \"No treatment (control) vs SRP vs SRP+doxycycline\",\n      \"intervention_description\": \"The group III received no treatment that served as control. All the control group subjects were treated with required periodontal intervention after the final assessment of study parameters after 3 months.\",\n      \"n_in_arm\": 17,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\nThree arms extracted from this 3-arm parallel RCT (Das et al. 2019, J Contemp Dent Pract). Group I received full-mouth SRP alone (`SI_alone`), Group II received SRP plus systemic doxycycline 1,600 mg over 14 days (`SI_plus_systemic_local_antimicrobial`), and Group III was an untreated control (`usual_care`). All arms had n=17 and 3-month follow-up.",
+  "stop_reason": "end_turn",
+  "session_id": "90b98b42-47a5-47ff-93ab-588c7e96e246",
+  "total_cost_usd": 0.1438677,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 23386,
+    "cache_read_input_tokens": 83634,
+    "output_tokens": 1974,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 23386
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 588,
+        "cache_read_input_tokens": 40434,
+        "cache_creation_input_tokens": 1316,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1316,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 1974,
+      "cacheReadInputTokens": 83634,
+      "cacheCreationInputTokens": 23386,
+      "webSearchRequests": 0,
+      "costUSD": 0.1424127,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "4d9e4313-4156-4d25-a1f4-d932283d62f2"
+}

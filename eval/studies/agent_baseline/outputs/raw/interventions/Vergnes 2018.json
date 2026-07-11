@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 46176,
+  "duration_api_ms": 46854,
+  "ttft_ms": 1952,
+  "ttft_stream_ms": 1928,
+  "time_to_request_ms": 135,
+  "num_turns": 4,
+  "result": "```json\n{\n  \"interventions\": [\n    {\n      \"arm_label\": \"Treatment group (immediate periodontal treatment)\",\n      \"comparison_summary\": \"Immediate SRP + systemic amoxicillin + chlorhexidine irrigation vs delayed/no-treatment control\",\n      \"intervention_description\": \"Full-mouth non-surgical scaling and root planing (SRP) performed in a single 2-hr session using ultrasonic and hand instruments; local anaesthesia administered if necessary; subgingival irrigation with antiseptic mouthwash (chlorhexidine 0.12%) during SRP; systemic antibiotics (amoxicillin 2 g/day for 7 days after periodontal treatment); oral health instructions (OHI) and free pack of dental care products for 3 months. SRP was performed over the 10-day period following the inclusion visit.\",\n      \"n_in_arm\": 45,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"SI_plus_systemic_local_antimicrobial\"\n    },\n    {\n      \"arm_label\": \"Control group (delayed periodontal treatment)\",\n      \"comparison_summary\": \"Immediate SRP + systemic amoxicillin + chlorhexidine irrigation vs delayed/no-treatment control\",\n      \"intervention_description\": \"No periodontal procedure performed during the 3-month follow-up period (true 'no treatment' control arm). Delayed periodontal treatment with exactly the same procedures as the treatment group was performed at the end of the 3-month follow-up period for ethical reasons.\",\n      \"n_in_arm\": 46,\n      \"duration_of_followup\": \"3 months\",\n      \"cochrane_subgroup_category\": \"usual_care\"\n    }\n  ]\n}\n```\n\n---\n\n**Key extraction notes:**\n\n- **Two arms**: \"immediate\" (treatment) vs \"delayed\" (control), with allocation 45 vs 46.\n- **Treatment arm** received full-mouth non-surgical SRP (single 2-hr session, ultrasonic + hand instruments, local anaesthesia if needed) + subgingival chlorhexidine 0.12% irrigation during SRP + systemic amoxicillin 2 g/day \u00d7 7 days post-SRP + OHI/dental products. The dominant adjunct is systemic antibiotic \u2192 `SI_plus_systemic_local_antimicrobial`.\n- **Control arm** was a true no-treatment control during the 3-month follow-up (identical procedures delivered only after the follow-up ended) \u2192 `usual_care`.\n- Follow-up was 3 months for both arms (V1 to V4).",
+  "stop_reason": "end_turn",
+  "session_id": "04487bf2-3b9d-4769-bbab-ee75edec5d5f",
+  "total_cost_usd": 0.23601645000000002,
+  "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 39993,
+    "cache_read_input_tokens": 143499,
+    "output_tokens": 2768,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 39993
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 651,
+        "cache_read_input_tokens": 56461,
+        "cache_creation_input_tokens": 1896,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 1896,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1370,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001455,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 6,
+      "outputTokens": 2768,
+      "cacheReadInputTokens": 143499,
+      "cacheCreationInputTokens": 39993,
+      "webSearchRequests": 0,
+      "costUSD": 0.23456145,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "1c7ec86f-4f3c-418e-8c46-31130de56ed3"
+}

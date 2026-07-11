@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 53903,
+  "duration_api_ms": 54525,
+  "ttft_ms": 1799,
+  "ttft_stream_ms": 1767,
+  "time_to_request_ms": 179,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"outcomes\": [\n    {\n      \"outcome_type\": \"PPD\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 4.27,\n      \"sd_arm1\": 0.88,\n      \"n_arm1\": 44,\n      \"mean_arm2\": 5.1,\n      \"sd_arm2\": 0.83,\n      \"n_arm2\": 44\n    },\n    {\n      \"outcome_type\": \"CAL\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 4.47,\n      \"sd_arm1\": 0.73,\n      \"n_arm1\": 44,\n      \"mean_arm2\": 5.41,\n      \"sd_arm2\": 0.81,\n      \"n_arm2\": 44\n    },\n    {\n      \"outcome_type\": \"BOP\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 15.36,\n      \"sd_arm1\": 9.82,\n      \"n_arm1\": 44,\n      \"mean_arm2\": 49.23,\n      \"sd_arm2\": 20.75,\n      \"n_arm2\": 44\n    },\n    {\n      \"outcome_type\": \"PI\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 16.64,\n      \"sd_arm1\": 10.21,\n      \"n_arm1\": 44,\n      \"mean_arm2\": 49.5,\n      \"sd_arm2\": 21.02,\n      \"n_arm2\": 44\n    },\n    {\n      \"outcome_type\": \"HbA1c\",\n      \"timepoint\": \"3-4_months\",\n      \"subgroup\": \"SI_plus_antimicrobial\",\n      \"mean_arm1\": 7.27,\n      \"sd_arm1\": 0.5,\n      \"n_arm1\": 44,\n      \"mean_arm2\": 8.34,\n      \"sd_arm2\": 0.64,\n      \"n_arm2\": 44\n    }\n  ]\n}\n```\n\n**Extraction notes:**\n\n- **5 rows** extracted: one per outcome at the single post-baseline timepoint (3 months \u2192 `3-4_months`).\n- **Subgroup = `SI_plus_antimicrobial`**: The intervention arm received SRP plus systemic amoxicillin (500 mg TID \u00d7 2 weeks) and metronidazole (400 mg TID \u00d7 2 weeks). The control received no active periodontal treatment during the 3-month follow-up (delayed therapy for ethical reasons).\n- **PI** maps \"visible dental plaque\" \u2014 recorded as % sites with plaque, the closest match to the plaque index (`PI`) category.\n- **No 6- or 12-month data** exist; the study's only follow-up was 3 months.\n- All n = 44 per arm; no dropouts reported (Figure 1 confirms complete follow-up).",
+  "stop_reason": "end_turn",
+  "session_id": "bcbca715-2728-43f1-ab52-6eca16202a85",
+  "total_cost_usd": 0.17667515,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 25175,
+    "cache_read_input_tokens": 84133,
+    "output_tokens": 3691,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 25175
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 832,
+        "cache_read_input_tokens": 40748,
+        "cache_creation_input_tokens": 2791,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2791,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1559,
+      "outputTokens": 18,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001649,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3691,
+      "cacheReadInputTokens": 84133,
+      "cacheCreationInputTokens": 25175,
+      "webSearchRequests": 0,
+      "costUSD": 0.17502615,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "f030c6a8-da74-4e92-b20c-fb6aea297117"
+}

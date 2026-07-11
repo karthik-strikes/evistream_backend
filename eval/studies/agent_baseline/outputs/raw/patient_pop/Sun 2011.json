@@ -1,0 +1,72 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 147198,
+  "duration_api_ms": 148030,
+  "ttft_ms": 87482,
+  "ttft_stream_ms": 85561,
+  "time_to_request_ms": 126,
+  "num_turns": 3,
+  "result": "```json\n{\n  \"age_arm_a\": 55.13,\n  \"age_arm_a_sd\": 11.16,\n  \"age_arm_b\": 54.23,\n  \"age_arm_b_sd\": 10.85,\n  \"pct_female_arm_a\": 57.32,\n  \"pct_female_arm_b\": 57.33,\n  \"diabetes_type\": \"T2DM\",\n  \"baseline_hba1c_arm_a\": 8.75,\n  \"baseline_hba1c_arm_b\": 8.70,\n  \"metabolic_control_level\": \"poor\",\n  \"duration_since_diabetes_dx\": \"diagnosed with T2DM over one year\",\n  \"tobacco_use\": \"none (excluded)\",\n  \"alcohol_consumption\": \"NR\",\n  \"inclusion_criteria\": \"1) patients diagnosed with T2DM over one year; 2) patients with moderately poor glycemic control (HbA1c between 7.5% and 9.5%); 3) not older than 70 years; body mass index (BMI) between 19 kg/m2 and 26 kg/m2 in women, BMI between 20 kg/m2 and 27 kg/m2 in men; 4) no medication changes during the 3 months of study; 5) not smoking; 6) without severe complications, such as diabetic nephropathy, stroke, angina, myocardial infarction. Periodontitis criteria: 1) with over 20 teeth, probing depth (PD) over 5 mm, more than 30% teeth with attachment loss (AL) over 4 mm, or over 60% teeth with PD >4 mm and AL >3 mm; 2) without periodontal treatment in the previous 6 months; 3) without antibiotics or non-steroidal anti-inflammatory drugs administered in the last 3 months; 4) without serious systemic diseases or complications\",\n  \"exclusion_criteria\": \"Patients with systemic inflammatory diseases (rheumatoid arthritis, etc.), blood disease, liver damage, kidney disease or trauma were excluded\",\n  \"n_randomised\": 190,\n  \"n_evaluated\": \"157 at 3 months (75 control + 82 intervention)\"\n}\n```\n\n**Key extraction notes:**\n\n- **Arm A** = T2DM-T (with periodontal intervention): 82 patients, 35M/47F, mean age 55.13 \u00b1 11.16 yrs, baseline HbA1c 8.75 \u00b1 0.67%\n- **Arm B** = T2DM-NT (without intervention / control): 75 patients, 32M/43F, mean age 54.23 \u00b1 10.85 yrs, baseline HbA1c 8.70 \u00b1 0.65%\n- `pct_female_arm_a`: 47/82 = 57.32%; `pct_female_arm_b`: 43/75 = 57.33% (derived from raw M:F counts)\n- `metabolic_control_level`: \"poor\" \u2014 the paper explicitly describes participants as having \"moderately poor glycemic control\" with HbA1c 7.5\u20139.5%; mean ~8.7% is above 8% threshold for poor control\n- `tobacco_use`: Smoking was an exclusion criterion (\"not smoking\" listed under inclusion criteria #5)\n- `n_randomised`: 190 enrolled and randomised; 33 dropped out before completion, leaving 157 analysed",
+  "stop_reason": "end_turn",
+  "session_id": "73620fed-5c13-4aa0-9296-6a26a9411353",
+  "total_cost_usd": 0.1607388,
+  "usage": {
+    "input_tokens": 5,
+    "cache_creation_input_tokens": 20272,
+    "cache_read_input_tokens": 79196,
+    "output_tokens": 3942,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 20272
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 1,
+        "output_tokens": 878,
+        "cache_read_input_tokens": 35638,
+        "cache_creation_input_tokens": 2998,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 2998,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-haiku-4-5-20251001": {
+      "inputTokens": 1730,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 0,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.001815,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    },
+    "claude-sonnet-4-6": {
+      "inputTokens": 5,
+      "outputTokens": 3942,
+      "cacheReadInputTokens": 79196,
+      "cacheCreationInputTokens": 20272,
+      "webSearchRequests": 0,
+      "costUSD": 0.1589238,
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "41316c2e-db6a-4131-8852-d16648e48a69"
+}

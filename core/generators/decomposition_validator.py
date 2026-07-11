@@ -257,6 +257,15 @@ def validate_pipeline_stages(
             f"Signatures not assigned to any stage: {list(missing_from_stages)}"
         )
 
+    # Check no signature appears twice within the same stage (intra-stage duplicate)
+    for stage in pipeline:
+        stage_sigs = stage.get("signatures", [])
+        intra_dupes = {s for s in stage_sigs if stage_sigs.count(s) > 1}
+        if intra_dupes:
+            issues.append(
+                f"Signatures appear multiple times in stage '{stage.get('stage_name', '?')}': {list(intra_dupes)}"
+            )
+
     # Check no signature appears in multiple stages
     sig_stage_count = {}
     for stage in pipeline:
@@ -381,6 +390,43 @@ class DecompositionValidator:
         if not pipeline_valid:
             all_issues.extend(pipeline_issues)
             logger.warning(f"Pipeline validation issues: {pipeline_issues}")
+
+        # Phase 2 B5: Locked signature preservation check
+        locked_sigs = form_data.get("_locked_signatures") or []
+        if locked_sigs:
+            locked_issues: List[str] = []
+            new_by_name = {s.get("name"): s for s in signatures}
+            for prev_sig in locked_sigs:
+                name = prev_sig.get("name")
+                if not name:
+                    continue
+                new_sig = new_by_name.get(name)
+                if not new_sig:
+                    locked_issues.append(
+                        f"Locked signature '{name}' was removed in regeneration"
+                    )
+                    continue
+                prev_fields = set((prev_sig.get("fields") or {}).keys())
+                new_fields = set((new_sig.get("fields") or {}).keys())
+                if prev_fields != new_fields:
+                    locked_issues.append(
+                        f"Locked signature '{name}' field set changed "
+                        f"(was {sorted(prev_fields)}, now {sorted(new_fields)})"
+                    )
+                prev_deps = set(prev_sig.get("depends_on") or [])
+                new_deps = set(new_sig.get("depends_on") or [])
+                if prev_deps != new_deps:
+                    locked_issues.append(
+                        f"Locked signature '{name}' dependencies changed "
+                        f"(was {sorted(prev_deps)}, now {sorted(new_deps)})"
+                    )
+            validation_results["locked_signature_check"] = {
+                "passed": len(locked_issues) == 0,
+                "issues": locked_issues,
+            }
+            if locked_issues:
+                all_issues.extend(locked_issues)
+                logger.warning(f"Locked signature drift: {locked_issues}")
 
         validation_results["passed"] = len(all_issues) == 0
 

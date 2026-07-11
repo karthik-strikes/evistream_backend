@@ -17,8 +17,8 @@ Architecture:
 - utils: Helper functions and entry points
 
 Usage:
-    from core.generators import DSPySignatureGenerator, generate_task_from_form
-    
+    from core.generators import DSPySignatureGenerator
+
     generator = DSPySignatureGenerator()
     result = generator.generate_complete_task(form_data, task_name)
 """
@@ -40,8 +40,6 @@ from .models import (
     SignatureSpec,
 )
 
-from .signature_validator import SignatureValidator
-from .module_validator import ModuleValidator
 from .decomposition_validator import DecompositionValidator
 from .human_review import HumanReviewHandler
 
@@ -52,10 +50,6 @@ from .module_gen import ModuleGenerator
 from .workflow import WorkflowOrchestrator
 
 from .task_utils import (
-    generate_task_from_form,
-    create_task_directory,
-    load_dynamic_schemas,
-    register_dynamic_schema,
     sanitize_form_name,
     sanitize_field_key,
 )
@@ -117,29 +111,6 @@ class DSPySignatureGenerator:
         """
         return self.sig_gen.generate_signature(questionnaire_spec, max_attempts)
 
-    def generate_module(
-        self,
-        signature_class_name: str,
-        output_field_name: str,
-        fallback_structure: dict,
-        max_attempts: int = 3,
-    ) -> dict:
-        """
-        Generate an async DSPy module that wraps a signature.
-
-        Args:
-            signature_class_name: Name of the signature class
-            output_field_name: Name of output field in signature
-            fallback_structure: Default structure for error recovery
-            max_attempts: Maximum validation attempts
-
-        Returns:
-            dict with 'code', 'is_valid', 'attempts', 'errors'
-        """
-        return self.mod_gen.generate_module(
-            signature_class_name, output_field_name, fallback_structure, max_attempts
-        )
-
     def generate_complete_task(
         self, form_data: dict, task_name: str = None
     ) -> dict:
@@ -189,14 +160,8 @@ __all__ = [
     "SignatureGenerator",
     "ModuleGenerator",
     "WorkflowOrchestrator",
-    "SignatureValidator",
-    "ModuleValidator",
     "DecompositionValidator",
     "HumanReviewHandler",
-
-    # Functions
-    "generate_task_from_form",
-    "load_dynamic_schemas",
 
     # Models (for structured output / Pydantic validation)
     "SignatureGenerationState",

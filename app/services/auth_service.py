@@ -2,6 +2,7 @@
 Authentication service handling user registration, login, and JWT tokens.
 """
 
+import hashlib
 import logging
 import secrets
 import bcrypt
@@ -149,6 +150,18 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication credentials"
             )
+
+
+    def create_password_reset_token(self) -> tuple[str, str, datetime]:
+        """Generate a password reset token. Returns (raw_token, hashed_token, expires_at)."""
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = self.hash_reset_token(raw_token)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+        return raw_token, token_hash, expires_at
+
+    def hash_reset_token(self, raw_token: str) -> str:
+        """SHA-256 hash of a reset token for safe DB storage."""
+        return hashlib.sha256(raw_token.encode()).hexdigest()
 
 
 # Global auth service instance

@@ -74,6 +74,7 @@ def _fail_stuck_job(job: dict):
     supabase.table("jobs").update({
         "status": JobStatus.FAILED.value,
         "progress": 0,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
         "error_message": error_msg,
     }).eq("id", job_id).execute()
 
@@ -101,3 +102,65 @@ def _fail_stuck_job(job: dict):
             supabase.table("extractions").update({
                 "status": "failed",
             }).eq("id", extraction_id).execute()
+
+
+@celery_app.task(name="watchdog_cleanup_stuck_forms")
+def cleanup_stuck_forms():
+    """
+    Find forms stuck in 'generating' or 'regenerating' that have no associated
+    pending/processing job. This catches cases like the resume_after_rejection bug
+    where the job completes but the form is left in a non-terminal status.
+    """
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(seconds=STUCK_THRESHOLD_SECONDS)
+        cutoff_iso = cutoff.isoformat()
+
+        # Find forms stuck in transient statuses beyond the timeout
+        stuck_forms_result = supabase.table("forms")\
+            .select("id, form_name, status")\
+            .in_("status", [FormStatus.GENERATING.value, FormStatus.REGENERATING.value])\
+            .lt("updated_at", cutoff_iso)\
+            .execute()
+
+        stuck_forms = stuck_forms_result.data or []
+        if not stuck_forms:
+            return {"cleaned": 0}
+
+        logger.warning(f"Watchdog found {len(stuck_forms)} potentially stuck form(s)")
+
+        cleaned = 0
+        for form in stuck_forms:
+            form_id = form["id"]
+            try:
+                # Check if there is an active job for this form
+                active_job = supabase.table("jobs")\
+                    .select("id")\
+                    .eq("input_data->>form_id", form_id)\
+                    .in_("status", [JobStatus.PENDING.value, JobStatus.PROCESSING.value])\
+                    .limit(1)\
+                    .execute()
+
+                if active_job.data:
+                    # A live job exists — the main watchdog will handle it if it times out
+                    continue
+
+                # No active job but form is stuck — mark it failed
+                error_msg = "Timed out: form stuck in generating state with no active job"
+                logger.warning(
+                    f"Marking stuck form {form_id} ({form['form_name']}) as failed "
+                    f"(status={form['status']}, no active job)"
+                )
+                supabase.table("forms").update({
+                    "status": FormStatus.FAILED.value,
+                    "error": error_msg,
+                }).eq("id", form_id).execute()
+                cleaned += 1
+            except Exception as e:
+                logger.error(f"Watchdog failed to clean stuck form {form_id}: {e}")
+
+        logger.info(f"Watchdog cleaned {cleaned}/{len(stuck_forms)} stuck forms")
+        return {"cleaned": cleaned, "found": len(stuck_forms)}
+
+    except Exception as e:
+        logger.error(f"Watchdog stuck-forms task failed: {e}")
+        return {"error": str(e)}

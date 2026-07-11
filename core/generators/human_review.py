@@ -114,11 +114,55 @@ class HumanReviewHandler:
         summary.append("\n" + "=" * 70)
         return "\n".join(summary)
 
+    def backup_state_for_review(
+        self, state: CompleteTaskGenerationState
+    ) -> bool:
+        """
+        Persist workflow state to Supabase so `approve_decomposition` can resume
+        even on a different worker. Must be called BEFORE LangGraph's
+        `interrupt_before=["human_review"]` pause — the human_review node body
+        never executes when interrupted, so this cannot live there.
+
+        Why: LangGraph's MemorySaver is in-process; the Celery worker that
+        resumes after approval may not be the one that paused. Without this
+        backup `approve_decomposition` returns "No saved state found".
+
+        Returns True on success, False on failure (non-fatal — the node body
+        still runs as a fallback when interrupts are disabled).
+        """
+        thread_id = state.get("thread_id", state.get("task_name", "unknown"))
+        supabase = get_supabase_client()
+        if not supabase or not supabase.is_available():
+            print("❌ Supabase client not available - cannot save state!")
+            return False
+        try:
+            asyncio.run(supabase.save_workflow_state(
+                thread_id=thread_id,
+                workflow_state=dict(state),
+                metadata={
+                    "stage": "human_review",
+                    "task_name": state.get("task_name"),
+                    "form_name": state.get("form_data", {}).get("form_name"),
+                },
+            ))
+            print(f"✓ Workflow state backed up to Supabase (thread: {thread_id})")
+            return True
+        except Exception as e:
+            print(f"❌ FAILED to backup state to Supabase: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
     def node_human_review(
         self, state: CompleteTaskGenerationState
     ) -> CompleteTaskGenerationState:
         """
         Node: Present decomposition to human for review and approval.
+
+        NOTE: when the workflow is compiled with `interrupt_before=["human_review"]`
+        this body never runs — the backup must be performed in
+        `_node_validate_decomposition` before the pause. This body remains as a
+        fallback for non-interrupt execution paths and idempotent re-saves.
 
         Args:
             state: Current workflow state
@@ -134,30 +178,8 @@ class HumanReviewHandler:
         summary = self.generate_decomposition_summary(state)
         state["decomposition_summary"] = summary
 
-        # BACKUP STATE TO SUPABASE before pausing
-        thread_id = state.get("thread_id", state.get("task_name", "unknown"))
-
-        supabase = get_supabase_client()
-        if supabase and supabase.is_available():
-            # Run async save in sync context
-            try:
-                asyncio.run(supabase.save_workflow_state(
-                    thread_id=thread_id,
-                    workflow_state=dict(state),
-                    metadata={
-                        "stage": "human_review",
-                        "task_name": state.get("task_name"),
-                        "form_name": state.get("form_data", {}).get("form_name")
-                    }
-                ))
-                print(
-                    f"✓ Workflow state backed up to Supabase (thread: {thread_id})")
-            except Exception as e:
-                print(f"❌ FAILED to backup state to Supabase: {e}")
-                import traceback
-                traceback.print_exc()
-        else:
-            print("❌ Supabase client not available - cannot save state!")
+        # Fallback backup (no-op if validate_decomposition already saved).
+        self.backup_state_for_review(state)
 
         # Print summary for human
         print(summary)

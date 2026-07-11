@@ -38,12 +38,20 @@ class PilotStartRequest(BaseModel):
     count: int = Field(default=3, ge=1, le=10)
 
 
+class SubfieldCorrection(BaseModel):
+    correct_value: Optional[str] = None
+    correct_source_text: Optional[str] = None
+    note: Optional[str] = None
+
+
 class PilotFeedbackEntry(BaseModel):
     rating: str  # "correct" | "incorrect"
     correct_value: Optional[str] = None
     correct_source_text: Optional[str] = None
     note: Optional[str] = None
     document_id: str
+    subfield_corrections: Optional[Dict[str, SubfieldCorrection]] = None
+    # {col_name: correction} — populated when table field has row_then_columns strategy
 
 
 class PilotFeedbackRequest(BaseModel):
@@ -84,7 +92,7 @@ def _save_pilot(form_id: str, project_id: str, pilot_data: dict):
         metadata = json.loads(metadata)
 
     metadata["pilot"] = pilot_data
-    supabase.table("forms").update({"metadata": metadata}).eq("id", form_id).execute()
+    supabase.table("forms").update({"metadata": json.dumps(metadata)}).eq("id", form_id).execute()
 
     # Invalidate cache
     if project_id:
@@ -140,9 +148,31 @@ def _accumulate_feedback(pilot_data: dict) -> dict:
                     })
 
                 # Append note to instructions
-                note = fb.get("note", "").strip()
+                note = (fb.get("note") or "").strip()
                 if note:
                     field_instructions.setdefault(field_name, []).append(note)
+
+                # Per-column subfield corrections (row_then_columns table fields)
+                subfield_corrections = fb.get("subfield_corrections") or {}
+                for col_name, col_fb in subfield_corrections.items():
+                    if isinstance(col_fb, dict):
+                        col_val = col_fb.get("correct_value")
+                        col_src = col_fb.get("correct_source_text", "")
+                        col_note = (col_fb.get("note") or "").strip()
+                    else:
+                        col_val = getattr(col_fb, "correct_value", None)
+                        col_src = getattr(col_fb, "correct_source_text", "") or ""
+                        col_note = (getattr(col_fb, "note", "") or "").strip()
+                    compound_key = f"{field_name}.{col_name}"
+                    if col_val is not None:
+                        field_examples.setdefault(compound_key, []).append({
+                            "value": col_val,
+                            "source_text": col_src,
+                            "iteration": iter_num,
+                            "document_id": doc_id,
+                        })
+                    if col_note:
+                        field_instructions.setdefault(compound_key, []).append(col_note)
 
     # Cap examples per field (keep most recent)
     max_per_field = 5
@@ -175,7 +205,9 @@ async def start_pilot(
     """Start a pilot extraction on a small sample of documents."""
     try:
         form = _get_form_with_access(str(form_id), user_id)
-        await check_project_access(UUID(form["project_id"]), user_id, "can_run_extractions")
+        # Pilot is part of form design (calibrate the schema you just built),
+        # not a production extraction. Gate on can_create_forms.
+        await check_project_access(UUID(form["project_id"]), user_id, "can_create_forms")
 
         if form["status"] != "active":
             raise HTTPException(
@@ -316,7 +348,10 @@ async def get_pilot(
         if not pilot:
             return {"status": "none"}
 
-        # If pilot is running, check if the latest job has completed
+        # If pilot is running, check if the latest job has completed. The
+        # historical results snapshot is still written to JSONB here so that
+        # _accumulate_feedback (which reads iteration["results"] for "correct"
+        # ratings) keeps working across re-piloting cycles.
         if pilot.get("status") == "running" and pilot.get("iterations"):
             latest = pilot["iterations"][-1]
             job_id = latest.get("job_id")
@@ -328,7 +363,6 @@ async def get_pilot(
                 if job_result.data:
                     job_status = job_result.data[0]["status"]
                     if job_status in ("completed", "failed"):
-                        # Fetch extraction results and store in pilot iteration
                         extraction_id = latest.get("extraction_id")
                         if extraction_id and job_status == "completed":
                             results_data = supabase.table("extraction_results")\
@@ -342,6 +376,35 @@ async def get_pilot(
 
                         pilot["status"] = "reviewing" if job_status == "completed" else "failed"
                         _save_pilot(str(form_id), form["project_id"], pilot)
+
+        # Overlay live results for every iteration into the response so the
+        # dialog never shows rows for documents that have since been deleted.
+        # ON DELETE CASCADE on extraction_results.document_id makes the live
+        # extraction_results query naturally exclude deleted-doc rows.
+        #
+        # IMPORTANT: this mutates the in-memory copy only — we do NOT call
+        # _save_pilot afterwards, so the JSONB snapshot used by
+        # _accumulate_feedback is untouched.
+        iterations = pilot.get("iterations") or []
+        for it in iterations:
+            ext_id = it.get("extraction_id")
+            if not ext_id:
+                continue
+            try:
+                live = supabase.table("extraction_results")\
+                    .select("document_id, extracted_data")\
+                    .eq("extraction_id", ext_id)\
+                    .execute()
+                it["results"] = {
+                    r["document_id"]: r["extracted_data"]
+                    for r in (live.data or [])
+                }
+            except Exception as live_err:
+                # Live query failure shouldn't break the dialog — fall back to
+                # whatever snapshot is already on the iteration dict.
+                logger.warning(
+                    f"Live-query failed for pilot iteration extraction_id={ext_id}: {live_err}"
+                )
 
         return pilot
 
@@ -369,7 +432,7 @@ async def submit_pilot_feedback(
     """
     try:
         form = _get_form_with_access(str(form_id), user_id)
-        await check_project_access(UUID(form["project_id"]), user_id, "can_run_extractions")
+        await check_project_access(UUID(form["project_id"]), user_id, "can_create_forms")
 
         pilot = _get_pilot(form)
         if not pilot or pilot.get("status") not in ("reviewing", "completed"):
@@ -501,7 +564,7 @@ async def complete_pilot(
     """Mark pilot as completed. Accumulated feedback persists for all future extractions."""
     try:
         form = _get_form_with_access(str(form_id), user_id)
-        await check_project_access(UUID(form["project_id"]), user_id, "can_run_extractions")
+        await check_project_access(UUID(form["project_id"]), user_id, "can_create_forms")
 
         pilot = _get_pilot(form)
         if not pilot:
@@ -548,7 +611,7 @@ async def reset_pilot(
     """Discard pilot state and all accumulated feedback."""
     try:
         form = _get_form_with_access(str(form_id), user_id)
-        await check_project_access(UUID(form["project_id"]), user_id, "can_run_extractions")
+        await check_project_access(UUID(form["project_id"]), user_id, "can_create_forms")
 
         # Remove pilot key from metadata
         metadata = form.get("metadata") or {}
@@ -556,7 +619,7 @@ async def reset_pilot(
             metadata = json.loads(metadata)
         metadata.pop("pilot", None)
 
-        supabase.table("forms").update({"metadata": metadata}).eq("id", str(form_id)).execute()
+        supabase.table("forms").update({"metadata": json.dumps(metadata)}).eq("id", str(form_id)).execute()
 
         project_id = form["project_id"]
         cache_service.delete_pattern(f"forms:project:{project_id}:*")

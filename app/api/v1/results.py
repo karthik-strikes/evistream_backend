@@ -8,7 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, 
 from fastapi.responses import StreamingResponse
 from supabase import create_client
 from uuid import UUID
-from typing import List, Optional
+from typing import List, Optional, Literal
 import json
 import csv
 import io
@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from app.dependencies import get_current_user
 from app.config import settings
 from app.services.project_access import check_project_access
+from app.services.blinding_service import filter_results_for_user
 from app.models.schemas import ExtractionResultResponse, ConsensusResultResponse, SourceIndexResponse
 from app.services.settings_service import get_user_settings
 from app.services.storage_service import storage_service
@@ -28,6 +29,7 @@ from app.rate_limit import limiter
 from app.rate_limits import RATE_LIMIT_CONSENSUS_SAVE, RATE_LIMIT_CONSENSUS_READ
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
+from postgrest.exceptions import APIError as PostgRESTError
 
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,47 @@ CONFIDENCE_SUFFIXES = (".confidence", ".reasoning", "_confidence", "_reasoning")
 SOURCE_LOCATION_SUFFIX = ".source_location"
 
 
+async def _apply_blinding_grouped(
+    results: List[Dict[str, Any]],
+    user_id: UUID,
+) -> List[Dict[str, Any]]:
+    """
+    Apply per-(document_id, form_id) blinding to a heterogeneous result list.
+
+    `filter_results_for_user` resolves the reviewer's role against a single
+    (document, form) pair, so any endpoint that returns rows spanning multiple
+    pairs must group → filter → recombine. Without this, reviewer-role
+    blinding silently leaks on the `?extraction_id`, `?project_id`, and
+    `/export` paths (see issue #6 in the audit).
+    """
+    if not results:
+        return results
+    from collections import defaultdict
+    groups: Dict[tuple, list] = defaultdict(list)
+    passthrough: list = []
+    for r in results:
+        doc_id = r.get("document_id")
+        f_id = r.get("form_id")
+        if not doc_id or not f_id:
+            # Defensive: a row missing either key can't be blinded.
+            # Drop it rather than leak — these rows should not exist in
+            # practice (NOT NULL on schema).
+            continue
+        groups[(doc_id, f_id)].append(r)
+    out: list = list(passthrough)
+    for (doc_id, f_id), group in groups.items():
+        try:
+            filtered = await filter_results_for_user(
+                group, user_id, UUID(doc_id), UUID(f_id)
+            )
+            out.extend(filtered)
+        except Exception:
+            logger.exception(
+                "Blinding failed for doc=%s form=%s; dropping group", doc_id, f_id
+            )
+    return out
+
+
 def _apply_export_prefs(data: dict, prefs: dict) -> dict:
     """Filter/transform extracted data according to user export preferences."""
     include_meta = prefs.get("export_include_metadata", True)
@@ -70,8 +113,18 @@ def _apply_export_prefs(data: dict, prefs: dict) -> dict:
         # Filter source_location keys from CSV/JSON exports (too verbose)
         if k.endswith(SOURCE_LOCATION_SUFFIX):
             continue
-        # Filter source_location from nested dicts
-        if isinstance(v, dict) and "source_location" in v:
+        # Nested value-cell: apply the NR-vs-blank provenance rule and drop internal keys.
+        # Genuine "not reported" → "NR"; any failure (error/missing) → "" (blank).
+        if isinstance(v, dict) and "value" in v:
+            status = v.get("status")
+            v = {dk: dv for dk, dv in v.items()
+                 if dk not in ("source_location", "status", "error")}
+            if status in ("error", "missing"):
+                v["value"] = ""
+            elif status == "not_reported":
+                v["value"] = "NR"
+        # Filter source_location from other nested dicts
+        elif isinstance(v, dict) and "source_location" in v:
             v = {dk: dv for dk, dv in v.items() if dk != "source_location"}
         # Format dates
         if isinstance(v, str):
@@ -106,7 +159,7 @@ async def list_results(
     """
     try:
         if extraction_id:
-            # Verify extraction exists and belongs to user's project
+            # Verify extraction exists and user has access to its project
             extraction_result = supabase.table("extractions")\
                 .select("project_id")\
                 .eq("id", str(extraction_id))\
@@ -119,19 +172,7 @@ async def list_results(
                 )
 
             extraction_project_id = extraction_result.data[0]["project_id"]
-
-            # Verify project belongs to user
-            project_result = supabase.table("projects")\
-                .select("id")\
-                .eq("id", extraction_project_id)\
-                .eq("user_id", str(user_id))\
-                .execute()
-
-            if not project_result.data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Extraction not found"
-                )
+            await check_project_access(UUID(extraction_project_id), user_id, "can_view_results")
 
             # Get results for specific extraction
             query = supabase.table("extraction_results")\
@@ -146,18 +187,8 @@ async def list_results(
             result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
 
         elif project_id:
-            # Verify project belongs to user
-            project_result = supabase.table("projects")\
-                .select("id")\
-                .eq("id", str(project_id))\
-                .eq("user_id", str(user_id))\
-                .execute()
-
-            if not project_result.data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Project not found"
-                )
+            # Verify user has access to this project
+            await check_project_access(project_id, user_id, "can_view_results")
 
             # Get all extractions for project
             extractions_result = supabase.table("extractions")\
@@ -183,13 +214,19 @@ async def list_results(
             result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
 
         else:
-            # Get all results from user's projects
-            projects_result = supabase.table("projects")\
+            # Get all results from user's owned + member projects
+            owned_result = supabase.table("projects")\
                 .select("id")\
                 .eq("user_id", str(user_id))\
                 .execute()
-
-            project_ids = [p["id"] for p in (projects_result.data or [])]
+            member_result = supabase.table("project_members")\
+                .select("project_id")\
+                .eq("user_id", str(user_id))\
+                .eq("can_view_results", True)\
+                .execute()
+            owned_ids = [p["id"] for p in (owned_result.data or [])]
+            member_ids = [r["project_id"] for r in (member_result.data or [])]
+            project_ids = list(set(owned_ids + member_ids))
 
             if not project_ids:
                 return []
@@ -218,6 +255,32 @@ async def list_results(
             result = query.order("created_at", desc=True).range(offset, offset + limit - 1).execute()
 
         results = result.data or []
+
+        # Attach the LLM model used for each AI result, derived from the job's
+        # input_data.model in one batched lookup. Manual/consensus rows have no
+        # model and are left as None.
+        ai_job_ids = list({
+            r.get("job_id") for r in results
+            if r.get("job_id") and (r.get("extraction_type") or "ai") == "ai"
+        })
+        if ai_job_ids:
+            jobs_result = supabase.table("jobs")\
+                .select("id, input_data")\
+                .in_("id", ai_job_ids)\
+                .execute()
+            model_by_job = {
+                j["id"]: (j.get("input_data") or {}).get("model")
+                for j in (jobs_result.data or [])
+            }
+            for r in results:
+                if (r.get("extraction_type") or "ai") == "ai":
+                    r["model_name"] = model_by_job.get(r.get("job_id"))
+
+        # Apply blinding on every path. The grouped helper handles broad
+        # queries (?extraction_id, ?project_id, no-filter) by partitioning by
+        # (document, form) and filtering each group.
+        results = await _apply_blinding_grouped(results, user_id)
+
         return [ExtractionResultResponse(**r) for r in results]
 
     except HTTPException:
@@ -235,8 +298,9 @@ class ManualExtractionCreate(BaseModel):
     document_id: UUID
     form_id: UUID
     extracted_data: Dict[str, Any]
-    extraction_type: str = "manual"  # "manual" | "consensus"
+    extraction_type: Literal["manual", "consensus"] = "manual"
     reviewer_role: Optional[str] = None
+    is_partial: bool = False
 
 
 @router.post("/manual", response_model=ExtractionResultResponse, status_code=status.HTTP_201_CREATED)
@@ -267,7 +331,53 @@ async def save_manual_extraction(
 
         project_id = doc_result.data[0]["project_id"]
 
-        await check_project_access(UUID(project_id), user_id, "can_view_results")
+        await check_project_access(UUID(project_id), user_id, "can_run_manual_extractions")
+
+        # Auto-detect reviewer_role from assignment when caller omits it.
+        reviewer_role = data.reviewer_role
+        if reviewer_role is None:
+            try:
+                asg = supabase.table("review_assignments")\
+                    .select("reviewer_role")\
+                    .eq("project_id", project_id)\
+                    .eq("document_id", str(data.document_id))\
+                    .eq("reviewer_user_id", str(user_id))\
+                    .neq("reviewer_role", "adjudicator")\
+                    .limit(1)\
+                    .execute()
+                if asg.data:
+                    reviewer_role = asg.data[0]["reviewer_role"]
+            except Exception:
+                pass
+        was_auto_detected = reviewer_role is not None and data.reviewer_role is None
+
+        # Validate that an explicitly-passed reviewer_role matches a current assignment.
+        # Prevents a stale frontend session from writing data under the wrong role.
+        if data.reviewer_role is not None and not was_auto_detected:
+            try:
+                asg_check = supabase.table("review_assignments")\
+                    .select("id")\
+                    .eq("project_id", project_id)\
+                    .eq("document_id", str(data.document_id))\
+                    .eq("reviewer_user_id", str(user_id))\
+                    .eq("reviewer_role", data.reviewer_role)\
+                    .limit(1)\
+                    .execute()
+                if not asg_check.data:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=f"Role '{data.reviewer_role}' does not match a current assignment for this document — reload the page to pick up your updated role.",
+                    )
+            except HTTPException:
+                raise
+            except Exception:
+                pass  # Don't block save if the assignment check itself errors
+
+        logger.info(
+            "save_manual_extraction: user=%s doc=%s form=%s requested_role=%s resolved_role=%s auto=%s",
+            user_id, data.document_id, data.form_id,
+            data.reviewer_role, reviewer_role, was_auto_detected,
+        )
 
         # Verify form exists and belongs to same project
         form_result = supabase.table("forms")\
@@ -282,10 +392,20 @@ async def save_manual_extraction(
                 detail="Form not found or doesn't belong to this project"
             )
 
-        # Find or create an extraction record keyed by extraction_type
-        # "manual" extractions use status="manual", "consensus" use status="consensus"
+        # Tag extracted_data with the partial marker so listing endpoints can distinguish
+        # in-progress saves from completed ones without a schema change.
+        extracted_data = dict(data.extracted_data)
+        if data.is_partial:
+            extracted_data["_partial"] = True
+        else:
+            extracted_data.pop("_partial", None)
+
+        # Find or create a grouping extraction record. The unique index on
+        # (project_id, form_id, status) is partial (WHERE status IN ('manual','consensus'))
+        # per phase3_006, which PostgREST's on_conflict=cols cannot reference — so use a
+        # SELECT-then-INSERT with 23505 race-tolerance instead of upsert.
         extraction_status = data.extraction_type  # "manual" | "consensus"
-        extraction_result = supabase.table("extractions")\
+        existing_extraction = supabase.table("extractions")\
             .select("id")\
             .eq("project_id", project_id)\
             .eq("form_id", str(data.form_id))\
@@ -293,51 +413,122 @@ async def save_manual_extraction(
             .limit(1)\
             .execute()
 
-        if extraction_result.data:
-            extraction_id = extraction_result.data[0]["id"]
+        if existing_extraction.data:
+            extraction_id = existing_extraction.data[0]["id"]
         else:
-            new_extraction = supabase.table("extractions").insert({
-                "project_id": project_id,
-                "form_id": str(data.form_id),
-                "status": extraction_status
-            }).execute()
+            try:
+                inserted = supabase.table("extractions").insert({
+                    "project_id": project_id,
+                    "form_id": str(data.form_id),
+                    "status": extraction_status,
+                }).execute()
+                if not inserted.data:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to create extraction record"
+                    )
+                extraction_id = inserted.data[0]["id"]
+            except PostgRESTError as e:
+                if getattr(e, "code", None) == "23505":
+                    retry = supabase.table("extractions")\
+                        .select("id")\
+                        .eq("project_id", project_id)\
+                        .eq("form_id", str(data.form_id))\
+                        .eq("status", extraction_status)\
+                        .limit(1)\
+                        .execute()
+                    if not retry.data:
+                        raise
+                    extraction_id = retry.data[0]["id"]
+                else:
+                    raise
 
-            if not new_extraction.data:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to create extraction record"
-                )
-            extraction_id = new_extraction.data[0]["id"]
-
-        # Upsert extraction result — overwrite if this document was already extracted manually
-        existing_result = supabase.table("extraction_results")\
-            .select("id")\
+        # Upsert extraction result — match on (extraction_id, document_id, reviewer_role)
+        # so R1 and R2 saves for the same doc never overwrite each other.
+        # Supabase .eq(col, None) generates `= NULL` (always false), not IS NULL — use .is_() instead.
+        existing_query = supabase.table("extraction_results")\
+            .select("id, extracted_by")\
             .eq("extraction_id", extraction_id)\
-            .eq("document_id", str(data.document_id))\
-            .limit(1)\
-            .execute()
+            .eq("document_id", str(data.document_id))
+        if reviewer_role is None:
+            existing_query = existing_query.is_("reviewer_role", "null")
+        else:
+            existing_query = existing_query.eq("reviewer_role", reviewer_role)
+        existing_result = existing_query.limit(1).execute()
+
+        # If no role-specific row found, migrate any pre-existing null-role row.
+        # This handles old saves (before reviewer_role was tracked) and avoids a
+        # duplicate-key error on extraction_results_extraction_document_unique.
+        if not existing_result.data and reviewer_role is not None:
+            try:
+                null_row = supabase.table("extraction_results")\
+                    .select("id, extracted_by")\
+                    .eq("extraction_id", extraction_id)\
+                    .eq("document_id", str(data.document_id))\
+                    .is_("reviewer_role", "null")\
+                    .limit(1)\
+                    .execute()
+                if null_row.data:
+                    existing_result = null_row
+            except Exception:
+                pass
 
         if existing_result.data:
+            existing_row = existing_result.data[0]
+            existing_author = existing_row.get("extracted_by")
+            # Block overwriting another reviewer's row — admin must clear stale data first.
+            if existing_author and existing_author != str(user_id):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Role conflict: this slot contains another reviewer's extraction. An admin must clear the stale data before you can save here.",
+                )
             result = supabase.table("extraction_results")\
                 .update({
-                    "extracted_data": data.extracted_data,
+                    "extracted_data": extracted_data,
                     "extraction_type": data.extraction_type,
                     "extracted_by": str(user_id),
-                    "reviewer_role": data.reviewer_role,
+                    "reviewer_role": reviewer_role,
                 })\
-                .eq("id", existing_result.data[0]["id"])\
+                .eq("id", existing_row["id"])\
                 .execute()
         else:
-            result = supabase.table("extraction_results").insert({
-                "extraction_id": extraction_id,
-                "project_id": project_id,
-                "form_id": str(data.form_id),
-                "document_id": str(data.document_id),
-                "extracted_data": data.extracted_data,
-                "extraction_type": data.extraction_type,
-                "extracted_by": str(user_id),
-                "reviewer_role": data.reviewer_role,
-            }).execute()
+            try:
+                result = supabase.table("extraction_results").insert({
+                    "extraction_id": extraction_id,
+                    "project_id": project_id,
+                    "form_id": str(data.form_id),
+                    "document_id": str(data.document_id),
+                    "extracted_data": extracted_data,
+                    "extraction_type": data.extraction_type,
+                    "extracted_by": str(user_id),
+                    "reviewer_role": reviewer_role,
+                }).execute()
+            except PostgRESTError as e:
+                if getattr(e, "code", None) == "23505":
+                    # Race: another concurrent save just inserted this row — UPDATE it.
+                    race_query = supabase.table("extraction_results")\
+                        .select("id, extracted_by")\
+                        .eq("extraction_id", extraction_id)\
+                        .eq("document_id", str(data.document_id))
+                    if reviewer_role is None:
+                        race_query = race_query.is_("reviewer_role", "null")
+                    else:
+                        race_query = race_query.eq("reviewer_role", reviewer_role)
+                    race_row = race_query.limit(1).execute()
+                    if race_row.data:
+                        result = supabase.table("extraction_results")\
+                            .update({
+                                "extracted_data": extracted_data,
+                                "extraction_type": data.extraction_type,
+                                "extracted_by": str(user_id),
+                                "reviewer_role": reviewer_role,
+                            })\
+                            .eq("id", race_row.data[0]["id"])\
+                            .execute()
+                    else:
+                        raise
+                else:
+                    raise
 
         if not result.data:
             raise HTTPException(
@@ -345,17 +536,24 @@ async def save_manual_extraction(
                 detail="Failed to save manual extraction"
             )
 
-        # Auto-update review assignment status if applicable
-        if data.reviewer_role:
+        # Invalidate consensus summary cache so the next page load reflects this save.
+        try:
+            cache_service.delete(f"consensus_summary:{project_id}:{data.form_id}")
+        except Exception:
+            pass
+
+        # Auto-update review assignment status if applicable.
+        # Partial saves never trigger assignment completion — they're explicitly in-progress.
+        if reviewer_role and not data.is_partial:
             try:
                 from app.services.assignment_service import check_and_auto_complete_assignment
                 await check_and_auto_complete_assignment(
                     project_id=project_id,
                     document_id=str(data.document_id),
-                    reviewer_role=data.reviewer_role,
+                    reviewer_role=reviewer_role,
                 )
             except Exception:
-                logger.warning("Failed to check/update review assignment status")
+                logger.warning("Failed to check/update review assignment status", exc_info=True)
 
         return ExtractionResultResponse(**result.data[0])
 
@@ -398,18 +596,7 @@ async def compare_results(
 
         project_id = doc_result.data[0]["project_id"]
 
-        # Verify project belongs to user
-        project_result = supabase.table("projects")\
-            .select("id")\
-            .eq("id", project_id)\
-            .eq("user_id", str(user_id))\
-            .execute()
-
-        if not project_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found"
-            )
+        await check_project_access(UUID(project_id), user_id, "can_view_results")
 
         # Get all results for this document + form
         results = supabase.table("extraction_results")\
@@ -430,11 +617,17 @@ async def compare_results(
                 }
             }
 
+        # Apply blinding rules — hide other reviewer's manual results when caller
+        # is an active reviewer for this (doc, form) and blinding is enabled.
+        visible_results = await filter_results_for_user(
+            results.data, user_id, document_id, form_id
+        )
+
         # Separate manual vs AI results
         manual_data = {}
         ai_data = {}
 
-        for r in results.data:
+        for r in visible_results:
             extracted = r.get("extracted_data", {})
             extraction_type = r.get("extraction_type", "ai")
 
@@ -510,18 +703,7 @@ async def get_consensus_summary(
         if cached:
             return cached
 
-        # Verify project belongs to user
-        project_result = supabase.table("projects")\
-            .select("id")\
-            .eq("id", str(project_id))\
-            .eq("user_id", str(user_id))\
-            .execute()
-
-        if not project_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+        await check_project_access(project_id, user_id, "can_view_results")
 
         # Get all documents in project
         docs_result = supabase.table("documents")\
@@ -538,20 +720,44 @@ async def get_consensus_summary(
             .select("document_id, extraction_type, extracted_data")\
             .eq("project_id", str(project_id))\
             .eq("form_id", str(form_id))\
+            .order("created_at", desc=False)\
             .execute()
 
-        # Try to get reviewer_role data (only exists after Phase 2 migration)
+        # Fetch manual extraction rows that have an explicit reviewer role tag.
         role_data = []
         try:
             results_with_role = supabase.table("extraction_results")\
-                .select("document_id, reviewer_role")\
+                .select("document_id, reviewer_role, extracted_data, extracted_by")\
                 .eq("project_id", str(project_id))\
                 .eq("form_id", str(form_id))\
-                .neq("reviewer_role", "null")\
+                .eq("extraction_type", "manual")\
+                .filter("reviewer_role", "not.is", "null")\
+                .order("created_at", desc=False)\
                 .execute()
             role_data = results_with_role.data or []
         except Exception:
-            pass
+            logger.warning("role_data query failed for project=%s form=%s", project_id, form_id, exc_info=True)
+
+        # Fetch current reviewer assignments to know who currently holds each role.
+        # We also build a reverse map: (doc_id, user_id) -> current_role so that
+        # when a user's role was swapped their saved work is counted under their NEW role.
+        try:
+            asg_rows = supabase.table("review_assignments")\
+                .select("document_id, reviewer_role, reviewer_user_id")\
+                .eq("project_id", str(project_id))\
+                .execute()
+            current_assignee = {
+                (a["document_id"], a["reviewer_role"]): a.get("reviewer_user_id")
+                for a in (asg_rows.data or [])
+            }
+            # (doc_id, str(user_id)) -> "reviewer_1" | "reviewer_2"
+            user_current_role: dict = {}
+            for (doc_id, role), user_id in current_assignee.items():
+                if role in ("reviewer_1", "reviewer_2") and user_id:
+                    user_current_role[(doc_id, str(user_id))] = role
+        except Exception:
+            current_assignee = {}
+            user_current_role = {}
 
         def normalize_ai_data(extracted: dict) -> dict:
             """
@@ -578,15 +784,39 @@ async def get_consensus_summary(
         consensus_map = {r["document_id"]: r["agreement_pct"] for r in (consensus_rows.data or [])}
         consensus_set = set(consensus_map.keys())
 
-        # Track R1 and R2 results
+        # Docs that have at least one live R1 or R2 assignment.
+        # Used to distinguish "no assignment for this doc" from "person was swapped away".
+        docs_with_role_assignments = {
+            doc_id for (doc_id, r) in current_assignee
+            if r in ("reviewer_1", "reviewer_2") and current_assignee[(doc_id, r)]
+        }
+
+        # Track R1 and R2 results — count non-partial rows, resolving roles:
+        # 1. If the row has a role tag AND the doc has assignments → use swap-aware lookup
+        #    (credits work to the saver's CURRENT role; skips if no longer assigned).
+        # 2. If the row has a role tag AND the doc has NO assignments → trust the tag.
+        # 3. If the row has NO role tag (null) → look up extracted_by in user_current_role
+        #    to infer the role (handles rows saved before/during assignment setup failure).
         r1_doc_ids = set()
         r2_doc_ids = set()
         for r in role_data:
-            reviewer_role = r.get("reviewer_role")
-            if reviewer_role == "reviewer_1":
-                r1_doc_ids.add(r["document_id"])
-            elif reviewer_role == "reviewer_2":
-                r2_doc_ids.add(r["document_id"])
+            role = r.get("reviewer_role")
+            data = r.get("extracted_data") or {}
+            if not data or data.get("_partial") is True:
+                continue
+            doc_id = r["document_id"]
+            extracted_by = str(r.get("extracted_by") or "")
+
+            if role not in ("reviewer_1", "reviewer_2"):
+                continue
+            if doc_id in docs_with_role_assignments and extracted_by:
+                effective_role = user_current_role.get((doc_id, extracted_by))
+                if effective_role is None:
+                    continue  # person no longer assigned to this doc — stranded row
+            else:
+                effective_role = role
+
+            (r1_doc_ids if effective_role == "reviewer_1" else r2_doc_ids).add(doc_id)
 
         # Get adjudication results (table may not exist before migration)
         adjudication_map = {}
@@ -753,15 +983,7 @@ async def save_consensus(
 
         project_id = doc_result.data[0]["project_id"]
 
-        # Verify project belongs to user
-        project_result = supabase.table("projects")\
-            .select("id")\
-            .eq("id", project_id)\
-            .eq("user_id", str(user_id))\
-            .execute()
-
-        if not project_result.data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        await check_project_access(UUID(project_id), user_id, "can_adjudicate")
 
         # Verify form belongs to same project
         form_result = supabase.table("forms")\
@@ -905,14 +1127,7 @@ async def get_consensus(
 
         project_id = doc_result.data[0]["project_id"]
 
-        project_result = supabase.table("projects")\
-            .select("id")\
-            .eq("id", project_id)\
-            .eq("user_id", str(user_id))\
-            .execute()
-
-        if not project_result.data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        await check_project_access(UUID(project_id), user_id, "can_view_results")
 
         result = supabase.table("consensus_results")\
             .select("*")\
@@ -949,14 +1164,31 @@ async def get_source_index(
     """
     try:
         result = supabase.table("extraction_results")\
-            .select("extracted_data, extraction_id")\
+            .select("*")\
             .eq("id", str(result_id))\
             .execute()
 
         if not result.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not found")
 
-        extracted_data = result.data[0].get("extracted_data", {})
+        row = result.data[0]
+
+        # Project access check + blinding enforcement
+        extraction_q = supabase.table("extractions")\
+            .select("project_id")\
+            .eq("id", row["extraction_id"])\
+            .execute()
+        if not extraction_q.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not found")
+        await check_project_access(UUID(extraction_q.data[0]["project_id"]), user_id, "can_view_results")
+
+        visible = await filter_results_for_user(
+            [row], user_id, UUID(row["document_id"]), UUID(row["form_id"])
+        )
+        if not visible:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Result not visible under blinding rules")
+
+        extracted_data = row.get("extracted_data", {})
 
         # Build page index from source_location fields
         page_index: Dict[str, list] = {}
@@ -1010,7 +1242,7 @@ async def get_page_map(
     try:
         # Get the result to find the document
         result = supabase.table("extraction_results")\
-            .select("document_id")\
+            .select("document_id, extraction_id")\
             .eq("id", str(result_id))\
             .execute()
 
@@ -1018,6 +1250,16 @@ async def get_page_map(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not found")
 
         document_id = result.data[0]["document_id"]
+
+        # Project access check — page boundaries are doc metadata,
+        # but viewing them implies viewing the result they came from.
+        extraction_q = supabase.table("extractions")\
+            .select("project_id")\
+            .eq("id", result.data[0]["extraction_id"])\
+            .execute()
+        if not extraction_q.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not found")
+        await check_project_access(UUID(extraction_q.data[0]["project_id"]), user_id, "can_view_results")
 
         # Get the document's S3 markdown path
         doc = supabase.table("documents")\
@@ -1099,18 +1341,16 @@ async def get_result(
 
         project_id = extraction_query.data[0]["project_id"]
 
-        # Verify project belongs to user
-        project_result = supabase.table("projects")\
-            .select("id")\
-            .eq("id", project_id)\
-            .eq("user_id", str(user_id))\
-            .execute()
+        await check_project_access(UUID(project_id), user_id, "can_view_results")
 
-        if not project_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Result not found"
-            )
+        # Blinding: a reviewer with can_view_results could otherwise fetch a peer
+        # reviewer's row by id. filter_results_for_user enforces per-form rules.
+        visible = await filter_results_for_user(
+            [extraction_result], user_id,
+            UUID(extraction_result["document_id"]), UUID(extraction_result["form_id"]),
+        )
+        if not visible:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Result not visible under blinding rules")
 
         return ExtractionResultResponse(**extraction_result)
 
@@ -1166,17 +1406,15 @@ async def export_result(
 
         project_id = extraction_query.data[0]["project_id"]
 
-        project_result = supabase.table("projects")\
-            .select("id")\
-            .eq("id", project_id)\
-            .eq("user_id", str(user_id))\
-            .execute()
+        await check_project_access(UUID(project_id), user_id, "can_view_results")
 
-        if not project_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Result not found"
-            )
+        # Blinding: same rule as get_result — block exports of peer reviewer rows.
+        visible = await filter_results_for_user(
+            [extraction_result], user_id,
+            UUID(extraction_result["document_id"]), UUID(extraction_result["form_id"]),
+        )
+        if not visible:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Result not visible under blinding rules")
 
         # Load user export preferences and resolve format
         try:
@@ -1272,18 +1510,7 @@ async def export_extraction_results(
 
         project_id = extraction_result.data[0]["project_id"]
 
-        # Verify project belongs to user
-        project_result = supabase.table("projects")\
-            .select("id")\
-            .eq("id", project_id)\
-            .eq("user_id", str(user_id))\
-            .execute()
-
-        if not project_result.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Extraction not found"
-            )
+        await check_project_access(UUID(project_id), user_id, "can_view_results")
 
         # Get all results for extraction
         results = supabase.table("extraction_results")\
@@ -1298,6 +1525,15 @@ async def export_extraction_results(
                 detail="No results found for this extraction"
             )
 
+        # Apply blinding before export — the previous code dumped every row
+        # in the extraction regardless of reviewer_role, leaking R2/R1 data.
+        rows = await _apply_blinding_grouped(list(results.data), user_id)
+        if not rows:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No results visible to this user for this extraction"
+            )
+
         # Load user export preferences and resolve format
         try:
             user_prefs = await get_user_settings(user_id)
@@ -1307,7 +1543,7 @@ async def export_extraction_results(
 
         # Extract all extracted_data and apply preferences
         all_data = []
-        for r in results.data:
+        for r in rows:
             item = r.get("extracted_data", {})
             if isinstance(item, dict):
                 item = _apply_export_prefs(item, user_prefs)

@@ -1,13 +1,19 @@
 """User settings endpoints — export and notification preferences."""
 
 import logging
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import UUID
 
 from app.dependencies import get_current_user
-from app.models.schemas import UserSettingsResponse, UserSettingsUpdate
+from app.models.schemas import (
+    AvailableModel,
+    UserSettingsResponse,
+    UserSettingsUpdate,
+)
 from app.services.settings_service import get_user_settings, update_user_settings
+from config.models import AVAILABLE_MODELS, AVAILABLE_MODEL_IDS
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +43,12 @@ async def patch_settings(
     if not updates:
         return await get_user_settings(user_id)
 
+    if "extraction_model" in updates and updates["extraction_model"] not in AVAILABLE_MODEL_IDS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported extraction_model. Allowed: {sorted(AVAILABLE_MODEL_IDS)}",
+        )
+
     try:
         return await update_user_settings(user_id, updates)
     except Exception:
@@ -45,3 +57,9 @@ async def patch_settings(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to save settings",
         )
+
+
+@router.get("/models", response_model=List[AvailableModel])
+async def list_available_models(user_id: UUID = Depends(get_current_user)):
+    """Return the allowlist of models users can pick from in Settings."""
+    return AVAILABLE_MODELS

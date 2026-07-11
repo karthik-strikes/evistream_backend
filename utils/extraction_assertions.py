@@ -58,6 +58,53 @@ def _is_nr(value_str: str) -> bool:
     return lower in NR_INDICATORS or lower in EMPTY_JSON_STRINGS
 
 
+def _classify_value(value) -> str:
+    """Classify one extracted field value: 'empty' | 'nr' | 'invalid' | 'substantive'.
+
+    Envelope-aware: runtime extractors return {"value", "source_text", "status"}
+    dicts — str(dict) is Python repr (single quotes), which never matches the
+    JSON-formatted NR strings, so the old string-based check silently counted
+    every envelope (including all-NR ones) as substantive.
+
+    - status missing/error  → 'empty'  (the model failed on this field — retryable)
+    - explicit NR / [] rows → 'nr'     (a deliberate answer, NOT a failure)
+    """
+    if value is None:
+        return "empty"
+    if isinstance(value, bool) or isinstance(value, (int, float)):
+        return "substantive"
+    if isinstance(value, str):
+        s = value.strip()
+        if s == "":
+            return "empty"
+        if _is_nr(s):
+            return "nr"
+        if s.startswith("{") or s.startswith("["):
+            if not _is_valid_json(s):
+                return "invalid"
+        return "substantive"
+    if isinstance(value, dict):
+        status = value.get("status")
+        if status in ("missing", "error"):
+            return "empty"
+        if "value" in value:
+            inner = value.get("value")
+            if inner is None:
+                return "nr" if status == "not_reported" else "empty"
+            if isinstance(inner, str):
+                s = inner.strip()
+                if s == "" or _is_nr(s):
+                    return "nr"
+                return "substantive"
+            if isinstance(inner, list):
+                return "nr" if len(inner) == 0 else "substantive"
+            return "substantive"
+        return "empty" if len(value) == 0 else "substantive"
+    if isinstance(value, list):
+        return "nr" if len(value) == 0 else "substantive"
+    return "substantive"
+
+
 def _is_valid_json(value_str: str) -> bool:
     """Check if a JSON-like string is valid JSON."""
     try:
@@ -95,33 +142,11 @@ def extraction_reward(args: dict, pred) -> float:
     if not output_fields:
         return 0.0
 
-    field_scores = []
-
-    for field in output_fields:
-        value = getattr(pred, field, None)
-
-        # Empty / None → 0.0
-        if value is None or str(value).strip() == "":
-            field_scores.append(0.0)
-            continue
-
-        value_str = str(value).strip()
-
-        # NR → 0.7 (valid deliberate answer, not a failure)
-        if _is_nr(value_str):
-            field_scores.append(0.7)
-            continue
-
-        # JSON-like → check validity
-        if value_str.startswith("{") or value_str.startswith("["):
-            if _is_valid_json(value_str):
-                field_scores.append(1.0)  # Valid JSON with data
-            else:
-                field_scores.append(0.0)  # Broken JSON
-            continue
-
-        # Substantive non-JSON value → full credit
-        field_scores.append(1.0)
+    _SCORES = {"empty": 0.0, "invalid": 0.0, "nr": 0.7, "substantive": 1.0}
+    field_scores = [
+        _SCORES[_classify_value(getattr(pred, field, None))]
+        for field in output_fields
+    ]
 
     return sum(field_scores) / len(field_scores)
 
@@ -135,7 +160,10 @@ def validate_extraction_output(
 
     Scoring philosophy:
     - score: proportion of fields with substantive data (0.0-1.0)
-    - all_failed: True only when EVERY field is empty/NR (extractor totally failed)
+    - all_failed: True only when NO field has real data AND at least one field
+      actually failed (empty/missing/error/invalid). A result where every field
+      is a deliberate, explicit NR is an ANSWER, not a failure — retrying it
+      pressures the model to hallucinate.
 
     The pipeline should retry only when all_failed=True, not based on score,
     because a low score with some real data means the paper simply doesn't
@@ -165,33 +193,26 @@ def validate_extraction_output(
     invalid_json_fields = []
     substantive_fields = []
 
+    _BUCKETS = {
+        "empty": empty_fields,
+        "nr": nr_fields,
+        "invalid": invalid_json_fields,
+        "substantive": substantive_fields,
+    }
     for field in fields:
-        value = result.get(field)
-
-        if value is None or str(value).strip() == "":
-            empty_fields.append(field)
-            continue
-
-        value_str = str(value).strip()
-
-        if _is_nr(value_str):
-            nr_fields.append(field)
-            continue
-
-        # Check JSON validity for JSON-like strings
-        if isinstance(value, str) and (value_str.startswith("{") or value_str.startswith("[")):
-            if not _is_valid_json(value_str):
-                invalid_json_fields.append(field)
-                continue
-
-        substantive_fields.append(field)
+        _BUCKETS[_classify_value(result.get(field))].append(field)
 
     total = len(fields)
     score = len(substantive_fields) / total if total > 0 else 0.0
 
     return {
         "score": score,
-        "all_failed": len(substantive_fields) == 0,
+        # Retry only when something actually failed — all-deliberate-NR is a
+        # valid answer, not an extractor failure.
+        "all_failed": (
+            len(substantive_fields) == 0
+            and (len(empty_fields) + len(invalid_json_fields)) > 0
+        ),
         "empty_fields": empty_fields,
         "nr_fields": nr_fields,
         "invalid_json_fields": invalid_json_fields,

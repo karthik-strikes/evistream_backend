@@ -523,6 +523,177 @@ async def get_document_markdown(
         )
 
 
+@router.get("/{document_id}/file")
+async def get_document_file(
+    document_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Stream the raw PDF bytes through the backend.
+
+    Same-origin response so pdfjs / react-pdf can fetch it via XHR without
+    triggering S3 CORS (the bucket has no CORS policy). Used by the viewer
+    inside the source-evidence drawer; bulk "download to disk" still uses
+    /download which returns a presigned S3 URL.
+
+    Prefers the *annotation-stripped* PDF at `s3_clean_pdf_path` so the
+    viewer never shows highlights / sticky-notes added by previous readers
+    that would visually compete with our own source-text overlay. Falls
+    back to the original if the clean variant doesn't exist yet, and lazily
+    enqueues `clean_pdf_document` so the next viewer load gets the clean
+    version.
+    """
+    try:
+        result = supabase.table("documents")\
+            .select("*")\
+            .eq("id", str(document_id))\
+            .execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+
+        document = result.data[0]
+        await check_project_access(UUID(document["project_id"]), user_id, "can_view_docs")
+
+        clean_key = document.get("s3_clean_pdf_path")
+        original_key = document.get("s3_pdf_path")
+        s3_key = clean_key or original_key
+        if not s3_key:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="PDF not available"
+            )
+
+        # Lazy backfill: if we have an original but no clean version, kick off
+        # the cleaner task in the background. The user gets the original this
+        # one time; the next viewer load (or any other user's load) hits clean.
+        if not clean_key and original_key:
+            try:
+                from app.workers.pdf_tasks import clean_pdf_document
+                clean_pdf_document.delay(str(document_id))
+                logger.info(f"Lazily enqueued clean_pdf_document for {document_id}")
+            except Exception as enq_err:
+                logger.warning(f"Could not enqueue clean task for {document_id}: {enq_err}")
+
+        try:
+            s3_response = storage_service.s3_client.get_object(
+                Bucket=settings.S3_BUCKET,
+                Key=s3_key,
+            )
+            body_stream = s3_response["Body"]
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="PDF not found in storage"
+            )
+
+        def iter_chunks(chunk_size: int = 65536):
+            try:
+                while True:
+                    chunk = body_stream.read(chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+            finally:
+                body_stream.close()
+
+        from fastapi.responses import StreamingResponse
+        import hashlib
+        filename = (document.get("filename") or "document.pdf").replace('"', '')
+        # ETag includes the S3 key so the cache invalidates the instant a doc
+        # transitions from "original served" to "clean served" (different key,
+        # different ETag). Without this, browsers happily serve the cached
+        # original for up to max-age after the clean version becomes available.
+        etag = hashlib.md5(s3_key.encode("utf-8")).hexdigest()[:16]
+        return StreamingResponse(
+            iter_chunks(),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="{filename}"',
+                # Short max-age + must-revalidate so the browser re-asks the
+                # server on the next view. ETag lets the server respond 304
+                # when the variant hasn't changed.
+                "Cache-Control": "private, max-age=300, must-revalidate",
+                "ETag": f'"{etag}"',
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error streaming document file")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.get("/{document_id}/blocks")
+async def get_document_blocks(
+    document_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Return the Datalab block-level JSON sidecar (per-block bbox/page/type).
+
+    Used by the frontend PDF viewer to draw exact-coordinate highlights over
+    the source PDF. Returns 404 with detail=`blocks_unavailable` for documents
+    parsed before the blocks pipeline existed — the viewer should fall back
+    to fuzzy-match highlighting in that case.
+    """
+    try:
+        result = supabase.table("documents")\
+            .select("*")\
+            .eq("id", str(document_id))\
+            .execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+
+        document = result.data[0]
+        await check_project_access(UUID(document["project_id"]), user_id, "can_view_docs")
+
+        blocks_key = document.get("s3_blocks_path")
+        if not blocks_key:
+            # Legacy doc that pre-dates the bbox pipeline. We return 200 with
+            # an "unavailable" sentinel instead of 404 because the document
+            # itself exists — only its bbox sidecar is missing. The 404 was
+            # visually noisy in browser devtools (Chrome paints failed fetches
+            # red regardless of how the frontend handles them); a 2xx with a
+            # tiny JSON payload lets the frontend route to text-layer fallback
+            # without any console error.
+            from fastapi.responses import JSONResponse
+            return JSONResponse(content={"unavailable": True, "reason": "blocks_unavailable"})
+
+        try:
+            response = storage_service.s3_client.get_object(
+                Bucket=settings.S3_BUCKET,
+                Key=blocks_key
+            )
+            content = response["Body"].read()
+        except Exception:
+            # Sidecar path is set but the object isn't there — still a soft
+            # failure from the viewer's perspective; surface as "unavailable".
+            from fastapi.responses import JSONResponse
+            return JSONResponse(content={"unavailable": True, "reason": "sidecar_missing"})
+
+        from fastapi.responses import Response
+        return Response(content=content, media_type="application/json")
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error getting document blocks")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
 @router.get("/{document_id}/download")
 async def download_document(
     document_id: UUID,

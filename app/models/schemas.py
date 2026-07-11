@@ -1,7 +1,7 @@
 """Pydantic schemas for API request/response validation."""
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
-from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator, model_validator
+from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 from uuid import UUID
 from .enums import (
@@ -62,14 +62,79 @@ class UserResponse(BaseModel):
     is_active: bool
     role: UserRole = UserRole.USER
     created_at: datetime
+    last_seen_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Forgot password request."""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Reset password request."""
+    token: str
+    new_password: str = Field(..., min_length=8)
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not any(c.islower() for c in v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not any(c.isdigit() for c in v):
+            raise ValueError('Password must contain at least one digit')
+        return v
+
+
+class UserProfileUpdate(BaseModel):
+    """Update profile fields for the current user."""
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    """Change password request for the current user."""
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not any(c.islower() for c in v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not any(c.isdigit() for c in v):
+            raise ValueError('Password must contain at least one digit')
+        return v
 
 
 class UserAdminUpdate(BaseModel):
     """Admin update request for a user."""
     is_active: Optional[bool] = None
     role: Optional[UserRole] = None
+
+
+class UserAdminCreate(BaseModel):
+    """Admin creates a new user account."""
+    email: EmailStr
+    full_name: Optional[str] = None
+    password: str = Field(..., min_length=8)
+    role: UserRole = UserRole.USER
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not any(c.islower() for c in v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not any(c.isdigit() for c in v):
+            raise ValueError('Password must contain at least one digit')
+        return v
 
 
 # ============================================================================
@@ -155,23 +220,29 @@ class DocumentLabelsUpdate(BaseModel):
 # Form Schemas
 # ============================================================================
 
-VALID_FIELD_TYPES = {"text", "number", "enum", "boolean", "array", "object"}
+VALID_FIELD_TYPES = {"text", "number", "select", "boolean", "array"}
 
 FIELD_TYPE_ALIASES = {
-    # human-friendly labels
+    # canonical types
     "text":             "text",
     "number":           "number",
-    "multiple choice":  "enum",
+    "select":           "select",
+    "boolean":          "boolean",
+    "array":            "array",
+    # human-friendly labels
+    "multiple choice":  "select",
     "table / list":     "array",
-    "structured object":"object",
-    # developer aliases
+    # legacy aliases (enum → select)
+    "enum":            "select",
+    "dropdown":        "select",
+    "multiple_choice": "select",
+    # other aliases
     "text_long":       "text",
     "long_text":       "text",
-    "dropdown":        "enum",
-    "multiple_choice": "enum",
-    "select":          "enum",
     "list":            "array",
     "table":           "array",
+    "object":          "array",
+    "structured object":"array",
     "integer":         "number",
     "float":           "number",
     "decimal":         "number",
@@ -181,13 +252,25 @@ FIELD_TYPE_ALIASES = {
 class FieldDefinition(BaseModel):
     """Form field definition."""
     field_name: str
+    display_name: Optional[str] = None
     field_description: str
-    field_type: str  # text, number, enum, object, array
+    field_type: str  # text, number, select, boolean, array
     field_control_type: Optional[str] = None  # dropdown, checkbox_group_with_text, etc.
     options: Optional[List[str]] = None
+    multiple: Optional[bool] = False  # For select fields: allow multiple selections
     example: Optional[str] = None
     extraction_hints: Optional[str] = None
     subform_fields: Optional[List['FieldDefinition']] = None
+    # Review-time calibration (set via PATCH /forms/{id}/fields).
+    # Spliced directly into signatures.py — what you see is what the LLM uses.
+    examples: Optional[List[Dict[str, Any]]] = None  # [{value, source_text?, note?}]
+    hints: Optional[List[str]] = None
+    rules: Optional[List[str]] = None
+    # Table extraction strategy (only meaningful on array fields).
+    # Mirrors schema_def.output_fields[].extraction_strategy / .anchor_columns
+    # so the UI can roundtrip without going through schema_def.
+    extraction_strategy: Optional[str] = None   # 'single_call' | 'row_then_columns'
+    anchor_columns: Optional[List[str]] = None
 
     @field_validator('field_type', mode='before')
     @classmethod
@@ -207,6 +290,7 @@ class FormCreate(BaseModel):
     form_description: str
     fields: List[FieldDefinition]
     enable_review: bool = False
+    save_as_draft: bool = False
 
 
 class FormUpdate(BaseModel):
@@ -226,7 +310,6 @@ class FormResponse(BaseModel):
     fields: List[Dict[str, Any]]
     status: FormStatus
     schema_name: Optional[str]
-    task_dir: Optional[str]
     statistics: Optional[Dict[str, Any]]
     error: Optional[str]
     metadata: Optional[Dict[str, Any]] = None  # Workflow state for human review
@@ -248,6 +331,55 @@ class FormResponse(BaseModel):
             except json.JSONDecodeError:
                 return None
         return v
+
+
+class ReviewNote(BaseModel):
+    """Structured reviewer note targeting a specific part of the decomposition."""
+    target_type: Literal["field", "group", "stage", "pipeline"]
+    target_ref: str
+    comment: str = Field(..., min_length=3, max_length=2000)
+
+
+class RejectDecompositionRequest(BaseModel):
+    """Reject decomposition request with optional structured notes."""
+    feedback: Optional[str] = None
+    notes: List[ReviewNote] = []
+    accepted_refs: List[str] = []
+
+    @model_validator(mode='after')
+    def at_least_one(self) -> 'RejectDecompositionRequest':
+        if not self.feedback and not self.notes:
+            raise ValueError("At least one of feedback or notes must be provided")
+        return self
+
+
+class FieldEditUpdate(BaseModel):
+    """Per-field calibration update from HITL review."""
+    field_name: str
+    description: Optional[str] = None
+    examples: Optional[List[Dict[str, Any]]] = None
+    hints: Optional[List[str]] = None
+    rules: Optional[List[str]] = None
+    options: Optional[List[str]] = None         # select-field answer choices
+    extraction_strategy: Optional[str] = None   # 'single_call' | 'row_then_columns'
+    anchor_columns: Optional[List[str]] = None  # column names used as row identifiers
+
+
+class FieldEditsRequest(BaseModel):
+    """Bulk field-level review edits (examples/hints/rules)."""
+    field_updates: List[FieldEditUpdate] = Field(..., min_length=1)
+
+
+class AddFieldRequest(BaseModel):
+    """Request to add a new field to an active form's signature."""
+    field_name: str
+    field_type: str  # text | number | boolean | select | array
+    display_name: Optional[str] = None
+    options: Optional[List[str]] = None
+    multiple: Optional[bool] = False
+    target_signature_class: str
+    description: str = Field(..., min_length=1)  # required — user's authoritative description
+    examples: Optional[List[Dict[str, Any]]] = None  # [{value, source_text?}], user-supplied anchor cases
 
 
 # ============================================================================
@@ -285,6 +417,7 @@ class ExtractionResultResponse(BaseModel):
     evaluation_metrics: Optional[Dict[str, Any]]
     extracted_by: Optional[UUID] = None
     reviewer_role: Optional[str] = None
+    model_name: Optional[str] = None  # LLM used for AI extraction, derived from jobs.input_data.model
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -422,10 +555,12 @@ class ProjectMemberPermissions(BaseModel):
     can_upload_docs: bool = False
     can_create_forms: bool = False
     can_run_extractions: bool = False
+    can_run_manual_extractions: bool = False
     can_view_results: bool = True
     can_adjudicate: bool = False
     can_qa_review: bool = False
     can_manage_assignments: bool = False
+    can_manage_members: bool = False
 
 
 class ProjectMemberResponse(BaseModel):
@@ -435,16 +570,20 @@ class ProjectMemberResponse(BaseModel):
     user_id: UUID
     email: str
     full_name: Optional[str]
+    role: str = "member"
     can_view_docs: bool
     can_upload_docs: bool
     can_create_forms: bool
     can_run_extractions: bool
+    can_run_manual_extractions: bool = False
     can_view_results: bool
     can_adjudicate: bool = False
     can_qa_review: bool = False
     can_manage_assignments: bool = False
+    can_manage_members: bool = False
     invited_by: Optional[UUID] = None
     created_at: Optional[datetime] = None
+    last_seen_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -452,39 +591,155 @@ class ProjectMemberResponse(BaseModel):
 class ProjectMemberInvite(BaseModel):
     """Request to invite a user to a project."""
     email: EmailStr
+    role: str = "member"
+    # Individual flags — only used when role='member'
     can_view_docs: bool = True
     can_upload_docs: bool = False
     can_create_forms: bool = False
     can_run_extractions: bool = False
+    can_run_manual_extractions: bool = False
     can_view_results: bool = True
     can_adjudicate: bool = False
     can_qa_review: bool = False
     can_manage_assignments: bool = False
+    can_manage_members: bool = False
 
 
 class ProjectMemberUpdate(BaseModel):
-    """Request to update a member's permissions."""
+    """Request to update a member's role and/or permissions."""
+    role: Optional[str] = None
+    # Individual flags — only apply when role='member'
     can_view_docs: Optional[bool] = None
     can_upload_docs: Optional[bool] = None
     can_create_forms: Optional[bool] = None
     can_run_extractions: Optional[bool] = None
+    can_run_manual_extractions: Optional[bool] = None
     can_view_results: Optional[bool] = None
     can_adjudicate: Optional[bool] = None
     can_qa_review: Optional[bool] = None
     can_manage_assignments: Optional[bool] = None
+    can_manage_members: Optional[bool] = None
+
+
+class ProjectInvitationCreate(BaseModel):
+    """Request to create a project invitation."""
+    email: EmailStr
+    role: str = "member"
+    can_view_docs: bool = True
+    can_upload_docs: bool = False
+    can_create_forms: bool = False
+    can_run_extractions: bool = False
+    can_run_manual_extractions: bool = False
+    can_view_results: bool = True
+    can_adjudicate: bool = False
+    can_qa_review: bool = False
+    can_manage_assignments: bool = False
+    can_manage_members: bool = False
+
+
+class ProjectInvitationResponse(BaseModel):
+    """Project invitation response."""
+    id: UUID
+    project_id: UUID
+    email: str
+    role: str
+    can_view_docs: bool
+    can_upload_docs: bool
+    can_create_forms: bool
+    can_run_extractions: bool
+    can_run_manual_extractions: bool = False
+    can_view_results: bool
+    can_adjudicate: bool
+    can_qa_review: bool
+    can_manage_assignments: bool
+    can_manage_members: bool
+    invited_by: Optional[UUID] = None
+    invited_by_name: Optional[str] = None
+    expires_at: datetime
+    accepted_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+    created_at: datetime
+    accept_url: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InvitationPreview(BaseModel):
+    """Public invitation preview for the accept page."""
+    project_id: UUID
+    project_name: str
+    role: str
+    invited_by_name: Optional[str] = None
+    expires_at: datetime
+
+
+class AcceptInvitationRequest(BaseModel):
+    """Request body to accept an invitation."""
+    token: str
 
 
 class MyPermissionsResponse(BaseModel):
     """Current user's effective permissions for a project."""
     is_owner: bool
+    is_admin: bool = False
+    role: str = "member"
     can_view_docs: bool
     can_upload_docs: bool
     can_create_forms: bool
     can_run_extractions: bool
+    can_run_manual_extractions: bool = False
     can_view_results: bool
     can_adjudicate: bool = False
     can_qa_review: bool = False
     can_manage_assignments: bool = False
+    can_manage_members: bool = False
+
+
+class OwnershipTransferRequest(BaseModel):
+    """Request to transfer project ownership."""
+    new_owner_id: UUID
+    previous_owner_role: Literal["manager", "member", "viewer", "none"] = "manager"
+
+
+class PermissionAuditLogResponse(BaseModel):
+    """Permission change audit log entry."""
+    id: UUID
+    project_id: UUID
+    actor_id: UUID
+    target_user_id: Optional[UUID] = None
+    action: str
+    old_values: Optional[dict] = None
+    new_values: Optional[dict] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminAuditLogEntry(BaseModel):
+    """Enriched audit log entry for admin global view."""
+    id: UUID
+    project_id: Optional[UUID] = None
+    actor_id: Optional[UUID] = None
+    target_user_id: Optional[UUID] = None
+    action: str
+    old_values: Optional[dict] = None
+    new_values: Optional[dict] = None
+    created_at: datetime
+    actor_name: Optional[str] = None
+    actor_email: Optional[str] = None
+    target_name: Optional[str] = None
+    target_email: Optional[str] = None
+    project_name: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminAuditLogResponse(BaseModel):
+    """Paginated response for admin global audit log."""
+    entries: List[AdminAuditLogEntry]
+    total: int
+    page: int
+    page_size: int
 
 
 # ============================================================================
@@ -527,6 +782,7 @@ class UserSettingsResponse(BaseModel):
     notify_extraction_completed: bool
     notify_extraction_failed: bool
     notify_code_generation: bool
+    extraction_model: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -544,6 +800,14 @@ class UserSettingsUpdate(BaseModel):
     notify_extraction_completed: Optional[bool] = None
     notify_extraction_failed: Optional[bool] = None
     notify_code_generation: Optional[bool] = None
+    extraction_model: Optional[str] = None
+
+
+class AvailableModel(BaseModel):
+    """One row in the user-facing model picker."""
+    id: str
+    label: str
+    provider: str
 
 
 # ============================================================================

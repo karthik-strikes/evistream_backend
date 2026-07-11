@@ -32,7 +32,7 @@ class FormFieldDefinition(BaseModel):
 
     field_type: str = Field(
         ...,
-        pattern="^(text|number|enum|object|array|boolean)$",
+        pattern="^(text|number|select|array|boolean|enum)$",
         description="Data type of this field"
     )
 
@@ -43,7 +43,12 @@ class FormFieldDefinition(BaseModel):
 
     options: Optional[List[str]] = Field(
         None,
-        description="Valid options for enum fields"
+        description="Valid options for select fields"
+    )
+
+    multiple: Optional[bool] = Field(
+        False,
+        description="Allow multiple selections for select fields"
     )
 
     example: Optional[str] = Field(
@@ -60,18 +65,18 @@ class FormFieldDefinition(BaseModel):
 
     subform_fields: Optional[List['FormFieldDefinition']] = Field(
         None,
-        description="Nested fields for object/array types"
+        description="Nested fields for array types"
     )
 
     @field_validator("options")
     @classmethod
-    def validate_enum_options(cls, v: Optional[List[str]], info) -> Optional[List[str]]:
-        """Validate that enum fields have options."""
+    def validate_select_options(cls, v: Optional[List[str]], info) -> Optional[List[str]]:
+        """Validate that select fields have options."""
         field_type = info.data.get("field_type")
-        if field_type == "enum" and not v:
-            raise ValueError("Enum fields must have at least one option")
+        if field_type == "select" and not v:
+            raise ValueError("Select fields must have at least one option")
         if v and len(v) < 1:
-            raise ValueError("Enum options cannot be empty")
+            raise ValueError("Select options cannot be empty")
         return v
 
     @field_validator("field_name")

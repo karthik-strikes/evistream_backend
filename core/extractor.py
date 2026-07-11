@@ -1,7 +1,10 @@
 import asyncio
 import json
+import logging
 import traceback
 from typing import Dict, List, Any
+
+logger = logging.getLogger(__name__)
 from utils.helpers.print_helpers import print_extracted_vs_ground_truth, print_field_level_table, print_evaluation_summary
 from utils.flatten_json import flatten_json
 from schemas.runtime import SchemaRuntime
@@ -102,5 +105,12 @@ async def run_async_extraction_and_evaluation(
         }
 
     except Exception as e:
-        print(f"❌ Error in async extraction: {e}")
-        traceback.print_exc()
+        logger.error(f"Error in async extraction: {e}", exc_info=True)
+        return {
+            "baseline_results": [],
+            "baseline_evaluation": None,
+            "field_counts": None,
+            "matches": [],
+            "aligned_records": {},
+            "files_saved": {},
+        }

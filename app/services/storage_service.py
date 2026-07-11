@@ -141,6 +141,55 @@ class S3StorageService:
             logger.error(f"Failed to upload markdown: {e}")
             raise
 
+    def upload_clean_pdf(self, pdf_bytes: bytes, project_id: str, content_hash: str) -> str:
+        """
+        Upload the annotation-stripped PDF (output of pdf_cleaner.clean_pdf_bytes)
+        to S3 under a separate prefix so the original is still recoverable.
+        Returns the S3 key.
+        """
+        s3_key = f"clean-pdfs/{project_id}/{content_hash}.pdf"
+        try:
+            self.s3_client.put_object(
+                Bucket=self.bucket,
+                Key=s3_key,
+                Body=pdf_bytes,
+                ContentType="application/pdf",
+                Metadata={
+                    "project-id": project_id,
+                    "content-hash": content_hash,
+                    "variant": "clean",
+                },
+            )
+            logger.info(f"Uploaded clean PDF to s3://{self.bucket}/{s3_key}")
+            return s3_key
+        except ClientError as e:
+            logger.error(f"Failed to upload clean PDF: {e}")
+            raise
+
+    def upload_blocks(self, blocks_json: dict, project_id: str, content_hash: str) -> str:
+        """
+        Upload Datalab block-level JSON (per-block bbox, page_id, type, text) to S3.
+        Sidecar to the markdown file — same content_hash, different prefix.
+        """
+        import json as _json
+        s3_key = f"blocks/{project_id}/{content_hash}.json"
+        try:
+            self.s3_client.put_object(
+                Bucket=self.bucket,
+                Key=s3_key,
+                Body=_json.dumps(blocks_json).encode("utf-8"),
+                ContentType="application/json",
+                Metadata={
+                    "project-id": project_id,
+                    "content-hash": content_hash,
+                },
+            )
+            logger.info(f"Uploaded blocks JSON to s3://{self.bucket}/{s3_key}")
+            return s3_key
+        except ClientError as e:
+            logger.error(f"Failed to upload blocks JSON: {e}")
+            raise
+
     def download_to_temp(self, s3_key: str, local_path: str) -> str:
         """
         Download an S3 object to a local file path.

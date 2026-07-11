@@ -10,6 +10,23 @@ from core.config import DEFAULT_HISTORY_CSV, PROJECT_ROOT
 
 _logger = logging.getLogger(__name__)
 
+
+def _strip_nul(value):
+    """Recursively remove NUL bytes (\\u0000) that PostgreSQL text/jsonb cannot store.
+
+    PDF text extraction frequently leaves stray NUL/control bytes in the content,
+    which flow into the LLM prompt and then into this audit insert, causing
+    postgrest error 22P05 "unsupported Unicode escape sequence".
+    """
+    if isinstance(value, str):
+        return value.replace("\x00", "")
+    if isinstance(value, list):
+        return [_strip_nul(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _strip_nul(v) for k, v in value.items()}
+    return value
+
+
 # Global variables to track processed calls
 _processed_hashes = set()
 # Default history CSV path, built relative to the project root
@@ -150,12 +167,17 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
             if client and client.is_available():
                 # Save each call to Supabase synchronously (simpler, no async issues)
                 saved_count = 0
+                # Stamp every row with the current run so per-run cost/token
+                # attribution is exact (see utils/run_context.py). None outside
+                # a stamped worker context (e.g. eval scripts) — that's fine.
+                from utils.run_context import get_current_job_id
+                _run_job_id = get_current_job_id()
                 for call_data in new_call_data:
                     try:
                         # Use synchronous save method
 
-                        # Extract messages
-                        messages = call_data.get('messages', [])
+                        # Extract messages — strip NUL bytes Postgres can't store (PDF text artifacts)
+                        messages = _strip_nul(call_data.get('messages', []))
                         system_msg = next(
                             (m.get('content', '') for m in messages if m.get('role') == 'system'), '')
                         user_msg = next(
@@ -165,7 +187,7 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
                         response_obj = call_data.get('response', {})
                         assistant_response = ""
                         if hasattr(response_obj, 'choices') and response_obj.choices:
-                            assistant_response = response_obj.choices[0].message.content
+                            assistant_response = _strip_nul(response_obj.choices[0].message.content or "")
 
                         # Extract usage
                         usage = call_data.get('usage', {})
@@ -174,8 +196,21 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
                             completion_tokens = usage.get(
                                 'completion_tokens', 0)
                             total_tokens = usage.get('total_tokens', 0)
+                            cache_creation_input_tokens = usage.get(
+                                'cache_creation_input_tokens', 0) or 0
+                            cache_read_input_tokens = usage.get(
+                                'cache_read_input_tokens', 0) or 0
+                            if not cache_read_input_tokens:
+                                # OpenAI/Gemini report cache reads under
+                                # prompt_tokens_details.cached_tokens instead of
+                                # the Anthropic-shaped top-level field.
+                                _details = usage.get('prompt_tokens_details') or {}
+                                if isinstance(_details, dict):
+                                    cache_read_input_tokens = _details.get(
+                                        'cached_tokens', 0) or 0
                         else:
                             prompt_tokens = completion_tokens = total_tokens = 0
+                            cache_creation_input_tokens = cache_read_input_tokens = 0
 
                         # Generate unique hash
                         hash_content = {
@@ -196,6 +231,8 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
                             "prompt_tokens": prompt_tokens,
                             "completion_tokens": completion_tokens,
                             "total_tokens": total_tokens,
+                            "cache_creation_input_tokens": cache_creation_input_tokens,
+                            "cache_read_input_tokens": cache_read_input_tokens,
                             "cache_hit": getattr(response_obj, 'cache_hit', False) if response_obj else False,
                             "messages": messages,
                             "system_prompt": system_msg,
@@ -203,6 +240,7 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
                             "assistant_response": assistant_response,
                             "source_file": source_file,
                             "schema_name": schema_name,
+                            "job_id": _run_job_id,
                             "metadata": {}
                         }
 
@@ -225,6 +263,39 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
         lm.history.clear()
 
     return len(new_records)
+
+
+def log_all_lm_histories(source_file: str = None, schema_name: str = None) -> int:
+    """Flush LM history from every model in the ModelRouter cache.
+
+    evistream uses `dspy.context(lm=...)` per coroutine instead of
+    `dspy.configure()`, so `dspy.settings.lm.history` only sees a subset
+    of calls. The authoritative history lives on each cached LM in
+    `ModelRouter._lm_cache`. This walks them all.
+    """
+    try:
+        from utils.circuit_breaker import ModelRouter
+        router = ModelRouter.get_instance()
+        lms = list(router._lm_cache.values())
+    except Exception:
+        _logger.warning("ModelRouter unavailable; falling back to dspy.settings.lm", exc_info=True)
+        return log_history(source_file=source_file, schema_name=schema_name)
+
+    total = 0
+    for lm in lms:
+        if not getattr(lm, "history", None):
+            continue
+        try:
+            with dspy.context(lm=lm):
+                total += log_history(
+                    clear_memory=True,
+                    save_to_supabase=True,
+                    source_file=source_file,
+                    schema_name=schema_name,
+                )
+        except Exception:
+            _logger.warning(f"Failed to flush history for LM {getattr(lm, 'model', '?')}", exc_info=True)
+    return total
 
 
 def show_stats():

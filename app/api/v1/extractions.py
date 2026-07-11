@@ -4,7 +4,7 @@ Extraction job endpoints - Create and manage extraction jobs.
 
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, status, Query, Request
 from supabase import create_client
 from uuid import UUID
 from typing import List, Optional
@@ -15,13 +15,56 @@ from app.models.schemas import ExtractionCreate, ExtractionResponse
 from app.models.enums import JobType, JobStatus
 from app.rate_limits import RATE_LIMIT_EXTRACTION_CREATE, RATE_LIMIT_EXTRACTION_LIST
 from app.services.project_access import check_project_access
+from app.services.settings_service import get_user_settings
 from app.rate_limit import limiter
 from app.services.activity_service import log_activity
+from config.models import AVAILABLE_MODEL_IDS, DEFAULT_MODEL
 
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+_NR_LIKE = {"", "NR", "NA", "N/A", "NONE", "NOT REPORTED", "NOT_REPORTED", "—", "-"}
+
+
+def _field_is_empty(v) -> bool:
+    """A field counts as empty when it has no substantive value — null/blank,
+    an NR-like token, or a cell whose status is not_reported/missing/error."""
+    if v is None:
+        return True
+    if isinstance(v, str):
+        return v.strip() == "" or v.strip().upper() in _NR_LIKE
+    if isinstance(v, bool):
+        return False
+    if isinstance(v, (int, float)):
+        return False
+    if isinstance(v, list):
+        return len(v) == 0 or all(_field_is_empty(item) for item in v)
+    if isinstance(v, dict):
+        st = v.get("status")
+        if st in ("missing", "error", "not_reported"):
+            return True
+        if st == "reported":
+            return False
+        if "value" in v:
+            return _field_is_empty(v.get("value"))
+        return len(v) == 0 or all(_field_is_empty(val) for val in v.values())
+    return False
+
+
+def _flagged_more_than_half_empty(extracted_data) -> bool:
+    """Flag a study whose latest result has more than half its fields empty —
+    a signal the paper was likely under-extracted and worth re-running."""
+    if not isinstance(extracted_data, dict):
+        return False
+    field_keys = [k for k in extracted_data.keys() if not k.startswith("_")]
+    total = len(field_keys)
+    if total == 0:
+        return True
+    empty = sum(1 for k in field_keys if _field_is_empty(extracted_data[k]))
+    return empty * 2 > total
 
 
 def _update_queue_position(job_id: str):
@@ -173,6 +216,13 @@ async def create_extraction_job(
 
         extraction = result.data[0]
 
+        # Resolve the user's preferred extraction model (Beta — set in Settings).
+        # Fall back to DEFAULT_MODEL if unset or no longer in the allowlist.
+        user_settings = await get_user_settings(user_id)
+        chosen_model = (user_settings or {}).get("extraction_model")
+        if chosen_model not in AVAILABLE_MODEL_IDS:
+            chosen_model = DEFAULT_MODEL
+
         # Create background job
         job_data = {
             "user_id": str(user_id),
@@ -184,7 +234,8 @@ async def create_extraction_job(
                 "extraction_id": extraction["id"],
                 "form_id": str(extraction_data.form_id),
                 "document_ids": [str(d) for d in extraction_data.document_ids] if extraction_data.document_ids else None,
-                "max_documents": extraction_data.max_documents
+                "max_documents": extraction_data.max_documents,
+                "model": chosen_model,
             }
         }
 
@@ -206,7 +257,8 @@ async def create_extraction_job(
             extraction_id=extraction["id"],
             job_id=str(job_id),
             document_ids=[str(d) for d in extraction_data.document_ids] if extraction_data.document_ids else None,
-            max_documents=extraction_data.max_documents
+            max_documents=extraction_data.max_documents,
+            model=chosen_model,
         )
 
         # Update queue position and celery_task_id in the background (non-blocking)
@@ -393,18 +445,28 @@ async def get_extraction_coverage(
             .execute()
         form_names = {f["id"]: f["form_name"] for f in (forms_result.data or [])}
 
-        # 4) Count distinct successfully extracted document_ids per form
-        #    extraction_results has (form_id, document_id, extracted_data)
+        # 4) Count distinct successfully extracted document_ids per form, and
+        #    flag documents whose latest result has field-level extraction
+        #    failures (cells with status missing/error masquerading as NR).
         results_result = supabase.table("extraction_results")\
-            .select("form_id, document_id")\
+            .select("form_id, document_id, extracted_data, created_at")\
             .eq("project_id", pid)\
+            .order("created_at", desc=True)\
             .execute()
         results_data = results_result.data or []
 
-        # Build set of extracted doc_ids per form
+        # Build set of extracted doc_ids per form; evaluate only the latest
+        # result per (form, document) for flagged (>half-empty) detection.
         form_extracted_docs: dict = defaultdict(set)
+        form_flagged_docs: dict = defaultdict(set)
+        seen_form_doc: dict = defaultdict(set)
         for r in results_data:
-            form_extracted_docs[r["form_id"]].add(r["document_id"])
+            fid, did = r["form_id"], r["document_id"]
+            form_extracted_docs[fid].add(did)
+            if did not in seen_form_doc[fid]:
+                seen_form_doc[fid].add(did)
+                if _flagged_more_than_half_empty(r.get("extracted_data")):
+                    form_flagged_docs[fid].add(did)
 
         # 5) Get all extraction jobs for this project to find failed doc_ids and active jobs
         extraction_ids = [ext["id"] for ext in extractions_data]
@@ -484,6 +546,8 @@ async def get_extraction_coverage(
                 "active_jobs": active_jobs,
                 "extracted_document_ids": list(extracted_doc_ids),
                 "failed_document_ids": list(failed_doc_ids),
+                "flagged_count": len(form_flagged_docs.get(form_id, set())),
+                "flagged_document_ids": list(form_flagged_docs.get(form_id, set())),
             })
 
         # Sort: active jobs first, then by last_run_at desc within each group
@@ -612,8 +676,10 @@ async def delete_extraction(
                         current_app.control.revoke(job["celery_task_id"], terminate=True)
                     except Exception as e:
                         logger.error(f"Failed to revoke task {job['celery_task_id']}: {e}")
+                from datetime import datetime, timezone
                 supabase.table("jobs").update({
                     "status": JobStatus.CANCELLED.value,
+                    "completed_at": datetime.now(timezone.utc).isoformat(),
                     "error_message": "Extraction deleted"
                 }).eq("id", job["id"]).execute()
 
@@ -748,14 +814,21 @@ async def cancel_extraction(
 async def retry_failed_extraction(
     extraction_id: UUID,
     background_tasks: BackgroundTasks,
+    payload: Optional[dict] = Body(default=None),
     user_id: UUID = Depends(get_current_user)
 ):
     """
-    Retry only the documents that failed in the most recent extraction run.
+    Retry documents from a prior extraction run as a NEW run.
 
-    Creates a new job for just the failed documents and updates the extraction
-    status back to pending. Clears failed_document_ids from the previous job
-    so the retry button disappears.
+    By default retries only the documents that hard-failed (recorded in the
+    job's failed_document_ids). Callers may instead pass an explicit
+    {"document_ids": [...]} body to retry specific studies — e.g. ones that
+    succeeded at the document level but under-extracted (fields with status
+    "missing"/"error").
+
+    Creates a brand-new extraction row (so it appears as its own entry in
+    "View by run" with its own results) and runs the selected documents under
+    it. The source extraction is left untouched.
     """
     try:
         # Get extraction
@@ -792,20 +865,46 @@ async def retry_failed_extraction(
 
         job = job_result.data[0]
         result_data = job.get("result_data") or {}
-        failed_document_ids = result_data.get("failed_document_ids") or []
 
-        # If no specific failed docs recorded, the whole extraction failed — retry all docs
-        if not failed_document_ids:
-            failed_document_ids = None  # None = run on all project documents
+        # Explicit document_ids (e.g. studies whose fields came back
+        # missing/error) take precedence over the job's recorded hard failures.
+        explicit_ids = (payload or {}).get("document_ids") or None
+        if explicit_ids:
+            failed_document_ids = explicit_ids
+        else:
+            failed_document_ids = result_data.get("failed_document_ids") or []
+            # If no specific failed docs recorded, the whole extraction failed — retry all docs
+            if not failed_document_ids:
+                failed_document_ids = None  # None = run on all project documents
 
-        # Clear failed_document_ids from the current job so the retry button disappears
-        updated_result_data = dict(result_data)
-        updated_result_data["failed_document_ids"] = []
-        supabase.table("jobs").update({
-            "result_data": updated_result_data
-        }).eq("id", job["id"]).execute()
+        # Reuse the model from the most recent job's input_data; fall back to
+        # the user's current preference, then DEFAULT_MODEL. Retries should not
+        # silently change which LLM extracted the rows.
+        prev_input = job.get("input_data") or {}
+        retry_model = prev_input.get("model")
+        if retry_model not in AVAILABLE_MODEL_IDS:
+            user_settings_retry = await get_user_settings(user_id)
+            retry_model = (user_settings_retry or {}).get("extraction_model")
+            if retry_model not in AVAILABLE_MODEL_IDS:
+                retry_model = DEFAULT_MODEL
 
-        # Create new job for the retry
+        # Create a NEW extraction row so the retry shows as its own run in
+        # "View by run" and the source run's results are preserved.
+        new_ext_result = supabase.table("extractions").insert({
+            "project_id": extraction["project_id"],
+            "form_id": extraction["form_id"],
+            "status": "pending",
+        }).execute()
+
+        if not new_ext_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create retry run"
+            )
+
+        new_extraction_id = new_ext_result.data[0]["id"]
+
+        # Create the job for the retry, pointing at the new extraction
         new_job_data = {
             "user_id": str(user_id),
             "project_id": extraction["project_id"],
@@ -813,10 +912,11 @@ async def retry_failed_extraction(
             "status": JobStatus.PENDING.value,
             "progress": 0,
             "input_data": {
-                "extraction_id": str(extraction_id),
+                "extraction_id": str(new_extraction_id),
                 "form_id": str(extraction["form_id"]),
                 "document_ids": failed_document_ids,
-                "max_documents": None
+                "max_documents": None,
+                "model": retry_model,
             }
         }
 
@@ -831,19 +931,15 @@ async def retry_failed_extraction(
         new_job = new_job_result.data[0]
         new_job_id = new_job["id"]
 
-        # Update extraction status back to pending
-        supabase.table("extractions").update({
-            "status": "pending"
-        }).eq("id", str(extraction_id)).execute()
-
-        # Trigger the extraction task
+        # Trigger the extraction task against the new extraction
         from app.workers.extraction_tasks import run_extraction
 
         celery_task = run_extraction.delay(
-            extraction_id=str(extraction_id),
+            extraction_id=str(new_extraction_id),
             job_id=new_job_id,
             document_ids=failed_document_ids,
-            max_documents=None
+            max_documents=None,
+            model=retry_model,
         )
 
         # Update job with Celery task ID
@@ -857,13 +953,18 @@ async def retry_failed_extraction(
             user_id=user_id,
             action_type="extraction",
             action="Retry Failed Papers",
-            description=f"Retrying {retrying_count} failed papers for extraction {extraction_id}",
+            description=f"Retrying {retrying_count} papers from extraction {extraction_id} as a new run",
             project_id=UUID(extraction["project_id"]),
-            metadata={"extraction_id": str(extraction_id), "retrying_count": retrying_count},
+            metadata={
+                "source_extraction_id": str(extraction_id),
+                "extraction_id": str(new_extraction_id),
+                "retrying_count": retrying_count,
+            },
         )
 
         return {
             "job_id": new_job_id,
+            "extraction_id": str(new_extraction_id),
             "retrying_count": retrying_count
         }
 

@@ -1,5 +1,6 @@
 """Service for adjudication of reviewer disagreements."""
 
+import json
 import logging
 from supabase import create_client, Client
 from typing import Optional, Dict, Any, List
@@ -16,21 +17,99 @@ def get_supabase() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 
+_METADATA_KEYS = frozenset({
+    "source_text", "source_location", "page", "section", "confidence", "reasoning",
+    "status", "error",
+})
+
+
+def _unwrap_for_compare(v: Any) -> Any:
+    """Recursively strip {value, source_text} envelopes and grounding metadata so
+    two reviewers with identical column values but different cited quotes are
+    treated as agreement, not conflict. Mirrors the rule that source_text is
+    metadata about a value — never the value itself."""
+    if isinstance(v, dict):
+        if "value" in v:
+            return _unwrap_for_compare(v["value"])
+        # Row dict inside a table: drop metadata keys, recurse on the rest.
+        return {k: _unwrap_for_compare(val) for k, val in v.items() if k not in _METADATA_KEYS}
+    if isinstance(v, list):
+        return [_unwrap_for_compare(x) for x in v]
+    return v
+
+
+def _canon(v: Any) -> Any:
+    """Canonicalize an unwrapped value for agreement checks: case/whitespace-
+    insensitive strings, numeric strings equal to numbers ("3" == 3), and table
+    row lists compared as order-insensitive multisets — the same leniency
+    scalar fields already get, so row order never counts as a conflict."""
+    if isinstance(v, bool):
+        # Compare as the lowercase string so True == "true" (manual reviewers
+        # save strings; AI may save real booleans).
+        return "true" if v else "false"
+    if isinstance(v, str):
+        s = v.strip().lower()
+        # Boolean synonyms — mirror the consensus UI's displayBoolean, which
+        # renders yes/true/y as "Yes": values that display identically must
+        # never count as a conflict.
+        if s in ("true", "yes", "y"):
+            return "true"
+        if s in ("false", "no"):
+            return "false"
+        try:
+            f = float(s)
+            if f == f and f not in (float("inf"), float("-inf")):
+                return f
+        except ValueError:
+            pass
+        return s
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, dict):
+        return {k: _canon(val) for k, val in v.items()}
+    if isinstance(v, list):
+        items = [_canon(x) for x in v]
+        try:
+            return sorted(items, key=lambda x: json.dumps(x, sort_keys=True, default=str))
+        except TypeError:
+            return items
+    return v
+
+
+def _align_multiselect(a: Any, b: Any):
+    """When one side saved a multi-select as a list and the other as a
+    comma-joined string, split the string so both compare as multisets."""
+    def _split(s: str) -> list:
+        return [p.strip() for p in s.split(",") if p.strip()]
+
+    def _scalar_list(x) -> bool:
+        return isinstance(x, list) and all(not isinstance(i, (dict, list)) for i in x)
+
+    if _scalar_list(a) and isinstance(b, str):
+        return a, _split(b)
+    if _scalar_list(b) and isinstance(a, str):
+        return _split(a), b
+    return a, b
+
+
 async def compare_reviewers(
     project_id: UUID,
     form_id: UUID,
     document_id: UUID,
+    requesting_user_id: Optional[UUID] = None,
 ) -> Dict[str, Any]:
     """Compare R1 vs R2 extraction results field-by-field."""
     supabase = get_supabase()
 
-    # Get R1 and R2 results
+    # Get R1 and R2 results — order by created_at asc so oldest (canonical) row wins
+    # if duplicates exist from a role-swap scenario.
     results = supabase.table("extraction_results")\
         .select("*")\
         .eq("document_id", str(document_id))\
         .eq("form_id", str(form_id))\
         .eq("extraction_type", "manual")\
         .in_("reviewer_role", ["reviewer_1", "reviewer_2"])\
+        .order("created_at", desc=False)\
         .execute()
 
     r1_data = {}
@@ -41,11 +120,11 @@ async def compare_reviewers(
     r2_user_id = None
 
     for r in (results.data or []):
-        if r.get("reviewer_role") == "reviewer_1":
+        if r.get("reviewer_role") == "reviewer_1" and r1_result_id is None:
             r1_data = r.get("extracted_data", {})
             r1_result_id = r["id"]
             r1_user_id = r.get("extracted_by")
-        elif r.get("reviewer_role") == "reviewer_2":
+        elif r.get("reviewer_role") == "reviewer_2" and r2_result_id is None:
             r2_data = r.get("extracted_data", {})
             r2_result_id = r["id"]
             r2_user_id = r.get("extracted_by")
@@ -87,11 +166,15 @@ async def compare_reviewers(
     for field in all_fields:
         r1_val = r1_data.get(field)
         r2_val = r2_data.get(field)
-        is_agreed = (
-            str(r1_val).strip().lower() == str(r2_val).strip().lower()
-            if r1_val is not None and r2_val is not None
-            else r1_val == r2_val
-        )
+        # Compare on unwrapped values so per-cell / per-field source_text
+        # differences never count as conflicts — only divergent values do.
+        r1_norm = _unwrap_for_compare(r1_val)
+        r2_norm = _unwrap_for_compare(r2_val)
+        # Same leniency at every depth: case/whitespace-insensitive, "3" == 3,
+        # boolean synonyms, list-vs-comma-string multi-selects, and table rows
+        # in a different order still count as agreement.
+        r1_norm, r2_norm = _align_multiselect(r1_norm, r2_norm)
+        is_agreed = _canon(r1_norm) == _canon(r2_norm)
 
         if is_agreed:
             agreed += 1
@@ -115,11 +198,13 @@ async def compare_reviewers(
             "user_id": r1_user_id,
             "full_name": user_map.get(r1_user_id, "Reviewer 1"),
             "result_id": r1_result_id,
+            "self_authored": bool(requesting_user_id and r1_user_id and str(requesting_user_id) == str(r1_user_id)),
         },
         "reviewer_2": {
             "user_id": r2_user_id,
             "full_name": user_map.get(r2_user_id, "Reviewer 2"),
             "result_id": r2_result_id,
+            "self_authored": bool(requesting_user_id and r2_user_id and str(requesting_user_id) == str(r2_user_id)),
         },
         "fields": fields,
         "statistics": {

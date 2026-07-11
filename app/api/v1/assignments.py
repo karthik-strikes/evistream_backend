@@ -39,6 +39,8 @@ async def bulk_create_assignments(
             assigned_by=user_id,
         )
         return [ReviewAssignmentResponse(**r) for r in result]
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         logger.exception("Failed to create bulk assignments")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create assignments")
@@ -61,6 +63,8 @@ async def auto_assign(
             assigned_by=user_id,
         )
         return [ReviewAssignmentResponse(**r) for r in result]
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         logger.exception("Failed to auto-assign")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to auto-assign")
@@ -114,6 +118,25 @@ async def update_assignment_status(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your assignment")
+
+
+@router.delete("/project/{project_id}", status_code=status.HTTP_200_OK)
+async def delete_project_assignments(
+    project_id: UUID,
+    reviewer_user_id: Optional[UUID] = Query(None),
+    user_id: UUID = Depends(get_current_user),
+):
+    """Delete all assignments for a project, or just one reviewer's assignments."""
+    await check_project_access(project_id, user_id, "can_manage_assignments")
+    try:
+        count = await assignment_service.delete_project_assignments(
+            project_id=project_id,
+            reviewer_user_id=reviewer_user_id,
+        )
+        return {"deleted": count}
+    except Exception:
+        logger.exception("Failed to delete assignments")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete assignments")
 
 
 @router.get("/progress")

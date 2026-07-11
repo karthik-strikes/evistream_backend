@@ -15,6 +15,10 @@ from app.models.schemas import (
     BulkEditRequest, ValidationRuleCreate, ValidationRuleUpdate,
     ValidationRuleResponse,
 )
+from app.config import settings
+from supabase import create_client
+
+_supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -48,7 +52,7 @@ async def bulk_edit(
     user_id: UUID = Depends(get_current_user),
 ):
     """Batch cell edits with audit trail."""
-    await check_project_access(data.project_id, user_id, "can_view_results")
+    await check_project_access(data.project_id, user_id, "can_adjudicate")
     edits = [e.model_dump() for e in data.edits]
     return await data_cleaning_service.bulk_edit(
         project_id=data.project_id,
@@ -58,12 +62,30 @@ async def bulk_edit(
     )
 
 
+async def _get_project_id_for_form(form_id: UUID) -> UUID:
+    """Resolve form_id to its project_id."""
+    result = _supabase.table("forms").select("project_id").eq("id", str(form_id)).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form not found")
+    return UUID(result.data[0]["project_id"])
+
+
+async def _get_project_id_for_rule(rule_id: UUID) -> UUID:
+    """Resolve rule_id to its project_id via the associated form."""
+    result = _supabase.table("validation_rules").select("form_id").eq("id", str(rule_id)).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rule not found")
+    return await _get_project_id_for_form(UUID(result.data[0]["form_id"]))
+
+
 @router.get("/rules", response_model=List[ValidationRuleResponse])
 async def list_rules(
     form_id: UUID = Query(...),
     user_id: UUID = Depends(get_current_user),
 ):
     """List validation rules for a form."""
+    project_id = await _get_project_id_for_form(form_id)
+    await check_project_access(project_id, user_id, "can_view_results")
     result = await data_cleaning_service.list_rules(form_id)
     return [ValidationRuleResponse(**r) for r in result]
 
@@ -74,6 +96,8 @@ async def create_rule(
     user_id: UUID = Depends(get_current_user),
 ):
     """Create a validation rule."""
+    project_id = await _get_project_id_for_form(data.form_id)
+    await check_project_access(project_id, user_id, "can_create_forms")
     result = await data_cleaning_service.create_rule(
         form_id=data.form_id,
         field_name=data.field_name,
@@ -93,6 +117,8 @@ async def update_rule(
     user_id: UUID = Depends(get_current_user),
 ):
     """Update a validation rule."""
+    project_id = await _get_project_id_for_rule(rule_id)
+    await check_project_access(project_id, user_id, "can_create_forms")
     updates = data.model_dump(exclude_unset=True)
     result = await data_cleaning_service.update_rule(rule_id, updates)
     if not result:
@@ -106,6 +132,8 @@ async def delete_rule(
     user_id: UUID = Depends(get_current_user),
 ):
     """Delete a validation rule."""
+    project_id = await _get_project_id_for_rule(rule_id)
+    await check_project_access(project_id, user_id, "can_create_forms")
     await data_cleaning_service.delete_rule(rule_id)
 
 

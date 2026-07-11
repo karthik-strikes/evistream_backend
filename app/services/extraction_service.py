@@ -4,17 +4,14 @@ Extraction service for running DSPy extractions on documents.
 
 import asyncio
 import logging
-from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 
 from app.config import settings as _app_settings
 _BATCH_CONCURRENCY = _app_settings.EXTRACTION_BATCH_CONCURRENCY
 
-from core.extractor import run_async_extraction_and_evaluation
-from schemas import get_schema, build_runtime
+from schemas import get_schema
 from schemas.registry import auto_discover_schemas
 from utils.lm_config import get_dspy_model
-from utils.helpers.print_helpers import print_extracted_vs_ground_truth
 
 logger = logging.getLogger(__name__)
 
@@ -44,259 +41,6 @@ class ExtractionService:
                 logger.error(f"Failed to configure DSPy LM: {e}")
                 raise
 
-    def run_extraction(
-        self,
-        markdown_path: str,
-        schema_name: str,
-        document_ids: Optional[List[str]] = None,
-        ground_truth: Optional[List[Dict]] = None,
-        max_documents: Optional[int] = None
-    ) -> Dict[str, Any]:
-        """
-        Run extraction on a document or batch of documents.
-
-        Args:
-            markdown_path: Path to markdown file or directory
-            schema_name: Name of the schema to use for extraction
-            document_ids: Optional list of document IDs to process
-            ground_truth: Optional ground truth data for evaluation
-            max_documents: Maximum number of documents to process
-
-        Returns:
-            Dictionary with extraction results
-        """
-        try:
-            self._ensure_dspy_configured()
-
-            # Get schema and build runtime (re-discover if not found)
-            logger.info(f"Loading schema: {schema_name}")
-            try:
-                schema_config = get_schema(schema_name)
-            except ValueError:
-                logger.info(f"Schema {schema_name} not found, re-discovering...")
-                from schemas.registry import auto_discover_schemas
-                auto_discover_schemas()
-                schema_config = get_schema(schema_name)
-            schema_runtime = build_runtime(schema_config)
-
-            # Check if single file or directory
-            path = Path(markdown_path)
-
-            if path.is_file():
-                # Single file extraction
-                return asyncio.run(
-                    self._run_single_extraction(
-                        markdown_path=str(path),
-                        schema_runtime=schema_runtime,
-                        ground_truth=ground_truth or []
-                    )
-                )
-            elif path.is_dir():
-                # Batch extraction
-                return asyncio.run(
-                    self._run_batch_extraction(
-                        markdown_dir=str(path),
-                        schema_runtime=schema_runtime,
-                        document_ids=document_ids,
-                        max_documents=max_documents
-                    )
-                )
-            else:
-                raise FileNotFoundError(f"Path not found: {markdown_path}")
-
-        except Exception as e:
-            logger.error(f"Extraction failed: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
-
-    async def _run_single_extraction(
-        self,
-        markdown_path: str,
-        schema_runtime,
-        ground_truth: List[Dict]
-    ) -> Dict[str, Any]:
-        """
-        Run extraction on a single markdown file.
-
-        Args:
-            markdown_path: Path to markdown file
-            schema_runtime: Schema runtime instance
-            ground_truth: Ground truth data for evaluation
-
-        Returns:
-            Dictionary with extraction results
-        """
-        try:
-            logger.info(f"Running extraction on: {markdown_path}")
-
-            # Read markdown content
-            with open(markdown_path, 'r', encoding='utf-8') as f:
-                markdown_content = f.read()
-
-            # Run extraction
-            result = await run_async_extraction_and_evaluation(
-                markdown_content=markdown_content,
-                source_file=markdown_path,
-                one_study_records=ground_truth,
-                schema_runtime=schema_runtime,
-                override=False,
-                run_diagnostic=False,
-                print_results=False,
-                field_level_analysis=False,
-                print_field_table=False
-            )
-
-            logger.info(f"Extraction completed for: {markdown_path}")
-
-            # Tag each result with the source file for document-ID mapping
-            baseline_results = result["baseline_results"]
-            if isinstance(baseline_results, list):
-                tagged_results = [
-                    {**(r if isinstance(r, dict) else {"data": r}), "source_file": markdown_path}
-                    for r in baseline_results
-                ]
-            else:
-                tagged_results = [{"data": baseline_results, "source_file": markdown_path}]
-
-            return {
-                "success": True,
-                "results": tagged_results,
-                "source_file": markdown_path
-            }
-
-        except Exception as e:
-            logger.error(f"Single extraction failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "source_file": markdown_path
-            }
-
-    async def _run_batch_extraction(
-        self,
-        markdown_dir: str,
-        schema_runtime,
-        document_ids: Optional[List[str]] = None,
-        max_documents: Optional[int] = None
-    ) -> Dict[str, Any]:
-        """
-        Run extraction on multiple markdown files.
-
-        Args:
-            markdown_dir: Directory containing markdown files
-            schema_runtime: Schema runtime instance
-            document_ids: Optional list of document IDs to process
-            max_documents: Maximum number of documents to process
-
-        Returns:
-            Dictionary with batch extraction results
-        """
-        try:
-            logger.info(f"Running batch extraction on directory: {markdown_dir}")
-
-            # Find all markdown files
-            dir_path = Path(markdown_dir)
-            all_markdown_files = list(dir_path.glob("*.md"))
-
-            # Filter by document IDs if provided
-            logger.info(f"DEBUG: Found {len(all_markdown_files)} markdown files")
-            logger.info(f"DEBUG: document_ids = {document_ids}")
-            if document_ids:
-                logger.info(f"DEBUG: File stems = {[f.stem for f in all_markdown_files]}")
-                markdown_files = [
-                    f for f in all_markdown_files
-                    if any(doc_id in f.stem for doc_id in document_ids)
-                ]
-                logger.info(f"DEBUG: Filtered to {len(markdown_files)} files")
-            else:
-                markdown_files = all_markdown_files
-
-            # Limit number of documents
-            if max_documents:
-                markdown_files = markdown_files[:max_documents]
-
-            logger.info(f"Processing {len(markdown_files)} documents (concurrency={_BATCH_CONCURRENCY})")
-
-            # Run extractions in parallel, bounded by semaphore
-            semaphore = asyncio.Semaphore(_BATCH_CONCURRENCY)
-
-            async def _extract_with_semaphore(md_file):
-                async with semaphore:
-                    return await self._run_single_extraction(
-                        markdown_path=str(md_file),
-                        schema_runtime=schema_runtime,
-                        ground_truth=[]
-                    )
-
-            results = await asyncio.gather(
-                *[_extract_with_semaphore(f) for f in markdown_files],
-                return_exceptions=False,
-            )
-
-            # Count successes and failures
-            successes = [r for r in results if r.get("success")]
-            failures = [r for r in results if not r.get("success")]
-
-            logger.info(
-                f"Batch extraction completed: {len(successes)} succeeded, "
-                f"{len(failures)} failed"
-            )
-
-            return {
-                "success": True,
-                "total_documents": len(results),
-                "successful_extractions": len(successes),
-                "failed_extractions": len(failures),
-                "results": results
-            }
-
-        except Exception as e:
-            logger.error(f"Batch extraction failed: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
-
-    async def _run_files_parallel(
-        self,
-        path_to_doc_id: dict,
-        schema_runtime,
-        on_paper_done=None,
-    ) -> list:
-        """
-        Run extraction on a list of (markdown_path, doc_id) pairs in parallel,
-        bounded by _BATCH_CONCURRENCY semaphore.
-        """
-        semaphore = asyncio.Semaphore(_BATCH_CONCURRENCY)
-
-        async def _extract_one(markdown_path, doc_id):
-            async with semaphore:
-                result = await self._run_single_extraction(
-                    markdown_path=markdown_path,
-                    schema_runtime=schema_runtime,
-                    ground_truth=[]
-                )
-                # Tag with doc_id for the Celery worker to store correctly
-                if result.get("success") and result.get("results"):
-                    for r in result["results"]:
-                        r["document_id"] = doc_id
-                        r["source_file"] = markdown_path
-                if on_paper_done is not None:
-                    try:
-                        await on_paper_done(doc_id, result)
-                    except Exception as cb_err:
-                        logger.warning(f"on_paper_done callback error (non-fatal): {cb_err}")
-                return result
-
-        tasks = [
-            _extract_one(path, doc_id)
-            for path, doc_id in path_to_doc_id.items()
-        ]
-        # return_exceptions=True means one paper failing does NOT
-        # cancel the other 4 — each result is either a dict or an Exception
-        return await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _run_files_stage_fanout(
         self,
@@ -304,11 +48,20 @@ class ExtractionService:
         schema_config,
         on_paper_done=None,
         pilot_feedback=None,
+        path_to_blocks_path: dict = None,
+        model_name: str = None,
     ) -> list:
         """
         Stage-level fan-out extraction.
         Reads all files upfront, then fans them out stage-by-stage.
+
+        path_to_blocks_path (optional): {markdown_local_path: blocks_local_path}.
+        When present, the Datalab blocks_json sidecar is loaded per paper and
+        threaded into the pipeline so enrich_extraction_results can attach
+        deterministic bboxes (utils/bbox_map.build_bbox_map) to each
+        source_location.
         """
+        import json as _json
         from app.config import settings as _s
 
         # Read all markdown files upfront
@@ -317,7 +70,21 @@ class ExtractionService:
             try:
                 with open(markdown_path, "r", encoding="utf-8") as f:
                     content = f.read()
-                papers.append({"doc_id": doc_id, "markdown_content": content, "path": markdown_path})
+                paper = {"doc_id": doc_id, "markdown_content": content, "path": markdown_path}
+                # Best-effort load of the blocks sidecar — bbox features
+                # degrade gracefully if missing or malformed.
+                if path_to_blocks_path:
+                    blocks_path = path_to_blocks_path.get(markdown_path)
+                    if blocks_path:
+                        try:
+                            with open(blocks_path, "r", encoding="utf-8") as bf:
+                                paper["blocks_json"] = _json.load(bf)
+                        except Exception as be:
+                            logger.warning(
+                                f"[stage_fanout] Failed to read blocks sidecar "
+                                f"{blocks_path}: {be}"
+                            )
+                papers.append(paper)
             except Exception as e:
                 logger.error(f"[stage_fanout] Failed to read {markdown_path}: {e}")
 
@@ -325,6 +92,12 @@ class ExtractionService:
             return []
 
         pipeline = schema_config.build_pipeline(pilot_feedback=pilot_feedback)
+        # Per-job model override (Beta — user's Settings → AI Model selection).
+        # Read inside StagedPipeline._run_extractor_with_retry, passed to
+        # ModelRouter so this becomes the primary candidate for every call in
+        # this batch while keeping circuit-breaker fallback intact.
+        if model_name:
+            pipeline.primary_model_override = model_name
 
         # Adaptive concurrency: reduce when circuit breaker is recovering
         # to avoid blasting a recovering model with 350 simultaneous requests.
@@ -345,10 +118,13 @@ class ExtractionService:
         task_semaphore = asyncio.Semaphore(effective_concurrency)
 
         async def _on_paper_done(doc_id, accumulated_results):
+            failed_meta = (accumulated_results or {}).get("_meta_extraction_failed")
             result = {
-                "success": True,
+                "success": not bool(failed_meta),
                 "results": [{**accumulated_results, "document_id": doc_id}],
             }
+            if failed_meta:
+                result["error"] = failed_meta.get("reason", "extraction_failed")
             if on_paper_done is not None:
                 try:
                     await on_paper_done(doc_id, result)
@@ -361,11 +137,15 @@ class ExtractionService:
         for paper in papers:
             doc_id = paper["doc_id"]
             paper_data = accumulated.get(doc_id, {})
-            results.append({
-                "success": True,
+            failed_meta = paper_data.get("_meta_extraction_failed")
+            entry = {
+                "success": not bool(failed_meta),
                 "results": [{**paper_data, "document_id": doc_id, "source_file": paper["path"]}],
                 "source_file": paper["path"],
-            })
+            }
+            if failed_meta:
+                entry["error"] = failed_meta.get("reason", "extraction_failed")
+            results.append(entry)
         return results
 
     def run_files_extraction(
@@ -374,10 +154,16 @@ class ExtractionService:
         schema_name: str,
         on_paper_done=None,
         pilot_feedback=None,
+        path_to_blocks_path: dict = None,
+        model_name: str = None,
     ) -> Dict[str, Any]:
         """
         Sync entry point for Celery: run parallel extraction on a
         path→doc_id mapping. Calls asyncio.run() exactly once.
+
+        path_to_blocks_path (optional): map markdown path → blocks sidecar
+        path so enrich_extraction_results can attach deterministic bboxes
+        to each source_location.
         """
         try:
             self._ensure_dspy_configured()
@@ -394,6 +180,8 @@ class ExtractionService:
                     path_to_doc_id, schema_config,
                     on_paper_done=on_paper_done,
                     pilot_feedback=pilot_feedback,
+                    path_to_blocks_path=path_to_blocks_path,
+                    model_name=model_name,
                 )
             )
 

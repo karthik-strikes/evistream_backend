@@ -12,6 +12,7 @@ SETTINGS_COLUMNS = (
     "id, user_id, "
     "export_format, export_date_format, export_include_metadata, export_include_confidence, "
     "notify_email, notify_browser, notify_extraction_completed, notify_extraction_failed, notify_code_generation, "
+    "extraction_model, "
     "created_at, updated_at"
 )
 

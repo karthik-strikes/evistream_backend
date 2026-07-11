@@ -2,11 +2,14 @@
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from supabase import create_client
 from uuid import UUID
 from typing import Optional, List
 
 from app.dependencies import get_current_user
 from app.services import vocabulary_service
+from app.services.project_access import check_project_access
+from app.config import settings
 from app.models.schemas import (
     ControlledVocabularyCreate, ControlledVocabularyUpdate,
     ControlledVocabularyResponse, FieldVocabularyMappingCreate,
@@ -16,6 +19,25 @@ from app.models.schemas import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+_supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+
+
+async def _get_project_id_for_form(form_id: UUID) -> UUID:
+    """Resolve form_id to its project_id."""
+    result = _supabase.table("forms").select("project_id").eq("id", str(form_id)).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form not found")
+    return UUID(result.data[0]["project_id"])
+
+
+async def _get_project_id_for_vocabulary(vocabulary_id: UUID) -> Optional[UUID]:
+    """Resolve vocabulary_id to its project_id (may be None for global vocabs)."""
+    result = _supabase.table("controlled_vocabularies").select("project_id").eq("id", str(vocabulary_id)).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vocabulary not found")
+    pid = result.data[0].get("project_id")
+    return UUID(pid) if pid else None
+
 
 @router.get("", response_model=List[ControlledVocabularyResponse])
 async def list_vocabularies(
@@ -23,6 +45,8 @@ async def list_vocabularies(
     user_id: UUID = Depends(get_current_user),
 ):
     """List project + global vocabularies."""
+    if project_id:
+        await check_project_access(project_id, user_id, "can_view_docs")
     result = await vocabulary_service.list_vocabularies(project_id)
     return [ControlledVocabularyResponse(**v) for v in result]
 
@@ -33,6 +57,8 @@ async def create_vocabulary(
     user_id: UUID = Depends(get_current_user),
 ):
     """Create a new vocabulary."""
+    if data.project_id:
+        await check_project_access(data.project_id, user_id, "can_create_forms")
     terms = [t.model_dump() for t in data.terms] if data.terms else []
     result = await vocabulary_service.create_vocabulary(
         name=data.name,
@@ -56,6 +82,8 @@ async def search_terms(
     user_id: UUID = Depends(get_current_user),
 ):
     """Autocomplete term search."""
+    if project_id:
+        await check_project_access(project_id, user_id, "can_view_docs")
     return await vocabulary_service.search_terms(
         vocabulary_id=vocabulary_id,
         project_id=project_id,
@@ -70,6 +98,8 @@ async def create_field_mapping(
     user_id: UUID = Depends(get_current_user),
 ):
     """Map a vocabulary to a form field."""
+    project_id = await _get_project_id_for_form(data.form_id)
+    await check_project_access(project_id, user_id, "can_create_forms")
     result = await vocabulary_service.create_field_mapping(
         form_id=data.form_id,
         field_name=data.field_name,
@@ -87,6 +117,8 @@ async def get_field_mappings(
     user_id: UUID = Depends(get_current_user),
 ):
     """Get vocabulary mappings for a form."""
+    project_id = await _get_project_id_for_form(form_id)
+    await check_project_access(project_id, user_id, "can_view_docs")
     result = await vocabulary_service.get_field_mappings(form_id)
     return [FieldVocabularyMappingResponse(**m) for m in result]
 
@@ -98,6 +130,9 @@ async def update_vocabulary(
     user_id: UUID = Depends(get_current_user),
 ):
     """Update a vocabulary."""
+    vocab_project_id = await _get_project_id_for_vocabulary(vocabulary_id)
+    if vocab_project_id:
+        await check_project_access(vocab_project_id, user_id, "can_create_forms")
     updates = data.model_dump(exclude_unset=True)
     if "terms" in updates and updates["terms"] is not None:
         updates["terms"] = [t if isinstance(t, dict) else t.model_dump() for t in data.terms]
@@ -113,6 +148,9 @@ async def delete_vocabulary(
     user_id: UUID = Depends(get_current_user),
 ):
     """Delete a vocabulary."""
+    vocab_project_id = await _get_project_id_for_vocabulary(vocabulary_id)
+    if vocab_project_id:
+        await check_project_access(vocab_project_id, user_id, "can_create_forms")
     await vocabulary_service.delete_vocabulary(vocabulary_id)
 
 
@@ -123,6 +161,9 @@ async def import_terms(
     user_id: UUID = Depends(get_current_user),
 ):
     """Import terms from a CSV file."""
+    vocab_project_id = await _get_project_id_for_vocabulary(vocabulary_id)
+    if vocab_project_id:
+        await check_project_access(vocab_project_id, user_id, "can_create_forms")
     content = await file.read()
     csv_text = content.decode("utf-8")
     try:

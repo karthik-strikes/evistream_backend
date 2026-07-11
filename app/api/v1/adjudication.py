@@ -25,7 +25,7 @@ async def compare_reviewers(
     await check_project_access(project_id, user_id, "can_adjudicate")
     if not await can_view_adjudication(user_id, document_id, form_id, project_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view adjudication")
-    return await adjudication_service.compare_reviewers(project_id, form_id, document_id)
+    return await adjudication_service.compare_reviewers(project_id, form_id, document_id, requesting_user_id=user_id)
 
 
 @router.post("/resolve", response_model=AdjudicationResultResponse, status_code=status.HTTP_201_CREATED)

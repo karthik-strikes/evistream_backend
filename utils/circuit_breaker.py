@@ -19,8 +19,22 @@ from core.config import (
     CB_FAILURE_THRESHOLD, CB_RECOVERY_TIMEOUT, CB_HALF_OPEN_SUCCESSES, CB_ENABLED
 )
 from core.exceptions import LLMError
+from config.models import EXTRACTION_PROMPT_CACHE
 
 logger = logging.getLogger(__name__)
+
+# Lazily-built adapter instance. We install it via dspy.configure() at module
+# load in lm_config, but DSPy's contextvar-based settings can drop the adapter
+# when ModelRouter enters dspy.context(lm=...). To guarantee the adapter is
+# active inside every per-coroutine context, we pass it explicitly into each
+# dspy.context() call below.
+_CACHING_ADAPTER = None
+if EXTRACTION_PROMPT_CACHE:
+    try:
+        from utils.caching_adapter import CachingChatAdapter
+        _CACHING_ADAPTER = CachingChatAdapter()
+    except Exception as _e:
+        logger.warning("[ModelRouter] Could not load CachingChatAdapter: %s", _e)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -277,6 +291,7 @@ class ModelRouter:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 num_retries=0,
+                cache=False,
             )
             for model in self.all_models
         }
@@ -339,10 +354,35 @@ class ModelRouter:
 
         return closed + half_open + eligible_open
 
+    def _ensure_model_registered(self, model: str) -> None:
+        """Lazily add a model to the breaker map + LM cache.
+
+        Needed for user-picked models (Settings → AI Model Beta) that aren't
+        in the original DEFAULT_MODEL+FALLBACK_MODELS list this router was
+        constructed with.
+        """
+        if model in self._breakers:
+            return
+        self._breakers[model] = ModelCircuitBreaker(
+            model_name=model,
+            failure_threshold=CB_FAILURE_THRESHOLD,
+            recovery_timeout=CB_RECOVERY_TIMEOUT,
+            half_open_successes=CB_HALF_OPEN_SUCCESSES,
+        )
+        self._lm_cache[model] = dspy.LM(
+            model,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            num_retries=0,
+            cache=False,
+        )
+        logger.info(f"[ModelRouter] Lazily registered model: {model}")
+
     async def run_with_routing(
         self,
         async_callable: Callable,
         operation_name: str = "DSPy call",
+        override_primary_model: Optional[str] = None,
         **callable_kwargs: Any,
     ) -> Any:
         """
@@ -353,6 +393,11 @@ class ModelRouter:
         Args:
             async_callable: The async function to call
             operation_name: Used in log messages for debugging
+            override_primary_model: If set, this model is tried first instead of
+                the router's configured primary. Used by the per-job model
+                picker (Settings → AI Model Beta). Falls back to the router's
+                regular fallback chain on rate-limit, same as the default
+                primary would.
             **callable_kwargs: Passed directly to async_callable
 
         Returns:
@@ -366,6 +411,13 @@ class ModelRouter:
             return await async_callable(**callable_kwargs)
 
         candidates = self._get_ordered_candidates()
+        if override_primary_model:
+            self._ensure_model_registered(override_primary_model)
+            # Front-load the override; keep the rest as fallback in CB-order,
+            # de-duping if the override was already in the list.
+            candidates = [override_primary_model] + [
+                m for m in candidates if m != override_primary_model
+            ]
 
         if not candidates:
             all_states = {m: cb.state.name for m, cb in self._breakers.items()}
@@ -405,7 +457,14 @@ class ModelRouter:
                 # KEY FIX: dspy.context() uses Python's contextvars.ContextVar.
                 # Each async coroutine gets its OWN model setting — no race conditions.
                 # When run_in_executor copies context to thread, the override propagates.
-                with dspy.context(lm=lm):
+                # We also pass the adapter explicitly because dspy.context() does
+                # NOT inherit dspy.settings.adapter from the parent context — without
+                # this, every per-coroutine LLM call would silently fall back to the
+                # default ChatAdapter and our cache_control placement would be lost.
+                ctx_kwargs = {"lm": lm}
+                if _CACHING_ADAPTER is not None:
+                    ctx_kwargs["adapter"] = _CACHING_ADAPTER
+                with dspy.context(**ctx_kwargs):
                     result = await async_callable(**callable_kwargs)
 
                 await cb.record_success()
@@ -421,8 +480,18 @@ class ModelRouter:
                         f"CB now={cb.state.name}, trying next model..."
                     )
                     continue
+                elif model != self.all_models[0]:
+                    # Fallback model hit a non-rate-limit error (e.g. bad auth, 5xx).
+                    # Don't fail fast — continue to the next candidate so the primary
+                    # model can still be probed when its CB recovery window has elapsed.
+                    logger.warning(
+                        f"[ModelRouter] {operation_name}: "
+                        f"fallback {model} non-rate-limit error ({type(e).__name__}), "
+                        f"trying next candidate..."
+                    )
+                    continue
                 else:
-                    # Not a rate limit — fail fast, don't waste time on fallbacks
+                    # Primary model hit a definitive error — fail fast
                     logger.error(
                         f"[ModelRouter] {operation_name}: "
                         f"non-rate-limit error on {model}: {type(e).__name__}: {e}"

@@ -2,13 +2,10 @@
 Code generation service - wraps existing core/generators workflow for backend use.
 """
 
-import ast
-import shutil
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
-import json
 
 # Maximum time (seconds) allowed for a single code generation workflow run
 CODEGEN_TIMEOUT_SECONDS = 600  # 10 minutes
@@ -26,7 +23,7 @@ from schemas.registry import register_schema
 
 
 # Setup core module logging
-setup_logging(level="INFO", log_dir=Path(__file__).parent.parent.parent / "logs")
+setup_logging(level="INFO", log_dir=Path(__file__).parent.parent.parent.parent / "logs")
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +60,7 @@ class CodeGenerationService:
         Returns:
             Dictionary containing:
             - success: bool
-            - task_dir: str (path to generated code directory)
             - schema_name: str (schema identifier for runtime)
-            - signatures_file: str (signatures.py content)
-            - modules_file: str (modules.py content)
             - field_mapping: dict (field-to-signature mapping)
             - statistics: dict (generation statistics)
             - error: str (if failed)
@@ -173,32 +167,6 @@ class CodeGenerationService:
                 if log_callback:
                     log_callback("Workflow completed, validating generated code...", "info")
 
-                # --- Gate 1: Validate generated Python is syntactically correct ---
-                if log_callback:
-                    log_callback("Running syntax validation...", "info")
-                for label, code_key in [("signatures.py", "signatures_file"), ("modules.py", "modules_file")]:
-                    code = result.get(code_key, "")
-                    try:
-                        ast.parse(code)
-                    except SyntaxError as syn_err:
-                        error_msg = f"Generated {label} has invalid Python syntax: {syn_err}"
-                        logger.error(error_msg)
-                        return {
-                            "success": False,
-                            "task_dir": None,
-                            "schema_name": None,
-                            "signatures_file": result.get("signatures_file"),
-                            "modules_file": result.get("modules_file"),
-                            "field_mapping": {},
-                            "statistics": {},
-                            "error": error_msg,
-                            "error_type": "syntax_error",
-                            "retryable": True,
-                        }
-
-                if log_callback:
-                    log_callback("✓ Syntax validation passed", "success")
-
                 # --- Gate 2: Verify all expected signatures were generated ---
                 if log_callback:
                     log_callback("Checking signature completeness...", "info")
@@ -218,8 +186,6 @@ class CodeGenerationService:
                         "success": False,
                         "task_dir": None,
                         "schema_name": None,
-                        "signatures_file": result.get("signatures_file"),
-                        "modules_file": result.get("modules_file"),
                         "field_mapping": {},
                         "statistics": stats,
                         "error": error_msg,
@@ -230,98 +196,95 @@ class CodeGenerationService:
                 if log_callback:
                     log_callback(f"✓ All {generated_count} signatures generated successfully", "success")
 
-                # --- All gates passed: write files to disk ---
-                if log_callback:
-                    log_callback("Writing generated code to disk...", "info")
-                task_dir = project_root / "dspy_components" / "tasks" / task_name
-                task_dir.mkdir(parents=True, exist_ok=True)
-
-                try:
-                    # Save signatures.py
-                    signatures_file = task_dir / "signatures.py"
-                    with open(signatures_file, "w", encoding="utf-8") as f:
-                        f.write(result["signatures_file"])
-
-                    # Save modules.py
-                    modules_file = task_dir / "modules.py"
-                    with open(modules_file, "w", encoding="utf-8") as f:
-                        f.write(result["modules_file"])
-
-                    # Save __init__.py
-                    init_file = task_dir / "__init__.py"
-                    with open(init_file, "w", encoding="utf-8") as f:
-                        f.write(f'"""\nGenerated task: {task_name}\n"""\n')
-
-                    if log_callback:
-                        log_callback(f"✓ Code files saved to: {task_dir}", "success")
-
-                    # Register the schema in the schema registry
-                    signature_names = [sig["name"] for sig in decomposition.get("signatures", [])]
-                    pipeline_stages = decomposition.get("pipeline", [])
-
-                    # Build field mapping from decomposition
-                    # Note: decomposition signatures have "fields" as a dict, not "field_names" as a list
-                    field_mapping = {}
-                    for sig in decomposition.get("signatures", []):
-                        sig_name = sig["name"]
-                        # Get field names from the keys of the "fields" dict
-                        for field_name in sig.get("fields", {}).keys():
-                            field_mapping[field_name] = sig_name
-
-                    # Save field mapping as JSON for auto-discovery
-                    mapping_file = task_dir / "field_mapping.json"
-                    with open(mapping_file, "w", encoding="utf-8") as f:
-                        json.dump(field_mapping, f, indent=2)
-
-                    # Save pipeline stages for auto-discovery
-                    pipeline_file = task_dir / "pipeline_stages.json"
-                    with open(pipeline_file, "w", encoding="utf-8") as f:
-                        json.dump(pipeline_stages, f, indent=2)
-
-                    schema_config = DynamicSchemaConfig(
-                        schema_name=task_name,
-                        task_name=task_name,
-                        module_path=f"dspy_components.tasks.{task_name}",
-                        signatures_path=f"dspy_components.tasks.{task_name}.signatures",
-                        signature_class_names=signature_names,
-                        pipeline_stages=pipeline_stages,
-                        project_id="",  # Not needed for extraction
-                        form_id=form_id,
-                        form_name=form_name
+                # --- Gate 3: Validate schema_def builds correctly at runtime ---
+                schema_def = result.get("schema_def")
+                if not schema_def:
+                    error_msg = (
+                        "schema_def was not built — generation produced no structured spec. "
+                        "Please try regenerating."
                     )
-
-                    register_schema(schema_config)
-                    logger.info(f"Schema registered: {task_name}")
-
-                    if log_callback:
-                        log_callback(f"✓ Schema registered: {task_name}", "success")
-                        log_callback("Code generation completed successfully!", "success")
-
-                except Exception as file_err:
-                    # Rollback: delete generated files if registration or file writing fails
-                    logger.error(f"Failed during file write / schema registration, rolling back: {file_err}")
-                    if task_dir.exists():
-                        shutil.rmtree(task_dir, ignore_errors=True)
+                    logger.error(error_msg)
                     return {
                         "success": False,
                         "task_dir": None,
                         "schema_name": None,
-                        "signatures_file": result.get("signatures_file"),
-                        "modules_file": result.get("modules_file"),
                         "field_mapping": {},
                         "statistics": result.get("statistics", {}),
-                        "error": f"Failed to save generated code: {str(file_err)}",
-                        "error_type": "file_error",
+                        "error": error_msg,
+                        "error_type": "schema_def_missing",
+                        "retryable": True,
+                    }
+
+                if log_callback:
+                    log_callback("Validating runtime class construction...", "info")
+                try:
+                    from dspy_components.runtime_builders import build_schema_classes
+                    factories = build_schema_classes(schema_def, task_name)
+                    if not factories:
+                        raise ValueError("build_schema_classes returned no extractor classes")
+                except Exception as rb_err:
+                    error_msg = f"Runtime builder validation failed: {rb_err}"
+                    logger.error(error_msg)
+                    return {
+                        "success": False,
+                        "task_dir": None,
+                        "schema_name": None,
+                        "field_mapping": {},
+                        "statistics": result.get("statistics", {}),
+                        "error": error_msg,
+                        "error_type": "runtime_builder_error",
+                        "retryable": True,
+                    }
+
+                if log_callback:
+                    log_callback("✓ Runtime class construction validated", "success")
+
+                signature_names = [s["class_name"] for s in schema_def["signatures"]]
+                pipeline_stages = schema_def.get("pipeline_stages", [])
+
+                schema_config = DynamicSchemaConfig(
+                    schema_name=task_name,
+                    task_name=task_name,
+                    module_path=f"dspy_components.tasks.{task_name}",
+                    signatures_path=f"dspy_components.tasks.{task_name}.signatures",
+                    signature_class_names=signature_names,
+                    pipeline_stages=pipeline_stages,
+                    project_id="",
+                    form_id=form_id,
+                    form_name=form_name,
+                    schema_def=schema_def,
+                )
+
+                try:
+                    register_schema(schema_config)
+                    logger.info(f"Schema registered: {task_name}")
+                    if log_callback:
+                        log_callback(f"✓ Schema registered: {task_name}", "success")
+                        log_callback("Code generation completed successfully!", "success")
+                except Exception as reg_err:
+                    error_msg = f"Schema registration failed: {reg_err}"
+                    logger.error(error_msg)
+                    return {
+                        "success": False,
+                        "task_dir": None,
+                        "schema_name": None,
+                        "field_mapping": {},
+                        "statistics": result.get("statistics", {}),
+                        "error": error_msg,
+                        "error_type": "registration_error",
                         "retryable": True,
                     }
 
                 return {
                     "success": True,
-                    "task_dir": str(task_dir),
+                    "task_dir": None,
                     "schema_name": task_name,
-                    "signatures_file": result["signatures_file"],
-                    "modules_file": result["modules_file"],
+                    "task_name": task_name,
+                    "thread_id": thread_id,
+                    "decomposition": result.get("decomposition", {}),
+                    "decomposition_summary": result.get("decomposition_summary", ""),
                     "field_mapping": result.get("field_mapping", {}),
+                    "schema_def": schema_def,
                     "statistics": result.get("statistics", {}),
                     "error": None
                 }
@@ -348,8 +311,6 @@ class CodeGenerationService:
                 "success": False,
                 "task_dir": None,
                 "schema_name": None,
-                "signatures_file": None,
-                "modules_file": None,
                 "field_mapping": {},
                 "statistics": {},
                 "error": f"Invalid form data: {str(e)}",
@@ -363,8 +324,6 @@ class CodeGenerationService:
                 "success": False,
                 "task_dir": None,
                 "schema_name": None,
-                "signatures_file": None,
-                "modules_file": None,
                 "field_mapping": {},
                 "statistics": {},
                 "error": str(e),
@@ -378,8 +337,6 @@ class CodeGenerationService:
                 "success": False,
                 "task_dir": None,
                 "schema_name": None,
-                "signatures_file": None,
-                "modules_file": None,
                 "field_mapping": {},
                 "statistics": {},
                 "error": f"Unexpected error: {str(e)}",

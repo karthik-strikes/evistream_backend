@@ -1,0 +1,29 @@
+-- Phase 3: Cleanup stranded extraction_results rows from role-swaps
+-- Applied: (run manually ONLY after admin reviews the stranded rows)
+--
+-- Background: When a reviewer's role is changed (e.g. R1 → R2), their old
+-- extraction_results row is left in place. This query deletes rows where the
+-- row's author (extracted_by) no longer matches the current assignment for
+-- that (project, document, reviewer_role) slot.
+--
+-- REVIEW BEFORE RUNNING — shows what would be deleted:
+--
+-- SELECT er.id, er.document_id, er.reviewer_role, er.extracted_by,
+--        ra.reviewer_user_id AS current_reviewer
+-- FROM extraction_results er
+-- JOIN review_assignments ra
+--   ON er.document_id = ra.document_id
+--  AND er.reviewer_role = ra.reviewer_role
+-- WHERE er.extraction_type = 'manual'
+--   AND er.extracted_by IS NOT NULL
+--   AND er.extracted_by <> ra.reviewer_user_id;
+--
+-- THEN DELETE (uncomment after review):
+--
+-- DELETE FROM extraction_results er
+-- USING review_assignments ra
+-- WHERE er.document_id = ra.document_id
+--   AND er.reviewer_role = ra.reviewer_role
+--   AND er.extraction_type = 'manual'
+--   AND er.extracted_by IS NOT NULL
+--   AND er.extracted_by <> ra.reviewer_user_id;

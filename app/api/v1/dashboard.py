@@ -12,6 +12,8 @@ from collections import Counter
 
 import logging
 from app.dependencies import get_current_user
+from app.services.project_access import check_project_access
+from app.context import user_role_var
 
 logger = logging.getLogger(__name__)
 from app.config import settings
@@ -44,6 +46,7 @@ async def get_dashboard_stats(
     Eliminates N+1 queries from the frontend dashboard page.
     """
     try:
+        await check_project_access(project_id, user_id, "can_view_docs")
         pid = str(project_id)
 
         # 1. Document count
@@ -221,15 +224,51 @@ async def get_dashboard_stats(
                 }
             )
 
-        # 7. Projects overview (all user projects with doc + form counts)
-        projects_resp = (
-            supabase.table("projects")
-            .select("id,name,description,created_at")
-            .eq("user_id", str(user_id))
-            .order("created_at", desc=True)
-            .execute()
-        )
-        all_projects = projects_resp.data or []
+        # 7. Projects overview (owned + member-of, mirrors projects.py:list_projects)
+        global_role = user_role_var.get()
+        if global_role == "admin":
+            projects_resp = (
+                supabase.table("projects")
+                .select("id,name,description,created_at")
+                .order("created_at", desc=True)
+                .execute()
+            )
+            all_projects = projects_resp.data or []
+        else:
+            owned_resp = (
+                supabase.table("projects")
+                .select("id,name,description,created_at")
+                .eq("user_id", str(user_id))
+                .order("created_at", desc=True)
+                .execute()
+            )
+            owned_projects = owned_resp.data or []
+
+            member_resp = (
+                supabase.table("project_members")
+                .select("project_id")
+                .eq("user_id", str(user_id))
+                .execute()
+            )
+            member_project_ids = [r["project_id"] for r in (member_resp.data or [])]
+
+            member_projects = []
+            if member_project_ids:
+                mp_resp = (
+                    supabase.table("projects")
+                    .select("id,name,description,created_at")
+                    .in_("id", member_project_ids)
+                    .order("created_at", desc=True)
+                    .execute()
+                )
+                member_projects = mp_resp.data or []
+
+            seen = set()
+            all_projects = []
+            for p in owned_projects + member_projects:
+                if p["id"] not in seen:
+                    seen.add(p["id"])
+                    all_projects.append(p)
 
         # Batch-fetch counts for all projects in 2 queries (not 2N)
         all_project_ids = [proj["id"] for proj in all_projects]

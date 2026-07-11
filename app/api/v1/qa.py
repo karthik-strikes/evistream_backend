@@ -9,6 +9,10 @@ from app.dependencies import get_current_user
 from app.services.project_access import check_project_access
 from app.services import qa_service
 from app.models.schemas import QASampleRequest, QAReviewSaveRequest, QAFlagResolveRequest, QAReviewResponse
+from supabase import create_client
+from app.config import settings
+
+_supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -96,8 +100,14 @@ async def resolve_flag(
     user_id: UUID = Depends(get_current_user),
 ):
     """Resolve a flagged field in a QA review."""
+    # Look up the QA review's project to check access
+    qa_result = _supabase.table("qa_reviews").select("project_id").eq("id", str(qa_id)).limit(1).execute()
+    if not qa_result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QA review not found")
+    await check_project_access(UUID(qa_result.data[0]["project_id"]), user_id, "can_qa_review")
     try:
-        result = await qa_service.resolve_flag(qa_id, data.field_name, data.resolved_by)
+        # Use authenticated user_id instead of client-supplied resolved_by
+        result = await qa_service.resolve_flag(qa_id, data.field_name, user_id)
         return result
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

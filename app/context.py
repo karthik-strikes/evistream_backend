@@ -10,6 +10,7 @@ from contextvars import ContextVar
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
 user_id_var: ContextVar[str] = ContextVar("user_id", default="")
+user_role_var: ContextVar[str] = ContextVar("user_role", default="user")
 job_id_var: ContextVar[str] = ContextVar("job_id", default="")
 
 
@@ -66,6 +67,20 @@ def configure_logging(
 
     # Suppress httpx request-level INFO logs (Supabase client spam)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+
+    # Suppress LiteLLM internal telemetry noise
+    logging.getLogger("litellm").setLevel(logging.WARNING)
+
+    # Drop the LiteLLM logging-worker "bound to a different event loop" spam.
+    # LiteLLM's LoggingWorker queue is created on a different event loop than
+    # Celery's async runner, causing asyncio to emit a harmless "Task exception
+    # was never retrieved" at ERROR level on every LLM call. Real asyncio errors
+    # (different message) are unaffected.
+    class _LiteLLMLoopFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            return "bound to a different event loop" not in record.getMessage()
+
+    logging.getLogger("asyncio").addFilter(_LiteLLMLoopFilter())
 
     # Handler 2: CloudWatch (feature-gated)
     from app.config import settings  # deferred to avoid circular import at module load

@@ -11,6 +11,23 @@ from typing import TypedDict, Dict, Any, List, Optional, Literal
 from pydantic import BaseModel, Field
 
 
+class AnchorClassification(BaseModel):
+    """LLM split of a table's columns into row-identity (anchor) vs measurement (value).
+
+    Used by the two-stage extractor config: anchor columns identify each row in Stage 1;
+    value columns are the measurements filled per-row in Stage 2.
+    """
+    anchor_columns: List[str] = Field(
+        description="Column names whose values IDENTIFY or locate a row — labels, categories, "
+        "names, group/arm identity, timepoint, subgroup, comparison. NOT measured numbers."
+    )
+    value_columns: List[str] = Field(
+        description="Column names holding a measured quantity/statistic extracted for an "
+        "already-identified row (e.g. mean_arm1, sd_arm2, n_arm1, percentage, p-value)."
+    )
+    reasoning: str = Field(description="One sentence explaining the split.")
+
+
 # ============================================================================
 # STATE DEFINITIONS FOR LANGGRAPH WORKFLOWS
 # ============================================================================
@@ -279,11 +296,50 @@ class InputFieldSpec(BaseModel):
     )
 
 
+class SubfieldEnrichment(BaseModel):
+    """
+    LLM-provided prose enrichment for a single subform column.
+
+    Structural fields (field_name index, field_type, column count/order) are
+    user-owned and NOT present here — the LLM cannot add, rename, retype, or
+    reorder columns. Only prose content is carried.
+    """
+    field_name: str = Field(
+        ...,
+        description="Must exactly match an input subform column name. Never invent a new column name."
+    )
+    field_description: str = Field(
+        default="",
+        description="Enriched description for this column. "
+                    "Copy verbatim when user-provided is non-empty; "
+                    "enrich only when user left it blank.",
+    )
+    hints: List[str] = Field(
+        default_factory=list,
+        description="Extraction hints specific to this column. Empty list when none needed.",
+    )
+    rules: List[str] = Field(
+        default_factory=list,
+        description="Validation/format rules specific to this column. Empty list when none needed.",
+    )
+    examples: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Per-column extraction examples — each {value, source_text}. "
+                    "These are merged with any user-provided examples.",
+    )
+    extraction_role: Optional[str] = Field(
+        default=None,
+        description="Role in two-stage extraction: 'anchor' (row identifier, Stage 1) or 'value' (measurement, Stage 2).",
+    )
+
+
 class OutputFieldSpec(BaseModel):
     """
     Specification for a single output field in a DSPy signature.
 
     Used for structured output when LLM designs signature specifications.
+    Phase B: description is a clean 1-2 sentence summary; hints/rules/examples
+    carry the structured guidance separately.
     """
     field_name: str = Field(
         ...,
@@ -291,11 +347,44 @@ class OutputFieldSpec(BaseModel):
     )
     field_type: str = Field(
         ...,
-        description="Python type as string (e.g., 'str', 'int', 'float', 'bool')"
+        description="Python type as string (e.g., 'str', 'int', 'float', 'bool', 'Dict[str, Any]')"
     )
     description: str = Field(
         ...,
-        description="Complete field description including extraction rules, examples, options (if enum), and 'NR' convention"
+        description="Clean 1-2 sentence summary of what this field captures. No embedded hints/rules/examples."
+    )
+    hints: List[str] = Field(
+        default_factory=list,
+        description="Soft navigation hints: where/how to locate the value in the document."
+    )
+    rules: List[str] = Field(
+        default_factory=list,
+        description="Hard output constraints: format, validation, NR convention, must/must-not requirements."
+    )
+    examples: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Extraction examples as {value, source_text} dicts (include NR case)."
+    )
+    options: List[str] = Field(
+        default_factory=list,
+        description="Allowed values for enum/select fields. Empty list for free-text fields."
+    )
+    subform_fields: List[SubfieldEnrichment] = Field(
+        default_factory=list,
+        description="Per-column prose enrichment for array/subform_table fields. "
+                    "Structural data (field_type, column count, order) is user-owned — "
+                    "do NOT add, remove, rename, or reorder columns. "
+                    "Return one entry per column whose prose needs enrichment; "
+                    "omit columns that already have substantive user-provided descriptions. "
+                    "Empty list for non-table fields.",
+    )
+    extraction_strategy: Optional[str] = Field(
+        default=None,
+        description="'single_call' or 'row_then_columns'. Set automatically based on column count.",
+    )
+    anchor_columns: Optional[List[str]] = Field(
+        default=None,
+        description="Column names used as row identifiers in Stage 1 (row_then_columns strategy).",
     )
 
 
@@ -329,6 +418,43 @@ class SignatureSpec(BaseModel):
         ...,
         min_length=1,
         description="List of output fields, one per key in enriched signature's fields dict"
+    )
+
+
+class AddFieldSpec(BaseModel):
+    """
+    Structured output for the add-field LLM call.
+
+    Returned by SignatureGenerator.enrich_new_field(). Contains enrichment
+    for exactly ONE field being spliced into an existing signature.
+    """
+    field_name: str = Field(
+        ...,
+        description="Must exactly match the user's requested field_name. Never rename."
+    )
+    description: str = Field(
+        ...,
+        description="Clean 1-2 sentence summary. Verbatim copy of user input when non-empty."
+    )
+    hints: List[str] = Field(
+        default_factory=list,
+        description="Soft navigation hints for locating the value in the document."
+    )
+    rules: List[str] = Field(
+        default_factory=list,
+        description="Hard output constraints including NR convention."
+    )
+    examples: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Extraction examples as {value, source_text} dicts. Always includes NR case."
+    )
+    options: List[str] = Field(
+        default_factory=list,
+        description="Allowed values for enum/select fields. Empty list for free-text."
+    )
+    subform_fields: List[SubfieldEnrichment] = Field(
+        default_factory=list,
+        description="Per-column prose enrichment for array/subform_table fields only."
     )
 
 
@@ -366,9 +492,10 @@ __all__ = [
     "CombinerSignature",
     "DecompositionValidation",
     "FormDecomposition",
-    "Stage1AtomicSignatures",
+    "Stage1Output",
     "Stage2CombinerAndFlow",
     "InputFieldSpec",
     "OutputFieldSpec",
     "SignatureSpec",
+    "AddFieldSpec",
 ]

@@ -12,6 +12,7 @@ from app.dependencies import get_current_user
 from app.config import settings
 from app.models.schemas import JobResponse
 from app.models.enums import JobStatus
+from app.services.project_access import check_project_access
 
 logger = logging.getLogger(__name__)
 
@@ -33,29 +34,24 @@ async def list_jobs(
         query = supabase.table("jobs").select("*")
 
         if project_id:
-            # Verify project belongs to user
-            project_result = supabase.table("projects")\
-                .select("id")\
-                .eq("id", str(project_id))\
-                .eq("user_id", str(user_id))\
-                .execute()
-
-            if not project_result.data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Project not found"
-                )
-
+            # Verify user has access to this project
+            await check_project_access(project_id, user_id, "can_view_results")
             query = query.eq("project_id", str(project_id))
 
         else:
-            # Get all jobs from user's projects
-            projects_result = supabase.table("projects")\
+            # Get all jobs from user's owned + member projects
+            owned_result = supabase.table("projects")\
                 .select("id")\
                 .eq("user_id", str(user_id))\
                 .execute()
-
-            project_ids = [p["id"] for p in (projects_result.data or [])]
+            member_result = supabase.table("project_members")\
+                .select("project_id")\
+                .eq("user_id", str(user_id))\
+                .eq("can_view_results", True)\
+                .execute()
+            owned_ids = [p["id"] for p in (owned_result.data or [])]
+            member_ids = [r["project_id"] for r in (member_result.data or [])]
+            project_ids = list(set(owned_ids + member_ids))
 
             if not project_ids:
                 return []
@@ -97,19 +93,9 @@ async def get_job(
 
         job = result.data[0]
 
-        # Verify ownership via project
+        # Verify user has access to the job's project
         if job.get("project_id"):
-            project_result = supabase.table("projects")\
-                .select("id")\
-                .eq("id", job["project_id"])\
-                .eq("user_id", str(user_id))\
-                .execute()
-
-            if not project_result.data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Job not found"
-                )
+            await check_project_access(UUID(job["project_id"]), user_id, "can_view_results")
 
         return JobResponse(**job)
 
@@ -152,19 +138,9 @@ async def cancel_job(
 
         job = result.data[0]
 
-        # Verify ownership
+        # Verify user has permission to cancel (requires can_run_extractions)
         if job.get("project_id"):
-            project_result = supabase.table("projects")\
-                .select("id")\
-                .eq("id", job["project_id"])\
-                .eq("user_id", str(user_id))\
-                .execute()
-
-            if not project_result.data:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Job not found"
-                )
+            await check_project_access(UUID(job["project_id"]), user_id, "can_run_extractions")
 
         # Check if already terminal
         if job["status"] in [JobStatus.COMPLETED.value, JobStatus.FAILED.value, JobStatus.CANCELLED.value]:

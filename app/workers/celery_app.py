@@ -51,6 +51,7 @@ celery_app.conf.task_routes = {
     # PDF processing tasks
     "process_pdf_document": {"queue": "pdf_processing"},
     "check_pdf_processor_health": {"queue": "pdf_processing"},
+    "clean_pdf_document": {"queue": "pdf_processing"},
 
     # Code generation tasks
     "generate_form_code": {"queue": "code_generation"},
@@ -64,12 +65,17 @@ celery_app.conf.task_routes = {
 
     # Watchdog tasks (use default queue or specify one)
     "watchdog_cleanup_stuck_jobs": {"queue": "celery"},
+    "watchdog_cleanup_stuck_forms": {"queue": "celery"},
 }
 
 # Beat schedule: periodic tasks
 celery_app.conf.beat_schedule = {
     "cleanup-stuck-jobs-every-5-min": {
         "task": "watchdog_cleanup_stuck_jobs",
+        "schedule": 300.0,  # every 5 minutes
+    },
+    "cleanup-stuck-forms-every-5-min": {
+        "task": "watchdog_cleanup_stuck_forms",
         "schedule": 300.0,  # every 5 minutes
     },
 }

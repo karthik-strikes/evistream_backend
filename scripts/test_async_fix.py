@@ -47,7 +47,7 @@ def setup_dspy():
 
     # cache=False — prevents litellm disk cache from serving stale responses
     lm = dspy.LM(
-        model="anthropic/claude-sonnet-4-6",
+        model="anthropic/claude-sonnet-5",
         max_tokens=4096,
         temperature=0.0,
         cache=False,

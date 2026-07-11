@@ -18,6 +18,8 @@ from .notifications import router as notifications_router
 from .issues import router as issues_router
 from .dashboard import router as dashboard_router
 from .project_members import router as project_members_router
+from .project_invitations import project_router as project_invitations_router
+from .project_invitations import router as invitations_router
 from .settings import router as settings_router
 from .assignments import router as assignments_router
 from .adjudication import router as adjudication_router
@@ -27,6 +29,7 @@ from .data_cleaning import router as data_cleaning_router
 from .audit import router as audit_router
 from .client_logs import router as client_logs_router
 from .pilot import router as pilot_router
+from .usage import router as usage_router
 
 
 api_router = APIRouter()
@@ -53,6 +56,8 @@ api_router.include_router(issues_router, prefix="/issues", tags=["Issues"])
 api_router.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
 api_router.include_router(project_members_router, prefix="/projects", tags=["Project Members"])
+api_router.include_router(project_invitations_router, prefix="/projects", tags=["Project Invitations"])
+api_router.include_router(invitations_router, prefix="/invitations", tags=["Invitations"])
 api_router.include_router(settings_router, prefix="/settings", tags=["Settings"])
 api_router.include_router(assignments_router, prefix="/assignments", tags=["Assignments"])
 api_router.include_router(adjudication_router, prefix="/adjudication", tags=["Adjudication"])
@@ -62,3 +67,4 @@ api_router.include_router(data_cleaning_router, prefix="/data-cleaning", tags=["
 api_router.include_router(audit_router, prefix="/audit", tags=["Audit Trail"])
 api_router.include_router(client_logs_router, prefix="/logs", tags=["Client Logs"])
 api_router.include_router(pilot_router, prefix="/forms", tags=["Pilot"])
+api_router.include_router(usage_router, prefix="/usage", tags=["Usage"])

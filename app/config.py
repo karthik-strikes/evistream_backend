@@ -30,6 +30,17 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = ""  # Override for production (e.g., "https://app.evistream.com")
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
+    # Demo mode — zero-login reviewer access (evistreams.com/demo)
+    DEMO_MODE_ENABLED: bool = True
+    DEMO_USER_ID: str = "f527299e-66fe-4178-a552-277b5ea0ea16"  # shared "evistreamsdemo" account
+    DEMO_MAX_PROJECTS: int = 6  # 4 seeded + 2 reviewers may create
+    DEMO_SEED_PROJECT_IDS: list[str] = [
+        "de11a001-0000-4000-8000-000000000001",  # Periodontitis (seeded)
+        "de11a002-0000-4000-8000-000000000002",  # Antibiotic prophylaxis (seeded)
+        "de11a003-0000-4000-8000-000000000003",  # Demo (seeded)
+        "de11a004-0000-4000-8000-000000000004",  # Ibuprofen (seeded)
+    ]
+
     # Security
     SECRET_KEY: str  # REQUIRED: Generate with: openssl rand -hex 32
     REFRESH_SECRET_KEY: str = ""  # Separate secret for refresh tokens; falls back to SECRET_KEY
@@ -84,6 +95,11 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_EXTRACTIONS_PER_USER: int = _m.EXTRACTION_MAX_JOBS_PER_USER
     MAX_DOCUMENTS_PER_EXTRACTION_JOB: int = _m.EXTRACTION_MAX_DOCS_PER_JOB
     EXTRACTION_TASK_CONCURRENCY: int = _m.EXTRACTION_TASK_CONCURRENCY
+
+    # Email (Resend)
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "eviStreams <noreply@evistreams.com>"
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 15
 
     # LLM API Keys (optional)
     GEMINI_API_KEY: str = ""

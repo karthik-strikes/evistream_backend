@@ -200,10 +200,11 @@ class CacheManager:
     def __init__(self, cache_dir: str = None):
         self.cache = Cache(cache_dir or str(CACHE_DIR))
 
-    def make_key(self, endpoint: str, file_path: str) -> str:
+    def make_key(self, endpoint: str, file_path: str, output_format: str = "markdown") -> str:
         with open(file_path, "rb") as f:
             file_hash = hashlib.sha256(f.read()).hexdigest()
-        return f"{endpoint}_md::{file_hash}"
+        suffix = "_md" if output_format == "markdown" else f"_{output_format}"
+        return f"{endpoint}{suffix}::{file_hash}"
 
     def get(self, key: str) -> Optional[Dict]:
         return self.cache.get(key)
@@ -221,14 +222,25 @@ class DataLabAPIClient:
         self.cache_manager = cache_manager
         self.logger = logging.getLogger(__name__)
 
-    def _make_api_request(self, endpoint: str, file_path: str) -> Tuple[str, Dict]:
+    def _make_api_request(
+        self,
+        endpoint: str,
+        file_path: str,
+        output_format: str = "markdown",
+        extras: Optional[str] = None,
+        save_checkpoint: bool = False,
+    ) -> Tuple[str, Dict, str]:
         url = f"{DATALAB_API_BASE_URL}/{endpoint}"
         with open(file_path, "rb") as file:
             form_data = {"file": (os.path.basename(
                 file_path), file, "application/pdf")}
             if endpoint == "marker":
-                form_data["output_format"] = (None, "markdown")
+                form_data["output_format"] = (None, output_format)
                 form_data["paginate"] = (None, "true")  # Add page separators
+                if extras:
+                    form_data["extras"] = (None, extras)
+                if save_checkpoint:
+                    form_data["save_checkpoint"] = (None, "true")
                 # Keep headers and footers in output
                 additional_config = {
                     "keep_pageheader_in_output": True,
@@ -253,9 +265,11 @@ class DataLabAPIClient:
         except (KeyError, json.JSONDecodeError) as e:
             raise DataLabAPIError(
                 f"Invalid response from Datalab API: {e}") from e
-        return check_url, headers
+        # request_id is the last path segment of the check URL — needed later for /thumbnails
+        request_id = check_url.rstrip("/").split("/")[-1]
+        return check_url, headers, request_id
 
-    def _poll_results(self, check_url: str, headers: Dict, cache_key: str) -> Dict:
+    def _poll_results(self, check_url: str, headers: Dict, cache_key: str, request_id: Optional[str] = None) -> Dict:
         for _ in range(self.config.max_polls):
             time.sleep(1)
             try:
@@ -267,6 +281,10 @@ class DataLabAPIClient:
                 raise DataLabAPIError(f"Error polling results: {e}") from e
             status = data.get("status")
             if status == "complete":
+                # Inject request_id so downstream code can hit /thumbnails/{request_id}.
+                # Datalab does not include this in the poll payload.
+                if request_id and "request_id" not in data:
+                    data["request_id"] = request_id
                 self.cache_manager.set(cache_key, data)
                 return data
             elif status not in {"processing", "pending"}:
@@ -274,13 +292,23 @@ class DataLabAPIClient:
         raise TimeoutError(
             f"API request timed out after {self.config.max_polls} polls")
 
-    def call_api(self, endpoint: str, file_path: str) -> Dict:
-        cache_key = self.cache_manager.make_key(endpoint, file_path)
+    def call_api(
+        self,
+        endpoint: str,
+        file_path: str,
+        output_format: str = "markdown",
+        extras: Optional[str] = None,
+        save_checkpoint: bool = False,
+    ) -> Dict:
+        cache_key = self.cache_manager.make_key(endpoint, file_path, output_format)
         cached_result = self.cache_manager.get(cache_key)
         if cached_result:
             return cached_result
-        check_url, headers = self._make_api_request(endpoint, file_path)
-        return self._poll_results(check_url, headers, cache_key)
+        check_url, headers, request_id = self._make_api_request(
+            endpoint, file_path,
+            output_format=output_format, extras=extras, save_checkpoint=save_checkpoint,
+        )
+        return self._poll_results(check_url, headers, cache_key, request_id=request_id)
 
 
 MARKER_PARSER_AVAILABLE = True
@@ -335,35 +363,28 @@ class PDFProcessor(BaseProcessor):
     def process(self, content: str, force_reprocess: bool = False) -> Dict[str, Any]:
         """
         Process PDF content using the marker parser.
-        First checks for existing results to avoid re-running Marker API.
 
-        Args:
-            content: Path to the PDF file
-            force_reprocess: If True, skip cache and re-process the PDF
+        Caching is handled inside the DataLabAPIClient via the diskcache layer,
+        which is keyed per (endpoint, output_format, content_hash). That layer is
+        the single source of truth for "have we already parsed this PDF in this
+        shape?" — no file-on-disk short-circuit lives above it.
 
-        Returns:
-            Dict: Processed PDF data
+        The on-disk JSON dump in {output_dir}/{hash}_md/{hash}_md.json is still
+        written for audit/debug purposes (see _save_result_with_unique_name)
+        but is *not* read back as a cache. That short-circuit used to skip
+        _parse_pdf_with_marker entirely, which silently bypassed the JSON
+        Datalab call (and thus the per-block bbox sidecar) any time an
+        older cache file existed.
         """
         try:
             if not os.path.exists(content):
                 raise FileNotFoundError(f"PDF file not found: {content}")
 
             logger.debug(f"Processing PDF: {content}")
-
-            # Check if we already have processed results (unless force reprocess is requested)
-            if not force_reprocess:
-                existing_result = self._check_existing_result(content)
-                if existing_result:
-                    logger.info(
-                        f"Using existing PDF processing result for: {content}")
-                    return existing_result
-            else:
+            if force_reprocess:
                 logger.info(f"Force reprocessing PDF: {content}")
 
-            # Generate unique filename for output
             unique_filename = self._generate_unique_filename(content)
-
-            # Parse PDF using marker parser (only if not cached)
             result = self._parse_pdf_with_marker(content, unique_filename)
 
             logger.debug(f"PDF processing completed: {content}")
@@ -373,46 +394,6 @@ class PDFProcessor(BaseProcessor):
             logger.error(f"Error processing PDF {content}: {str(e)}")
             raise
 
-    def _check_existing_result(self, pdf_path: str) -> Optional[Dict[str, Any]]:
-        """
-        Check if we already have a processed result for this PDF.
-
-        Returns existing result if found, None otherwise.
-        """
-        try:
-            with open(pdf_path, "rb") as f:
-                file_hash = hashlib.sha256(f.read()).hexdigest()[:16]
-            expected_filename = f"{file_hash}_md"
-
-            # Check if output directory with this name exists
-            output_path = os.path.join(self.output_dir, expected_filename)
-            result_file = os.path.join(
-                output_path, f"{expected_filename}.json")
-
-            if os.path.exists(result_file):
-                logger.debug(f"Found existing result: {result_file}")
-
-                # Load and validate the existing result
-                with open(result_file, 'r', encoding='utf-8') as f:
-                    existing_result = json.load(f)
-
-                # Verify the result has the required structure
-                # Note: pdf_path is intentionally not checked here — the hash-based
-                # folder already guarantees content identity, so a renamed/moved PDF
-                # with the same bytes should still hit the cache.
-                if (existing_result.get("status") == "success" and
-                        "marker" in existing_result):
-                    return existing_result
-                else:
-                    logger.warning(
-                        f"Existing result file invalid or corrupted: {result_file}")
-
-            return None
-
-        except Exception as e:
-            logger.warning(f"Error checking for existing result: {e}")
-            return None
-
     def _generate_unique_filename(self, pdf_path: str) -> str:
         """Generate filename with _md suffix for the output, keyed on content hash."""
         with open(pdf_path, "rb") as f:
@@ -421,25 +402,46 @@ class PDFProcessor(BaseProcessor):
         return filename
 
     def _parse_pdf_with_marker(self, pdf_path: str, unique_filename: str) -> Dict[str, Any]:
-        """Parse PDF using the marker parser."""
-        try:
-            # Call the marker API
-            marker_results = self.api_client.call_api("marker", pdf_path)
+        """Parse PDF using the marker parser.
 
-            # Create result structure
+        Makes two calls:
+          1. output_format=markdown — primary rendered text (unchanged behavior)
+          2. output_format=json + extras=table_row_bboxes,extract_links + save_checkpoint=true —
+             block-level structure with bboxes/page_ids for source highlighting
+
+        Both responses are cached separately. If the JSON call fails, we still return
+        a successful result with the markdown — bbox features will simply degrade gracefully.
+        """
+        try:
+            marker_results = self.api_client.call_api("marker", pdf_path, output_format="markdown")
+
+            marker_json_results: Dict[str, Any] = {}
+            try:
+                marker_json_results = self.api_client.call_api(
+                    "marker",
+                    pdf_path,
+                    output_format="json",
+                    extras="table_row_bboxes,extract_links",
+                    save_checkpoint=True,
+                )
+            except Exception as e:
+                logger.warning(
+                    f"JSON-format marker call failed for {pdf_path}; "
+                    f"continuing with markdown only: {e}"
+                )
+
             result = {
                 "id": hashlib.md5(pdf_path.encode()).hexdigest(),
                 "pdf_path": pdf_path,
                 "unique_filename": unique_filename,
                 "marker": marker_results,
+                "marker_json": marker_json_results,
                 "status": "success",
                 "processing_timestamp": datetime.now().isoformat()
             }
 
-            # Save result with unique filename
             self._save_result_with_unique_name(result, unique_filename)
 
-            # Save images if requested and available
             if self.extract_images and marker_results.get("images"):
                 self._save_images(marker_results["images"], unique_filename)
 
@@ -452,6 +454,7 @@ class PDFProcessor(BaseProcessor):
                 "pdf_path": pdf_path,
                 "unique_filename": unique_filename,
                 "marker": {},
+                "marker_json": {},
                 "status": f"error: {str(e)}",
                 "processing_timestamp": datetime.now().isoformat()
             }

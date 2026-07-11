@@ -1,6 +1,14 @@
-# eviStream Backend
+# eviStream — Backend
 
-FastAPI backend for the eviStream AI-powered medical data extraction platform.
+FastAPI backend for **eviStream**, an AI-powered platform for extracting structured data from research papers (systematic reviews, meta-analyses, evidence synthesis).
+
+**Live:** https://evistreams.com · **Try it (no login):** https://evistreams.com/demo
+
+---
+
+## What it does
+
+Users design an extraction schema ("form"); the platform compiles it into a runtime **DSPy** pipeline, runs it over uploaded PDFs, and supports a full double-review + adjudication workflow with reviewer blinding. Form *code generation* is driven by a **LangGraph** state machine with a human-in-the-loop review pause.
 
 ---
 
@@ -8,91 +16,52 @@ FastAPI backend for the eviStream AI-powered medical data extraction platform.
 
 | Layer | Technology |
 |---|---|
-| Framework | FastAPI |
-| Language | Python 3.11+ |
-| Database | Supabase (PostgreSQL) |
-| Cache / Broker | Redis |
-| Task Queue | Celery |
-| Auth | JWT (python-jose) |
-| File Storage | AWS S3 |
-| LLM | Gemini / OpenAI / Anthropic via DSPy |
+| Framework | FastAPI (Python 3.11+) |
+| Database | Supabase (PostgreSQL) — accessed via service-role key, scoping enforced in app code |
+| Cache / Broker | Redis (port **6380**) |
+| Task Queue | Celery — 3 queues: `pdf_processing`, `code_generation`, `extraction` |
+| Auth | Custom HS256 JWT (python-jose) + bcrypt |
+| Object Storage | AWS S3 |
+| LLM orchestration | DSPy (runtime extraction) + LangGraph (form code generation) |
+| Models | Anthropic / OpenAI / Gemini via Bedrock & native APIs |
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-
 - Python 3.11+
-- Redis running on `localhost:6379`
-- Supabase project
+- Redis on `localhost:6380`
+- A Supabase project
 
 ### Setup
-
 ```bash
-# Install dependencies
 pip install -r requirements.txt
+cp .env.example .env            # fill in the values below
 
-# Copy environment file
-cp .env.example .env
-# Fill in values (see Environment Variables section)
-
-# Start the API server
-bash start_backend.sh
+bash start_backend.sh           # API on http://localhost:8001
+bash start_workers.sh           # Celery workers (pdf / codegen / extraction)
 ```
 
-API available at `http://localhost:8000`
-- Swagger UI: `http://localhost:8000/api/docs`
-- ReDoc: `http://localhost:8000/api/redoc`
-- Health check: `http://localhost:8000/health`
+- Health check: `http://localhost:8001/health`
+- Swagger UI (when `DEBUG=true`): `http://localhost:8001/api/docs`
+- ReDoc: `http://localhost:8001/api/redoc`
 
-### Start Workers
-
-```bash
-# All workers in one terminal
-bash start_workers.sh
-
-# Or each worker in a separate terminal
-bash start_workers_separate_terminals.sh
-
-# Stop all workers
-bash stop_workers.sh
-```
-
----
-
-## Environment Variables
-
+### Environment Variables
+See `.env.example` for the full list. Key ones:
 ```env
-# Application
-DEBUG=true
-ENVIRONMENT=development
-
-# Security
-SECRET_KEY=                        # openssl rand -hex 32
-
-# Database
-SUPABASE_URL=                      # https://your-project.supabase.co
-SUPABASE_KEY=                      # anon key
-SUPABASE_SERVICE_KEY=              # service role key
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# AWS S3
-AWS_ACCESS_KEY_ID=
+SECRET_KEY=                 # openssl rand -hex 32
+SUPABASE_URL=               # https://your-project.supabase.co
+SUPABASE_KEY=               # anon key
+SUPABASE_SERVICE_KEY=       # service-role key (admin ops)
+REDIS_URL=redis://localhost:6380/0
+AWS_ACCESS_KEY_ID=          # S3 + Bedrock
 AWS_SECRET_ACCESS_KEY=
-AWS_REGION=us-east-1
-S3_BUCKET=evistream-production
-
-# CORS
+S3_BUCKET=
+# LLM keys (at least one): ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY
 BACKEND_CORS_ORIGINS=["http://localhost:3000"]
-
-# LLM Keys (at least one required)
-GEMINI_API_KEY=
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
 ```
+> Secrets are never committed — `.env` is git-ignored (only `.env.example` is tracked). In production, secrets are loaded via `utils/secrets_loader.py`.
 
 ---
 
@@ -101,135 +70,80 @@ ANTHROPIC_API_KEY=
 ```
 backend/
 ├── app/
-│   ├── main.py                     # FastAPI app entry point
+│   ├── main.py                     # FastAPI app entry (uvicorn :8001)
 │   ├── config.py                   # Pydantic settings
-│   ├── database.py                 # Supabase client
-│   ├── dependencies.py             # Shared FastAPI dependencies
-│   ├── rate_limits.py              # Rate limiting rules
-│   │
-│   ├── api/v1/                     # REST API routes
-│   │   ├── router.py               # Route aggregator
-│   │   ├── auth.py                 # /auth — register, login, me
-│   │   ├── projects.py             # /projects — CRUD
-│   │   ├── documents.py            # /documents — upload, list, status
-│   │   ├── forms.py                # /forms — create, generate DSPy code
-│   │   ├── extractions.py          # /extractions — run jobs
-│   │   ├── results.py              # /results — view, export
-│   │   ├── jobs.py                 # /jobs — monitor async jobs
-│   │   ├── activities.py           # /activities — activity feed
-│   │   ├── notifications.py        # /notifications — user notifications
-│   │   └── websocket.py            # /ws — real-time job log streaming
-│   │
-│   ├── models/
-│   │   ├── schemas.py              # Pydantic request/response models
-│   │   └── enums.py                # Shared enums (JobStatus, etc.)
-│   │
-│   ├── services/                   # Business logic layer
-│   │   ├── auth_service.py         # JWT auth, password hashing
-│   │   ├── extraction_service.py   # Orchestrates extraction pipeline
-│   │   ├── code_generation_service.py  # Wraps core/generators workflow
-│   │   ├── pdf_processing_service.py   # PDF → markdown conversion
-│   │   ├── storage_service.py      # S3 upload/download
-│   │   ├── cache_service.py        # Redis caching helpers
-│   │   ├── activity_service.py     # Activity feed writes
-│   │   └── notification_service.py # User notification delivery
-│   │
-│   ├── workers/                    # Celery async tasks
-│   │   ├── celery_app.py           # Celery app + queue config
-│   │   ├── extraction_tasks.py     # Run extraction pipelines
-│   │   ├── generation_tasks.py     # Run DSPy code generation
-│   │   ├── pdf_tasks.py            # Process uploaded PDFs
-│   │   ├── log_broadcaster.py      # Stream logs over WebSocket
-│   │   └── watchdog_tasks.py       # Job timeout / cleanup
-│   │
-│   └── [core, dspy_components, schemas, utils]  # Symlinks to root packages
+│   ├── dependencies.py             # get_current_user, require_admin, ...
+│   ├── rate_limit.py               # slowapi limiter
+│   ├── api/v1/                     # REST routes (see API Reference)
+│   ├── models/                     # Pydantic schemas + enums
+│   ├── services/                   # Business logic (auth, extraction, adjudication, blinding, ...)
+│   └── workers/                    # Celery tasks (pdf / generation / extraction / watchdog)
 │
-├── migrations/                     # DB migration SQL files
+├── core/generators/                # LangGraph form-code-generation workflow + prompts
+├── dspy_components/                # Runtime DSPy signature/module builders
+├── schemas/                        # StagedPipeline runtime + DynamicSchemaConfig
+├── utils/                          # secrets_loader, caching_adapter, pilot_feedback, ...
+├── migrations/                     # DB migration SQL
 ├── tests/                          # Test suite
-├── docs/                           # API documentation
-├── logs/                           # Runtime logs
-├── output/                         # Generated outputs
-│
+├── deploy/                         # systemd units + nginx config + setup scripts
 ├── database_schema.sql             # Full DB schema reference
-├── PRIORITY1_MIGRATION.sql         # Migration patches
-├── create_dev_user.py              # Seed a dev user
 ├── requirements.txt
-├── start_backend.sh
-├── start_workers.sh
-├── start_workers_separate_terminals.sh
-└── stop_workers.sh
+└── start_backend.sh / start_workers.sh / stop_workers.sh
 ```
 
 ---
 
-## API Reference
+## API Reference (`/api/v1`)
 
-| Method | Route | Description |
-|---|---|---|
-| POST | `/api/v1/auth/register` | Register new user |
-| POST | `/api/v1/auth/login` | Login, returns JWT |
-| GET | `/api/v1/auth/me` | Current user info |
-| GET/POST | `/api/v1/projects` | List / create projects |
-| GET/PUT/DELETE | `/api/v1/projects/{id}` | Project detail |
-| GET/POST | `/api/v1/documents` | List / upload PDFs |
-| GET/POST | `/api/v1/forms` | List / create forms |
-| POST | `/api/v1/forms/{id}/generate` | Trigger DSPy code generation |
-| POST | `/api/v1/extractions` | Start extraction job |
-| GET | `/api/v1/extractions/{id}` | Job status |
-| GET | `/api/v1/results` | Browse results |
-| GET | `/api/v1/jobs` | All async jobs |
-| GET | `/api/v1/activities` | Activity feed |
-| GET | `/api/v1/notifications` | User notifications |
-| WS | `/api/v1/ws/jobs/{job_id}` | Real-time log streaming |
+| Area | Routes |
+|---|---|
+| Auth | `/auth` — register, login, refresh, me, forgot/reset-password, **`/auth/demo`** (zero-login demo session) |
+| Projects | `/projects` (CRUD), `/projects/{id}/members`, `/project-invitations` |
+| Documents | `/documents` — upload PDFs, processing status |
+| Forms | `/forms` — create + LangGraph code generation, decomposition review |
+| Extraction | `/extractions`, `/results`, `/jobs`, `/pilot` (calibration) |
+| Review workflow | `/assignments`, `/adjudication`, `/qa`, `/vocabularies`, `/data-cleaning` |
+| Ops / meta | `/dashboard`, `/activities`, `/notifications`, `/audit`, `/usage`, `/admin`, `/settings`, `/issues`, `/client-logs` |
+| Realtime | `WS /ws/jobs/{job_id}` — live job log streaming (Redis pub/sub relay) |
 
-All routes except `/auth/register` and `/auth/login` require `Authorization: Bearer <token>`.
+All routes except the auth entry points require `Authorization: Bearer <token>`.
+
+### Demo mode
+`POST /api/v1/auth/demo` issues a session for a shared, sandboxed demo account (no credentials). The account is capped to a fixed number of projects, its seeded showcase projects are delete-protected, and it can only see its own data. Toggled via `DEMO_MODE_ENABLED` in config.
 
 ---
 
 ## Architecture
 
 ```
-Frontend (Next.js :3000)
-        │
-        ▼
-FastAPI (:8000)
-  ├── Auth middleware (JWT)
-  ├── Rate limiting
-  ├── API routes → Services
-  └── WebSocket (job logs)
-        │
-        ├── Supabase (PostgreSQL) — persistent data
-        ├── Redis — cache + Celery broker
-        └── Celery Workers
-              ├── PDF processing (pdf_tasks)
-              ├── DSPy code generation (generation_tasks)
-              ├── Extraction pipeline (extraction_tasks)
-              └── Log broadcaster (WebSocket relay)
+Next.js (:3000) ──► nginx ──► FastAPI (:8001)
+                                 │
+     ┌───────────────────────────┼───────────────────────────┐
+     ▼                           ▼                            ▼
+ Supabase (Postgres)        Redis (:6380)              Celery workers
+  persistent data        cache + broker + pub/sub    ├─ pdf_processing
+  (app-level scoping)                                 ├─ code_generation (LangGraph)
+                                                       └─ extraction (DSPy StagedPipeline)
 ```
+
+- **Form = schema + compiled DSPy program + completion ledger**, unified in one `forms` table.
+- **Form generation** runs a LangGraph `StateGraph` (`decompose → validate → human_review → generate_signatures → finalize`) that pauses for human decomposition review.
+- **Runtime extraction** is pure DSPy: signatures/modules are built at runtime from `schema_def` (no `.py` files on disk) and cached in a 3-tier cache (memory → Redis → Supabase).
+- **Three HITL loops:** decomposition review, pilot calibration, and R1/R2 adjudication — with reviewer blinding enforced on all result reads/exports.
+
+---
+
+## Deployment
+
+Production runs on a single host via **systemd**: `evistream-fastapi`, `evistream-nextjs`, and three Celery worker units (`evistream-worker-{pdf,codegen,extraction}`), fronted by **nginx** (`/api` → `:8001`, `/` → `:3000`, `/ws` → WebSocket). See `deploy/` for units, nginx config, and setup scripts.
 
 ---
 
 ## Development
 
-### Create a dev user
-
 ```bash
-python create_dev_user.py
+python create_dev_user.py     # seed a local dev user
+pytest tests/                 # run tests
 ```
 
-### Run tests
-
-```bash
-pytest tests/
-```
-
-### Database schema
-
-Full schema reference in `database_schema.sql`. Apply migrations with `migrations/`.
-
-### Adding a new endpoint
-
-1. Create route file in `app/api/v1/`
-2. Register router in `app/api/v1/router.py`
-3. Add service logic in `app/services/`
-4. Use `Depends(get_current_user)` for protected routes
+Adding an endpoint: create the route in `app/api/v1/`, register it in `router.py`, put logic in `app/services/`, and gate it with `Depends(get_current_user)`.

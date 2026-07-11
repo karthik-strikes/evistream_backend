@@ -4,6 +4,7 @@ Celery tasks for form code generation.
 
 import logging
 import json
+from datetime import datetime, timezone
 from supabase import create_client
 
 from app.workers.celery_app import celery_app
@@ -13,11 +14,96 @@ from app.services.code_generation_service import code_generation_service
 from app.models.enums import FormStatus, JobStatus
 from app.workers.utils import sync_log_activity, sync_notify
 from app.services.cache_service import cache_service
+from utils.run_context import set_current_job_id
 
 logger = logging.getLogger(__name__)
 
 # Initialize Supabase client
 supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+
+
+def _make_log_callback(broadcaster: CeleryLogBroadcaster):
+    """Create a log_callback that detects structured data and stage transitions."""
+    def log_callback(message: str, level: str = "info"):
+        # Handle structured JSON messages (field_list, field_done)
+        if message.startswith("{"):
+            try:
+                data = json.loads(message)
+                broadcaster.data(data, data.get("_type", ""))
+                return
+            except (json.JSONDecodeError, TypeError):
+                pass
+        # Detect stage transitions from workflow messages and update progress
+        if "Cognitive Decomposition" in message:
+            broadcaster.stage("decomposing", message)
+            broadcaster.progress(40, "Grouping related fields...")
+        elif "Generating" in message and "signature" in message.lower():
+            broadcaster.stage("generating_signatures", message)
+            broadcaster.progress(55, "Building extraction rules...")
+        elif "Generating extractor modules" in message:
+            broadcaster.stage("generating_modules", message)
+            broadcaster.progress(70, "Building extraction rules...")
+        elif "Assembling final" in message:
+            broadcaster.stage("finalizing", message)
+            broadcaster.progress(85, "Finalizing...")
+        # Always broadcast the log message
+        if level == "error":
+            broadcaster.error(message)
+        elif level == "warning":
+            broadcaster.warning(message)
+        elif level == "success":
+            broadcaster.success(message)
+        else:
+            broadcaster.info(message)
+    return log_callback
+
+
+def _mirror_enriched_subfields(fields: list, schema_def: dict) -> list:
+    """Write enriched subform_fields (hints/rules/examples) from schema_def into fields list.
+
+    After signature generation, schema_def carries LLM-enriched per-column
+    hints/rules/examples. This mirrors them back into forms.fields JSONB so
+    both sources stay in sync from the very first save (Move 5 of the root-cause fix).
+    User structural data (field_name, field_type) is always preserved.
+    """
+    if not schema_def or not fields:
+        return fields
+
+    # Build lookup: field_name → enriched subform_fields list from schema_def
+    enriched_sf: dict = {}
+    for sig in schema_def.get("signatures", []):
+        for of in sig.get("output_fields", []):
+            sfs = of.get("subform_fields")
+            fname = of.get("name", "")
+            if fname and sfs:
+                enriched_sf[fname] = sfs
+
+    if not enriched_sf:
+        return fields
+
+    result = []
+    for field in fields:
+        fname = field.get("field_name", "")
+        if fname in enriched_sf:
+            existing_by_name = {
+                sf.get("field_name", ""): sf
+                for sf in (field.get("subform_fields") or [])
+            }
+            merged = []
+            for esf in enriched_sf[fname]:
+                cname = esf.get("field_name", "")
+                base = dict(existing_by_name.get(cname) or {})
+                # Overlay enriched prose/hints/rules/examples; never touch field_type
+                for key in ("field_description", "hints", "rules", "examples", "options"):
+                    val = esf.get(key)
+                    if val:  # non-empty string or non-empty list
+                        base[key] = val
+                if not base:
+                    base = esf
+                merged.append(base)
+            field = {**field, "subform_fields": merged}
+        result.append(field)
+    return result
 
 
 def _invalidate_form_caches(project_id: str, form_id: str):
@@ -37,6 +123,69 @@ def _form_still_exists(form_id: str) -> bool:
         return bool(result.data)
     except Exception:
         return True  # assume it exists on DB error to avoid false aborts
+
+
+REVISION_HISTORY_CAP = 4
+
+
+def _signatures_differ(a: dict, b: dict) -> bool:
+    """Return True if two decompositions have meaningfully different signatures."""
+    def fingerprint(d: dict):
+        return sorted(
+            (s.get("name"), tuple(sorted((s.get("fields") or {}).keys())))
+            for s in (d.get("signatures") or [])
+        )
+    return fingerprint(a or {}) != fingerprint(b or {})
+
+
+def _read_existing_metadata(form_id: str) -> dict:
+    """Fetch the form's current metadata as a dict, or {}."""
+    try:
+        row = supabase.table("forms").select("metadata").eq("id", form_id).execute()
+        if not row.data:
+            return {}
+        raw = row.data[0].get("metadata")
+        if not raw:
+            return {}
+        return json.loads(raw) if isinstance(raw, str) else (raw or {})
+    except Exception as e:
+        logger.warning(f"Failed to read existing metadata for {form_id}: {e}")
+        return {}
+
+
+def _build_completion_metadata(form_id: str, result: dict) -> dict:
+    """
+    Build a fresh `metadata` dict for a form update, while:
+      - appending the previous decomposition to revision_history (Phase 2 B6)
+      - preserving review_notes, current_job_id from existing metadata
+    """
+    existing = _read_existing_metadata(form_id)
+    new_decomp = result.get("decomposition", {}) or {}
+
+    history = list(existing.get("revision_history") or [])
+    prev_decomp = existing.get("decomposition")
+    if prev_decomp and _signatures_differ(prev_decomp, new_decomp):
+        history.append({
+            "decomposition": prev_decomp,
+            "validation_results": existing.get("validation_results"),
+            "review_notes": existing.get("review_notes", []),
+            "archived_at": datetime.now(timezone.utc).isoformat(),
+        })
+    history = history[-REVISION_HISTORY_CAP:]
+
+    meta = {
+        "thread_id": result.get("thread_id"),
+        "task_name": result.get("task_name"),
+        "decomposition": new_decomp,
+        "decomposition_summary": result.get("decomposition_summary", ""),
+        "validation_results": result.get("validation_results")
+            or new_decomp.get("validation_results", {}),
+        "revision_history": history,
+    }
+    for k in ("review_notes", "current_job_id"):
+        if k in existing:
+            meta[k] = existing[k]
+    return meta
 
 
 @celery_app.task(
@@ -64,6 +213,7 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
     try:
         # Initialize log broadcaster for real-time streaming
         broadcaster = CeleryLogBroadcaster(job_id)
+        set_current_job_id(job_id)  # stamp codegen LLM calls with this job for cost attribution
 
         logger.info(f"Starting code generation for form {form_id}")
         broadcaster.info("🚀 Starting code generation workflow...")
@@ -122,18 +272,8 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
             return {"status": "cancelled", "form_id": form_id}
 
         # Generate code using service with log callback
-        broadcaster.stage("code_generation", "🤖 AI is analyzing your form...")
-
-        def log_callback(message: str, level: str = "info"):
-            """Callback to stream logs from code generation service"""
-            if level == "error":
-                broadcaster.error(message)
-            elif level == "warning":
-                broadcaster.warning(message)
-            elif level == "success":
-                broadcaster.success(message)
-            else:
-                broadcaster.info(message)
+        broadcaster.stage("initializing", "Analyzing your form...")
+        log_callback = _make_log_callback(broadcaster)
 
         result = code_generation_service.generate_extraction_code(
             form_id=form_id,
@@ -146,6 +286,7 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
         # Check if workflow is paused for human review
         if result.get("status") == "awaiting_human_review" or result.get("paused") == True:
             logger.info(f"Workflow paused for human review - form {form_id}")
+            broadcaster.stage("awaiting_review", "Waiting for your review")
             broadcaster.info("⏸️  Workflow paused for human review")
             broadcaster.info("Please review the decomposition in the frontend")
 
@@ -155,12 +296,7 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
             logger.info(f"Signatures count: {len(decomposition.get('signatures', [])) if decomposition else 0}")
             logger.info(f"Pipeline count: {len(decomposition.get('pipeline', [])) if decomposition else 0}")
 
-            metadata = {
-                "thread_id": result.get("thread_id"),
-                "task_name": result.get("task_name"),
-                "decomposition": decomposition,
-                "decomposition_summary": result.get("decomposition_summary", "")
-            }
+            metadata = _build_completion_metadata(form_id, result)
 
             logger.info(f"Metadata to store: thread_id={metadata['thread_id']}, has_decomposition={bool(metadata['decomposition'])}")
 
@@ -204,12 +340,7 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
             broadcaster.data(result.get("statistics", {}), "Generation statistics")
 
             # Update form with generated code information
-            metadata = {
-                "thread_id": result.get("thread_id"),
-                "task_name": result.get("task_name"),
-                "decomposition": result.get("decomposition", {}),
-                "decomposition_summary": result.get("decomposition_summary", "")
-            }
+            metadata = _build_completion_metadata(form_id, result)
             update_data = {
                 "status": FormStatus.ACTIVE.value,
                 "schema_name": result["schema_name"],
@@ -218,6 +349,12 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
                 "metadata": json.dumps(metadata),
                 "error": None,
             }
+            if result.get("schema_def"):
+                update_data["schema_def"] = result["schema_def"]
+                # Mirror enriched subform_fields into forms.fields (Move 5)
+                enriched_fields = _mirror_enriched_subfields(fields, result["schema_def"])
+                if enriched_fields is not fields:
+                    update_data["fields"] = enriched_fields
             supabase.table("forms").update(update_data).eq("id", form_id).execute()
             _invalidate_form_caches(project_id, form_id)
             broadcaster.info(f"💾 Saved to: {result['schema_name']}")
@@ -378,6 +515,7 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
     """
     try:
         broadcaster = CeleryLogBroadcaster(job_id)
+        set_current_job_id(job_id)  # stamp codegen LLM calls with this job for cost attribution
         logger.info(f"Resuming workflow after approval - form: {form_id}, thread: {thread_id}")
 
         if not _form_still_exists(form_id):
@@ -418,26 +556,15 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
         }
 
         from core.generators.workflow import WorkflowOrchestrator
-        from pathlib import Path
-        import ast
 
-        project_root = Path(__file__).parent.parent.parent  # = backend/
-
-        def log_callback(message: str, level: str = "info"):
-            if level == "error":
-                broadcaster.error(message)
-            elif level == "warning":
-                broadcaster.warning(message)
-            elif level == "success":
-                broadcaster.success(message)
-            else:
-                broadcaster.info(message)
+        log_callback = _make_log_callback(broadcaster)
 
         orchestrator = WorkflowOrchestrator(
             human_review_enabled=False,
             log_callback=log_callback
         )
 
+        broadcaster.stage("generating_signatures", "Building extraction rules from approved plan...")
         broadcaster.info("Generating signatures and modules from approved decomposition...")
         result = orchestrator.generate_from_approved_decomposition(
             form_data=form_data,
@@ -449,16 +576,12 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
         # Check if success or paused again
         if result.get("status") == "awaiting_human_review":
             # Paused again (unlikely after approval, but possible if re-decomposed)
-            metadata = {
-                "thread_id": thread_id,
-                "task_name": task_name,
-                "decomposition": result.get("decomposition", {}),
-                "decomposition_summary": result.get("decomposition_summary", "")
-            }
+            metadata = _build_completion_metadata(form_id, result)
             supabase.table("forms").update({
                 "status": FormStatus.AWAITING_REVIEW.value,
                 "metadata": json.dumps(metadata)
             }).eq("id", form_id).execute()
+            _invalidate_form_caches(form.get("project_id"), form_id)
 
             supabase.table("jobs").update({
                 "status": JobStatus.COMPLETED.value,
@@ -472,55 +595,27 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
             logger.info(f"Code generation completed after approval - form: {form_id}")
             broadcaster.success("✅ Code generation completed!")
 
-            # Validate syntax
-            for label, code_key in [("signatures.py", "signatures_file"), ("modules.py", "modules_file")]:
-                code = result.get(code_key, "")
-                try:
-                    ast.parse(code)
-                except SyntaxError as syn_err:
-                    error_msg = f"Generated {label} has invalid syntax: {syn_err}"
-                    logger.error(error_msg)
-                    broadcaster.error(error_msg)
-                    supabase.table("forms").update({
-                        "status": FormStatus.FAILED.value,
-                        "error": error_msg
-                    }).eq("id", form_id).execute()
-                    supabase.table("jobs").update({
-                        "status": JobStatus.FAILED.value,
-                        "error_message": error_msg
-                    }).eq("id", job_id).execute()
-                    return {"status": "failed", "form_id": form_id, "error": error_msg}
+            schema_def = result.get("schema_def")
+            if not schema_def:
+                error_msg = "schema_def not built after approval — cannot activate form"
+                logger.error(error_msg)
+                broadcaster.error(error_msg)
+                supabase.table("forms").update({
+                    "status": FormStatus.FAILED.value,
+                    "error": error_msg
+                }).eq("id", form_id).execute()
+                _invalidate_form_caches(form.get("project_id"), form_id)
+                supabase.table("jobs").update({
+                    "status": JobStatus.FAILED.value,
+                    "error_message": error_msg
+                }).eq("id", job_id).execute()
+                return {"status": "failed", "form_id": form_id, "error": error_msg}
 
-            broadcaster.success("✓ Syntax validation passed")
-
-            # Write files
-            broadcaster.info("Writing generated code to disk...")
-            task_dir = project_root / "dspy_components" / "tasks" / task_name
-            task_dir.mkdir(parents=True, exist_ok=True)
-
-            (task_dir / "signatures.py").write_text(result["signatures_file"], encoding="utf-8")
-            (task_dir / "modules.py").write_text(result["modules_file"], encoding="utf-8")
-            (task_dir / "__init__.py").write_text(f'"""\nGenerated task: {task_name}\n"""\n', encoding="utf-8")
-
-            # Save metadata files for auto-discovery
-            decomposition = result.get("decomposition", {})
-            signature_names = [sig["name"] for sig in decomposition.get("signatures", [])]
-            pipeline_stages = decomposition.get("pipeline", [])
-
-            field_mapping = {}
-            for sig in decomposition.get("signatures", []):
-                sig_name = sig["name"]
-                for field_name in sig.get("fields", {}).keys():
-                    field_mapping[field_name] = sig_name
-
-            (task_dir / "field_mapping.json").write_text(json.dumps(field_mapping, indent=2), encoding="utf-8")
-            (task_dir / "pipeline_stages.json").write_text(json.dumps(pipeline_stages, indent=2), encoding="utf-8")
-
-            broadcaster.success(f"✓ Code saved to: {task_dir}")
-
-            # Register schema
+            # Register schema from schema_def (no disk writes)
             from schemas.config import DynamicSchemaConfig
             from schemas.registry import register_schema
+            signature_names = [s["class_name"] for s in schema_def["signatures"]]
+            pipeline_stages = schema_def.get("pipeline_stages", [])
 
             schema_config = DynamicSchemaConfig(
                 schema_name=task_name,
@@ -531,26 +626,35 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
                 pipeline_stages=pipeline_stages,
                 project_id="",
                 form_id=form_id,
-                form_name=form["form_name"]
+                form_name=form["form_name"],
+                schema_def=schema_def,
             )
             register_schema(schema_config)
             broadcaster.success(f"✓ Schema registered: {task_name}")
 
             # Update form to active
-            metadata = {
+            decomposition = result.get("decomposition", {})
+            metadata = _build_completion_metadata(form_id, {
                 "thread_id": thread_id,
                 "task_name": task_name,
                 "decomposition": decomposition,
-                "decomposition_summary": result.get("decomposition_summary", "")
-            }
-            supabase.table("forms").update({
+                "decomposition_summary": result.get("decomposition_summary", ""),
+            })
+            form_update = {
                 "status": FormStatus.ACTIVE.value,
                 "schema_name": task_name,
-                "task_dir": str(task_dir),
+                "task_dir": None,
                 "statistics": json.dumps(result.get("statistics", {})),
                 "metadata": json.dumps(metadata),
                 "error": None,
-            }).eq("id", form_id).execute()
+                "schema_def": schema_def,
+            }
+            # Mirror enriched subform_fields into forms.fields (Move 5)
+            enriched_fields = _mirror_enriched_subfields(fields, schema_def)
+            if enriched_fields is not fields:
+                form_update["fields"] = enriched_fields
+            supabase.table("forms").update(form_update).eq("id", form_id).execute()
+            _invalidate_form_caches(form.get("project_id"), form_id)
 
             # Update job to completed
             supabase.table("jobs").update({
@@ -558,7 +662,7 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
                 "progress": 100,
                 "result_data": {
                     "schema_name": task_name,
-                    "task_dir": str(task_dir),
+                    "task_dir": None,
                     "statistics": result.get("statistics", {})
                 }
             }).eq("id", job_id).execute()
@@ -597,6 +701,7 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
                 "status": FormStatus.FAILED.value,
                 "error": error_msg
             }).eq("id", form_id).execute()
+            _invalidate_form_caches(form.get("project_id"), form_id)
 
             supabase.table("jobs").update({
                 "status": JobStatus.FAILED.value,
@@ -656,7 +761,7 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
     retry_backoff=True,
     retry_jitter=True,
 )
-def resume_after_rejection(self, form_id: str, job_id: str, thread_id: str, task_name: str, feedback: str):
+def resume_after_rejection(self, form_id: str, job_id: str, thread_id: str, task_name: str, feedback: str, accepted_refs: list = None):
     """
     Resume workflow after user rejects decomposition with feedback.
 
@@ -667,9 +772,11 @@ def resume_after_rejection(self, form_id: str, job_id: str, thread_id: str, task
         thread_id: Workflow thread ID for resumption
         task_name: Task directory name
         feedback: User feedback for regeneration
+        accepted_refs: Signature names the reviewer locked (Phase 2 B5)
     """
     try:
         broadcaster = CeleryLogBroadcaster(job_id)
+        set_current_job_id(job_id)  # stamp codegen LLM calls with this job for cost attribution
         logger.info(f"Resuming workflow after rejection - form: {form_id}, thread: {thread_id}")
 
         if not _form_still_exists(form_id):
@@ -690,21 +797,14 @@ def resume_after_rejection(self, form_id: str, job_id: str, thread_id: str, task
         # Initialize orchestrator and resume with feedback
         from core.generators.workflow import WorkflowOrchestrator
 
-        def log_callback(message: str, level: str = "info"):
-            if level == "error":
-                broadcaster.error(message)
-            elif level == "warning":
-                broadcaster.warning(message)
-            elif level == "success":
-                broadcaster.success(message)
-            else:
-                broadcaster.info(message)
+        log_callback = _make_log_callback(broadcaster)
 
         orchestrator = WorkflowOrchestrator(
             human_review_enabled=True,
             log_callback=log_callback
         )
 
+        broadcaster.stage("decomposing", "Regrouping fields with your feedback...")
         broadcaster.info(f"Regenerating with feedback: {feedback[:100]}...")
 
         # MemorySaver is in-process only — state is lost across worker invocations.
@@ -725,12 +825,23 @@ def resume_after_rejection(self, form_id: str, job_id: str, thread_id: str, task
             except Exception:
                 pass
 
+        # Phase 2 B5: build locked_signatures list from accepted_refs
+        locked_signatures = []
+        if accepted_refs and previous_decomposition:
+            accepted_set = set(accepted_refs)
+            locked_signatures = [
+                sig for sig in (previous_decomposition.get("signatures") or [])
+                if sig.get("name") in accepted_set
+            ]
+        # Also stash in form_data["_locked_signatures"] for the validator
         form_data = {
             "form_name": form["form_name"],
             "form_description": form.get("form_description", ""),
             "fields": fields,
             "human_feedback": feedback,
             "previous_decomposition": previous_decomposition,
+            "locked_signatures": locked_signatures,
+            "_locked_signatures": locked_signatures,
         }
 
         from app.services.code_generation_service import code_generation_service
@@ -747,46 +858,96 @@ def resume_after_rejection(self, form_id: str, job_id: str, thread_id: str, task
             logger.info("Workflow paused again for review after regeneration")
             broadcaster.info("⏸️  New decomposition ready for review")
             new_thread_id = result.get("thread_id", thread_id)
-            metadata = {
+            metadata = _build_completion_metadata(form_id, {
                 "thread_id": new_thread_id,
                 "task_name": task_name,
                 "decomposition": result.get("decomposition", {}),
-                "decomposition_summary": result.get("decomposition_summary", "")
-            }
+                "decomposition_summary": result.get("decomposition_summary", ""),
+                "validation_results": result.get("validation_results"),
+            })
             supabase.table("forms").update({
                 "status": FormStatus.AWAITING_REVIEW.value,
                 "metadata": json.dumps(metadata)
             }).eq("id", form_id).execute()
+            _invalidate_form_caches(form.get("project_id"), form_id)
             supabase.table("jobs").update({
                 "status": JobStatus.COMPLETED.value,
                 "progress": 50
             }).eq("id", job_id).execute()
             return {"status": "awaiting_review", "form_id": form_id}
 
-        broadcaster.info("Regeneration completed")
-        supabase.table("forms").update({
-            "status": FormStatus.GENERATING.value
-        }).eq("id", form_id).execute()
-        supabase.table("jobs").update({
-            "status": JobStatus.COMPLETED.value,
-            "progress": 75
-        }).eq("id", job_id).execute()
+        if result.get("success"):
+            logger.info(f"Regeneration after rejection succeeded - form: {form_id}")
+            broadcaster.success("✅ Code generation completed!")
 
-        # Log activity on rejection-resume completion
-        job_record = supabase.table("jobs").select("user_id, project_id").eq("id", job_id).execute()
-        if job_record.data:
-            _user_id = job_record.data[0]["user_id"]
-            _project_id = job_record.data[0].get("project_id")
-            sync_log_activity(
-                user_id=_user_id,
-                action_type="code_generation",
-                action="Regeneration After Rejection Completed",
-                description=f"Regeneration completed after rejection for form: {form['form_name']}",
-                project_id=_project_id,
-                metadata={"form_id": form_id, "feedback": feedback[:200]},
-            )
+            # Update form with generated code information
+            metadata = _build_completion_metadata(form_id, result)
+            supabase.table("forms").update({
+                "status": FormStatus.ACTIVE.value,
+                "schema_name": result["schema_name"],
+                "task_dir": result["task_dir"],
+                "statistics": json.dumps(result.get("statistics", {})),
+                "metadata": json.dumps(metadata),
+                "error": None,
+            }).eq("id", form_id).execute()
+            _invalidate_form_caches(form.get("project_id"), form_id)
 
-        return {"status": "generating", "form_id": form_id}
+            supabase.table("jobs").update({
+                "status": JobStatus.COMPLETED.value,
+                "progress": 100,
+                "result_data": {
+                    "schema_name": result["schema_name"],
+                    "task_dir": result["task_dir"],
+                    "statistics": result.get("statistics", {})
+                }
+            }).eq("id", job_id).execute()
+
+            broadcaster.info(f"💾 Saved to: {result['schema_name']}")
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": "completed",
+            })
+
+            # Log activity on rejection-resume completion
+            job_record = supabase.table("jobs").select("user_id, project_id").eq("id", job_id).execute()
+            if job_record.data:
+                _user_id = job_record.data[0]["user_id"]
+                _project_id = job_record.data[0].get("project_id")
+                sync_log_activity(
+                    user_id=_user_id,
+                    action_type="code_generation",
+                    action="Regeneration After Rejection Completed",
+                    description=f"Regeneration completed after rejection for form: {form['form_name']}",
+                    project_id=_project_id,
+                    metadata={"form_id": form_id, "feedback": feedback[:200]},
+                )
+
+            return {
+                "status": "success",
+                "form_id": form_id,
+                "schema_name": result["schema_name"],
+                "task_dir": result["task_dir"],
+            }
+        else:
+            error_msg = result.get("error", "Unknown error during regeneration after rejection")
+            logger.error(f"Regeneration after rejection failed for form {form_id}: {error_msg}")
+            broadcaster.error(f"❌ Generation failed: {error_msg}")
+            broadcaster._broadcast_message({
+                "type": "complete",
+                "job_id": str(job_id),
+                "status": "failed",
+            })
+            supabase.table("forms").update({
+                "status": FormStatus.FAILED.value,
+                "error": error_msg
+            }).eq("id", form_id).execute()
+            _invalidate_form_caches(form.get("project_id"), form_id)
+            supabase.table("jobs").update({
+                "status": JobStatus.FAILED.value,
+                "error_message": error_msg
+            }).eq("id", job_id).execute()
+            return {"status": "failed", "form_id": form_id, "error": error_msg}
 
     except Exception as e:
         error_msg = str(e)

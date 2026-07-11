@@ -71,8 +71,10 @@ class PDFProcessingService:
             )
 
             if result.get("status") == "success":
-                # Extract markdown content from result
-                markdown_content = result.get("marker", {}).get("markdown")
+                marker_md = result.get("marker", {}) or {}
+                marker_json = result.get("marker_json", {}) or {}
+
+                markdown_content = marker_md.get("markdown")
 
                 if not markdown_content:
                     return {
@@ -82,14 +84,38 @@ class PDFProcessingService:
                         "metadata": {}
                     }
 
+                # The second (json-format) call returns block-level structure under "json".
+                # Some Datalab tiers may surface page_count / parse_quality_score on either
+                # response; prefer the json call (richer), fall back to markdown call.
+                blocks_json = marker_json.get("json")
+                page_count = (
+                    marker_json.get("page_count")
+                    or marker_md.get("page_count")
+                    or marker_md.get("pages")
+                    or 0
+                )
+                parse_quality_score = (
+                    marker_json.get("parse_quality_score")
+                    if marker_json.get("parse_quality_score") is not None
+                    else marker_md.get("parse_quality_score")
+                )
+                checkpoint_id = marker_json.get("checkpoint_id") or marker_md.get("checkpoint_id")
+                request_id = marker_json.get("request_id") or marker_md.get("request_id")
+
                 return {
                     "success": True,
                     "markdown_content": markdown_content,
+                    "blocks_json": blocks_json,
+                    "parse_quality_score": parse_quality_score,
+                    "checkpoint_id": checkpoint_id,
+                    "request_id": request_id,
+                    "page_count": page_count,
                     "error": None,
                     "metadata": {
-                        "pages": result.get("marker", {}).get("pages", 0),
-                        "processing_time": result.get("marker", {}).get("processing_time", 0),
-                        "cost": result.get("marker", {}).get("cost", 0),
+                        "pages": page_count,
+                        "processing_time": marker_md.get("processing_time", 0),
+                        "cost": marker_md.get("cost", 0),
+                        "parse_quality_score": parse_quality_score,
                     }
                 }
             else:

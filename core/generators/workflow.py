@@ -19,6 +19,7 @@ The workflow uses LangGraph StateGraph for reliable orchestration with:
 import json
 import re
 import asyncio
+import logging
 import uuid
 from typing import Dict, Any, List, Optional
 from pathlib import Path
@@ -37,8 +38,10 @@ from .module_gen import ModuleGenerator
 from .decomposition import decompose_form
 from .decomposition_validator import DecompositionValidator
 from .human_review import HumanReviewHandler
-from .task_utils import sanitize_form_name, create_task_directory, sanitize_field_key
+from .task_utils import sanitize_form_name
 from config.models import CODEGEN_SIGNATURE_MODEL
+
+logger = logging.getLogger(__name__)
 
 
 class WorkflowOrchestrator:
@@ -229,6 +232,36 @@ class WorkflowOrchestrator:
             coverage = validation_results.get("field_coverage", {})
             print(f"    Fields covered: {coverage.get('fields_covered')}/{coverage.get('total_form_fields')}, DAG valid: ✓, Pipeline valid: ✓")
 
+            # Phase 2 B7: Risk scorer + tier computation
+            try:
+                from .risk_scorer import score_decomposition
+                risk = score_decomposition(state["decomposition"], state["form_data"])
+                validation_results["risk_signals"] = risk["aggregated"]
+                validation_results["risk_by_signature"] = risk["by_signature"]
+                validation_results["risk_counts"] = risk["counts"]
+                validation_results["review_tier"] = risk["tier"]
+                state["validation_results"] = validation_results
+                counts = risk["counts"]
+                print(f"    Risk tier: {risk['tier']} (high={counts['high']}, warn={counts['warn']}, info={counts['info']})")
+            except Exception as e:
+                print(f"    Risk scoring failed (non-fatal): {e}")
+
+        # If validation passed and we are about to pause for human review,
+        # back up state to Supabase BEFORE the interrupt fires. The
+        # `human_review` node body never runs under `interrupt_before`, so the
+        # save must happen here — otherwise `approve_decomposition` resumes on
+        # a different worker and finds "No saved state found".
+        if state.get("decomposition_valid"):
+            tier = validation_results.get("review_tier", "normal")
+            will_pause_for_review = (
+                state.get("human_review_enabled", False) and tier != "auto"
+            )
+            if will_pause_for_review:
+                try:
+                    self.human_review_handler.backup_state_for_review(state)
+                except Exception as e:
+                    print(f"⚠️  Pre-interrupt state backup failed: {e}")
+
         state["current_stage"] = "validation_complete"
         return state
 
@@ -255,50 +288,94 @@ class WorkflowOrchestrator:
         try:
             all_signatures = state["decomposition"].get("signatures", [])
 
-            for idx, enriched_sig in enumerate(all_signatures, 1):
-                sig_name = enriched_sig.get("name", f"Signature{idx}")
-                print(f"\n[{idx}/{len(all_signatures)}] {sig_name}")
+            # Broadcast field list so frontend can show skeletons
+            if self.log_callback:
+                sig_list = [{"name": s.get("name", ""), "fields": list(s.get("fields", {}).keys())} for s in all_signatures]
+                self.log_callback(json.dumps({"_type": "field_list", "signatures": sig_list}), "info")
 
+            # ── Parallel signature generation ─────────────────────────────────
+            # All signatures run concurrently via ThreadPoolExecutor.
+            # A shared threading.Semaphore caps total in-flight LLM calls across
+            # all signatures AND their per-column enrichment calls combined.
+            #
+            # Semaphore sizing for 4k calls/min API limit:
+            #   - Each LLM call takes ~2-3 s latency
+            #   - 4000 calls/min = ~66/sec → can sustain ~150 concurrent calls
+            #   - A form rarely has >50 total calls (signatures + columns combined)
+            #   - Set to 20 to leave headroom for simultaneous extractions/users
+            import threading
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            MAX_CONCURRENT_LLM_CALLS = 20
+            semaphore = threading.Semaphore(MAX_CONCURRENT_LLM_CALLS)
+
+            def _generate_one(idx_sig_tuple):
+                idx, enriched_sig = idx_sig_tuple
+                sig_name = enriched_sig.get("name", f"Signature{idx}")
+                print(f"\n[{idx}/{len(all_signatures)}] {sig_name} — starting")
                 try:
-                    result = self.sig_gen.generate_signature(enriched_sig)
+                    result = self.sig_gen.generate_signature(
+                        enriched_sig, semaphore=semaphore
+                    )
+                    return idx, sig_name, enriched_sig, result, None
+                except Exception as e:
+                    import traceback as _tb
+                    return idx, sig_name, enriched_sig, None, (str(e), _tb.format_exc())
+
+            with ThreadPoolExecutor(max_workers=len(all_signatures)) as pool:
+                futures = [
+                    pool.submit(_generate_one, (idx, sig))
+                    for idx, sig in enumerate(all_signatures, 1)
+                ]
+                # Collect in completion order for live progress broadcast;
+                # sort into index order at the end so signatures_code is stable.
+                completed_items = []
+                for future in as_completed(futures):
+                    idx, sig_name, enriched_sig, result, err = future.result()
+                    fields = enriched_sig.get("fields", {})
+
+                    if err:
+                        exc_str, tb_str = err
+                        state["errors"].append(f"Error generating {sig_name}: {exc_str}")
+                        print(f"  ✗ [{sig_name}] Error: {exc_str}\n{tb_str}")
+                        completed_items.append((idx, None))
+                        continue
 
                     if result["is_valid"]:
                         class_name = sanitize_form_name(sig_name)
-                        fields = enriched_sig.get("fields", {})
                         output_field = list(fields.keys())[0] if fields else "output"
-
-                        signatures_code.append({
+                        entry = {
                             "signature_name": sig_name,
                             "class_name": class_name,
                             "code": result["code"],
+                            "spec": result.get("spec"),
                             "output_field": output_field,
                             "requires_context": bool(enriched_sig.get("depends_on")),
                             "context_fields": enriched_sig.get("depends_on", [])
-                        })
-                        print(f"  ✓ Generated")
+                        }
+                        completed_items.append((idx, entry))
+                        print(f"  ✓ [{sig_name}] Generated")
+
+                        if self.log_callback:
+                            self.log_callback(json.dumps({
+                                "_type": "field_done",
+                                "name": sig_name,
+                                "fields": list(fields.keys()),
+                                "index": idx,
+                                "total": len(all_signatures)
+                            }), "info")
                     else:
-                        errors = result.get('errors', [])
-                        state["errors"].append(
-                            f"Failed to generate {sig_name}: {errors}")
-                        print(f"  ✗ Generation failed")
-                        for error in errors:
-                            print(f"     • {error}")
+                        errors = result.get("errors", [])
+                        state["errors"].append(f"Failed to generate {sig_name}: {errors}")
+                        print(f"  ✗ [{sig_name}] Generation failed: {errors}")
+                        completed_items.append((idx, None))
 
-                except Exception as e:
-                    state["errors"].append(
-                        f"Error generating {sig_name}: {str(e)}")
-                    print(f"  ✗ Error: {str(e)}")
-                    import traceback
-                    traceback.print_exc()
+            # Restore original signature order (futures complete out of order)
+            for _, entry in sorted(completed_items, key=lambda x: x[0]):
+                if entry is not None:
+                    signatures_code.append(entry)
 
-                # Add delay to avoid rate limiting (except after last signature)
-                if idx < len(all_signatures):
-                    import time
-                    print(f"Waiting 6 seconds to avoid rate limit...")
-                    time.sleep(6)
-
-            print(
-                f"\nGenerated {len(signatures_code)}/{len(all_signatures)} signatures")
+            print(f"\nGenerated {len(signatures_code)}/{len(all_signatures)} signatures")
 
         except Exception as e:
             state["errors"].append(
@@ -314,72 +391,64 @@ class WorkflowOrchestrator:
 
         return state
 
-    def _node_generate_modules(
-        self, state: CompleteTaskGenerationState
-    ) -> CompleteTaskGenerationState:
-        """Node 4: Generate modules for signatures"""
-        print(f"\n{'='*70}")
-        print(f"STAGE: Generating Modules")
-        print(f"{'='*70}")
+    def _build_schema_def(self, state: CompleteTaskGenerationState) -> Optional[Dict[str, Any]]:
+        """Build schema_def dict from workflow state for runtime class construction.
 
-        if self.log_callback:
-            self.log_callback("⚙️ Stage: Generating extractor modules...", "info")
+        Returns None if any signature is missing its spec (e.g. on validation failure),
+        so callers can skip schema_def without crashing.
+        """
+        try:
+            enriched_sigs_map = {
+                s["name"]: s
+                for s in state["decomposition"].get("signatures", [])
+            }
 
-        # Check if signatures were generated
-        if "signatures_code" not in state or not state["signatures_code"]:
-            error_msg = "No signatures available for module generation"
-            state["errors"].append(error_msg)
-            state["modules_code"] = []
-            state["current_stage"] = "modules_failed"
-            print(f"✗ {error_msg}")
-            return state
+            sig_defs = []
+            for sig_code in state.get("signatures_code", []):
+                spec = sig_code.get("spec")
+                if not spec:
+                    logger.warning(
+                        "schema_def build skipped: signature '%s' has no spec",
+                        sig_code.get("class_name", "?"),
+                    )
+                    return None
+                sig_name = sig_code["signature_name"]
+                enriched_sig = enriched_sigs_map.get(sig_name, {})
+                sig_def = self.sig_gen.spec_to_sig_def(spec, enriched_sig)
+                sig_defs.append(sig_def)
 
-        modules_code = []
+            if not sig_defs:
+                return None
 
-        for idx, sig_code in enumerate(state["signatures_code"], 1):
-            sig_name = sig_code["signature_name"]
-            print(
-                f"\n[{idx}/{len(state['signatures_code'])}] Module for {sig_name}")
+            # Fallback structures per signature class name
+            fallback_structures: Dict[str, Any] = {}
+            for sig_code in state.get("signatures_code", []):
+                class_name = sig_code["class_name"]
+                sig_name = sig_code["signature_name"]
+                enriched_sig = enriched_sigs_map.get(sig_name, {})
+                fallback_structures[class_name] = self.mod_gen.create_fallback_structure(enriched_sig)
 
-            try:
-                all_sigs = state["decomposition"].get("signatures", [])
-                enriched_sig = next(
-                    (s for s in all_sigs if s.get("name") == sig_name), {})
+            # field_name → signature class_name mapping
+            field_map: Dict[str, str] = {}
+            for sig_code in state.get("signatures_code", []):
+                class_name = sig_code["class_name"]
+                sig_name = sig_code["signature_name"]
+                enriched_sig = enriched_sigs_map.get(sig_name, {})
+                for fname in enriched_sig.get("fields", {}).keys():
+                    field_map[fname] = class_name
 
-                fallback = self.mod_gen.create_fallback_structure(enriched_sig)
-
-                result = self.mod_gen.generate_module(
-                    sig_code["class_name"],
-                    sig_code["output_field"],
-                    fallback,
-                    requires_fields=sig_code.get("context_fields", []),
-                )
-
-                if result["is_valid"]:
-                    modules_code.append(result["code"])
-                    print(f"  ✓ Module generated")
-                else:
-                    errors = result.get('errors', [])
-                    state["errors"].append(
-                        f"Failed to generate module for {sig_name}: {errors}")
-                    print(f"  ✗ Module generation failed")
-                    for error in errors:
-                        print(f"     • {error}")
-
-            except Exception as e:
-                state["errors"].append(
-                    f"Error generating module for {sig_name}: {str(e)}")
-                print(f"  ✗ Error: {str(e)}")
-
-        state["modules_code"] = modules_code
-        state["current_stage"] = "modules_generated"
-
-        print(f"\nGenerated {len(modules_code)} modules")
-
-        if self.log_callback:
-            self.log_callback(f"✓ Generated {len(modules_code)} extractor modules", "success")
-
-        return state
+            return {
+                "version": 1,
+                "schema_name": state["task_name"],
+                "task_name": state["task_name"],
+                "signatures": sig_defs,
+                "pipeline_stages": state["decomposition"].get("pipeline", []),
+                "field_to_signature_map": field_map,
+                "fallback_structures": fallback_structures,
+            }
+        except Exception as e:
+            logger.warning("Failed to build schema_def: %s", e)
+            return None
 
     def _node_finalize_and_assemble(
         self, state: CompleteTaskGenerationState
@@ -397,37 +466,20 @@ class WorkflowOrchestrator:
             if not state.get("signatures_code"):
                 raise ValueError("No signatures were generated")
 
-            # Assemble signatures file using SignatureGenerator
-            signatures_file = self.sig_gen.assemble_signatures_file(
-                state["signatures_code"],
-                state["task_name"]
-            )
-
-            # Collect signature class names for imports
-            signature_class_names = []
-            for sig_code in state["signatures_code"]:
-                if "class_name" in sig_code:
-                    signature_class_names.append(sig_code["class_name"])
-
-            # Assemble modules file using ModuleGenerator
-            modules_file = self.mod_gen.assemble_modules_file(
-                state["modules_code"],
-                state["task_name"],
-                signature_class_names
-            )
+            # Build schema_def for runtime class construction
+            schema_def = self._build_schema_def(state)
 
             # Prepare result
             state["result"] = {
                 "success": True,
                 "task_name": state["task_name"],
-                "signatures_file": signatures_file,
-                "modules_file": modules_file,
                 "field_mapping": state["field_to_signature_map"],
                 "decomposition": state["decomposition"],
+                "schema_def": schema_def,
                 "statistics": {
                     "total_form_fields": len(state["form_data"].get("fields", [])),
                     "signatures": len(state["signatures_code"]),
-                    "modules": len(state["modules_code"]),
+                    "modules": len(state.get("modules_code", [])),
                     "pipeline_stages": len(state["decomposition"].get("pipeline", [])),
                     "total_attempts": state["attempt"]
                 }
@@ -438,7 +490,8 @@ class WorkflowOrchestrator:
 
             print(f"✓ Task generation completed successfully")
             print(f"  - {len(state['signatures_code'])} signatures")
-            print(f"  - {len(state['modules_code'])} modules")
+            if schema_def:
+                print(f"  - schema_def built ({len(schema_def['signatures'])} sig defs)")
 
         except Exception as e:
             state["errors"].append(f"Finalization failed: {str(e)}")
@@ -457,10 +510,14 @@ class WorkflowOrchestrator:
     def _route_after_decomposition_validation(self, state: CompleteTaskGenerationState) -> str:
         """Routing: After decomposition validation"""
         if state["decomposition_valid"]:
-            # Check if human review is enabled
-            if state.get("human_review_enabled", False):
+            # Phase 2 B7: auto-tier bypasses human review
+            tier = state.get("validation_results", {}).get("review_tier", "normal")
+            if state.get("human_review_enabled", False) and tier != "auto":
                 return "human_review"
             else:
+                if state.get("human_review_enabled") and tier == "auto":
+                    state["auto_approved"] = True
+                    print(f"  ⚡ Auto-approved (tier=auto) — skipping human review")
                 return "generate_signatures"
         else:
             # Retry decomposition if attempts remaining
@@ -474,12 +531,7 @@ class WorkflowOrchestrator:
         return HumanReviewHandler.route_after_human_review(state)
 
     def _route_after_signatures(self, state: CompleteTaskGenerationState) -> str:
-        """Routing: After signature generation"""
-        # Generate modules if any signatures were successfully generated
-        # Even if there are some errors, we should generate modules for successful signatures
-        if state.get("signatures_code") and len(state["signatures_code"]) > 0:
-            return "generate_modules"
-        # Only skip modules if no signatures were generated at all
+        """Routing: After signature generation."""
         return "finalize"
 
     def _build_workflow_graph(self):
@@ -538,8 +590,6 @@ class WorkflowOrchestrator:
         workflow.add_node("human_review", self._node_human_review)
         workflow.add_node("generate_signatures",
                           self._node_generate_signatures)
-        workflow.add_node("generate_modules",
-                          self._node_generate_modules)
         workflow.add_node("finalize", self._node_finalize_and_assemble)
 
         # Set entry point
@@ -572,16 +622,7 @@ class WorkflowOrchestrator:
             }
         )
 
-        workflow.add_conditional_edges(
-            "generate_signatures",
-            self._route_after_signatures,
-            {
-                "generate_modules": "generate_modules",
-                "finalize": "finalize"
-            }
-        )
-
-        workflow.add_edge("generate_modules", "finalize")
+        workflow.add_edge("generate_signatures", "finalize")
         workflow.add_edge("finalize", END)
 
         # Compile workflow with interrupt for human review

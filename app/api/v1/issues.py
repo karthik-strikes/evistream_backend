@@ -32,7 +32,6 @@ async def create_issue(
             user_email = None
 
         result = supabase.table("issue_reports").insert({
-            "user_id": str(user_id),
             "user_email": user_email,
             "title": data.title,
             "description": data.description,

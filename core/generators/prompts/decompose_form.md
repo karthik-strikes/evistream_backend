@@ -25,8 +25,6 @@ it into the NATURAL WORKFLOW STAGES someone would follow to complete this form.
 
 **COMMON WORKFLOW STAGES (not all forms have all stages):**
 
-**COMMON WORKFLOW STAGES (not all forms have all stages):**
-
 1. **Context Establishment**
    - Identify: who/what/when this form is about
    - Examples: study_id, patient_id, reference_id, first_author
@@ -85,9 +83,10 @@ GROUPING STRATEGY: FOLLOW THE NATURAL WORKFLOW
 **Key Question: "What information do I need to know FIRST to extract this field?"**
 
 **BIAS TOWARD SIMPLICITY:**
-- Most forms need 3-4 signatures
-- If you have 6+ signatures, you're likely over-splitting
+- Most forms need 3-4 signatures; only complex multi-stage forms justify 5-7
+- If you have 8+ signatures, you're over-splitting — reconsider your grouping
 - When uncertain, group fields together rather than separate
+- But avoid mega-signatures too: keep each signature to at most ~6 fields — very wide signatures degrade extraction reliability (fields get silently dropped)
 
 ═══════════════════════════════════════════════════════════════════════════════
 IDENTIFYING DEPENDENCIES
@@ -171,7 +170,10 @@ This field extracts EVERY intervention mentioned, creating an array:
 
 ✓ **Rule 2: Treat subform as single extraction task**
   - Extracting "ALL interventions" is ONE cognitive workflow stage
-  - Usually gets its own signature (separate from simple fields)
+  - ALWAYS give it its own signature, never grouped with scalar fields — the
+    pipeline runs tables through a dedicated extractor and will split them out
+    automatically; grouping them yourself only makes the reviewed decomposition
+    differ from what actually runs
   - Signature name should indicate "all" or "multiple" (e.g., "ExtractAllInterventions")
 
 ✓ **Rule 3: Count fields correctly**
@@ -365,6 +367,11 @@ SIGNATURE NAMING CONVENTIONS
 - Extraction: "Extract[DataType]" or "Collect[Measurements]"
 - Synthesis: "Synthesize[Purpose]" or "Aggregate[Summary]"
 
+**CRITICAL: Every signature name must be globally unique across your entire output.**
+- Never assign the same name to two different groups, even if they share a cognitive behavior.
+- If two groups both classify things, differentiate: "ClassifyStudyDesign" vs "ClassifyFundingSource" — NOT both "ClassifyStudyDesignAndFunding".
+- Duplicate names will be rejected and force a retry.
+
 ═══════════════════════════════════════════════════════════════════════════════
 STEP-BY-STEP PROCESS
 ═══════════════════════════════════════════════════════════════════════════════
@@ -415,7 +422,7 @@ Form data:
     {"field_name": "other_outcome_specification", "field_type": "text"},
     {"field_name": "follow_up_time_point", "field_type": "text"},
     {"field_name": "adverse_effect_specified", "field_type": "text"},
-    {"field_name": "all_adverse_effects_reported", "field_type": "list"},
+    {"field_name": "all_adverse_effects_reported", "field_type": "text"},
     {"field_name": "number_analyzed", "field_type": "number"},
     {"field_name": "number_of_events", "field_type": "number"},
     {"field_name": "percentage_of_events", "field_type": "text"},
@@ -563,7 +570,7 @@ COMMON MISTAKES TO AVOID
    Right: Both are independent, just one is only filled conditionally
 
 ❌ Over-splitting into too many signatures
-   If you have 6+ signatures for a simple form, reconsider your grouping
+   If you exceed the typical counts above (8+ signatures), reconsider your grouping
 
 ❌ Separating specification fields from what they specify
    Wrong: other_outcome_specification in separate signature from outcome_code

@@ -272,7 +272,7 @@ async def websocket_job_updates(
 
     try:
         from app.services.auth_service import auth_service
-        user_id = auth_service.verify_token(token)
+        user_id, _role = auth_service.verify_token(token)
     except Exception:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
@@ -300,11 +300,14 @@ async def websocket_job_updates(
                 .execute()
 
             if not project_result.data:
-                # Check if user is a project member
+                # Check if user is a project member with results-view permission.
+                # Previously this only checked membership — any member could
+                # subscribe to extraction streams regardless of `can_view_results`.
                 member_result = _supabase.table("project_members")\
                     .select("id")\
                     .eq("project_id", project_id)\
                     .eq("user_id", str(user_id))\
+                    .eq("can_view_results", True)\
                     .execute()
 
                 if not member_result.data:
@@ -317,13 +320,24 @@ async def websocket_job_updates(
 
     await manager.connect(job_id, websocket)
 
+    # Coordination: do not replay cached messages until the Redis subscription
+    # is actually established. Otherwise messages published between cache-read
+    # and subscribe-complete are lost (the gap is a fraction of a millisecond
+    # but live under load, especially the worker's terminal `complete` event).
+    sub_ready = asyncio.Event()
+
     async def _redis_subscriber():
         """Subscribe to Redis pub/sub and forward messages to this WebSocket client."""
         from app.config import settings
         r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
         async with r:
             pubsub = r.pubsub()
-            await pubsub.subscribe(f"ws_jobs:{job_id}")
+            try:
+                await pubsub.subscribe(f"ws_jobs:{job_id}")
+            finally:
+                # Set the gate even if subscribe raised — the main coroutine
+                # must not block forever waiting for a failed subscriber.
+                sub_ready.set()
             try:
                 async for msg in pubsub.listen():
                     if msg["type"] == "message":
@@ -336,6 +350,13 @@ async def websocket_job_updates(
     sub_task = asyncio.create_task(_redis_subscriber())
 
     try:
+        # Wait for the pubsub subscription to be live before replaying cached
+        # messages. Bounded wait so a Redis hiccup can't deadlock the handler.
+        try:
+            await asyncio.wait_for(sub_ready.wait(), timeout=5.0)
+        except asyncio.TimeoutError:
+            logger.warning("Redis subscribe slow for job %s; proceeding without ordering guarantee", job_id)
+
         # Send initial connection message
         await manager.send_personal_message({
             "type": "connected",
@@ -344,7 +365,7 @@ async def websocket_job_updates(
             "timestamp": asyncio.get_event_loop().time()
         }, websocket)
 
-        # Send any cached messages
+        # Send any cached messages (now safe: live messages are queued by pubsub)
         cached_messages = await manager.get_cached_messages(job_id)
         for msg in cached_messages:
             await manager.send_personal_message(msg, websocket)

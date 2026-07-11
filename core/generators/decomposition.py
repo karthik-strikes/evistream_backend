@@ -47,6 +47,33 @@ def _prepare_stage1_prompt(form_data: Dict[str, Any], feedback: Optional[str] = 
         "[[FORM_DATA_JSON]]", json.dumps(form_data, indent=2)
     )
 
+    # Phase 2 B5: Locked signatures block — surfaced even without feedback
+    locked_block = ""
+    locked_sigs = form_data.get("locked_signatures") or []
+    if locked_sigs:
+        locked_specs = [
+            {
+                "name": sig.get("name"),
+                "fields": list((sig.get("fields") or {}).keys()),
+                "depends_on": sig.get("depends_on") or [],
+            }
+            for sig in locked_sigs
+        ]
+        locked_block = f"""
+═══════════════════════════════════════════════════════════════════════════════
+🔒 LOCKED SIGNATURES — DO NOT MODIFY
+═══════════════════════════════════════════════════════════════════════════════
+
+The reviewer marked these signatures as correct. You MUST reproduce them
+EXACTLY in the new decomposition — same name, same field set, same depends_on.
+Do not rename, merge, split, reorder fields within, or change dependencies of
+these locked signatures:
+
+{json.dumps(locked_specs, indent=2)}
+═══════════════════════════════════════════════════════════════════════════════
+
+"""
+
     if feedback:
         # Build previous decomposition context so the model knows what it generated before
         prev_context = ""
@@ -86,6 +113,10 @@ below — ignore that guidance when the human specifies a different count.
         # Inject feedback at the very top, before everything else
         stage1_prompt = feedback_block + stage1_prompt
 
+    # Locked block sits above feedback (highest priority)
+    if locked_block:
+        stage1_prompt = locked_block + stage1_prompt
+
     return stage1_prompt
 
 
@@ -115,7 +146,11 @@ def _execute_stage1(model, stage1_prompt: str, max_retries: int = 3) -> Stage1Ou
 
             structured_model = model.with_structured_output(Stage1Output)
 
-            stage1_result = structured_model.invoke(stage1_prompt)
+            from utils.langchain_cost_callback import make_callback_config
+            stage1_result = structured_model.invoke(
+                stage1_prompt,
+                config=make_callback_config("codegen:decompose"),
+            )
 
             if stage1_result is None:
                 raise ValueError(
@@ -125,6 +160,17 @@ def _execute_stage1(model, stage1_prompt: str, max_retries: int = 3) -> Stage1Ou
             logger.info(
                 f"Decomposition complete: {len(stage1_result.signatures)} signatures generated"
             )
+
+            # Fail fast on duplicate names — retries within this loop
+            seen: Dict[str, int] = {}
+            for sig in stage1_result.signatures:
+                seen[sig.name] = seen.get(sig.name, 0) + 1
+            dupes = [n for n, c in seen.items() if c > 1]
+            if dupes:
+                raise ValueError(
+                    f"Duplicate signature names in decomposition: {dupes}. "
+                    "Use distinct names for each group."
+                )
 
             return stage1_result
 
@@ -199,10 +245,55 @@ def _enrich_signatures_with_metadata(
                 "field_description": original_field["field_description"],
             }
 
-            # Optional attributes (copied only if present)
-            for attr in ["options", "example", "extraction_hints", "subform_fields"]:
+            # Optional attributes (copied only if present).
+            # `multiple` matters: without it the spec LLM prompts multi-selects
+            # as single-select ("exactly one of the options").
+            for attr in ["options", "example", "extraction_hints", "subform_fields", "hints", "rules", "examples", "multiple"]:
                 if attr in original_field:
                     enriched_field[attr] = original_field[attr]
+
+            # ── Move 2: Pre-split embedded prose BEFORE the LLM sees it ──────
+            # If the user's field_description contains inline Hints/Rules/Examples
+            # blocks (e.g. "Total dose. Examples: '2 g'. Use NR if not reported."),
+            # split them into structured arrays NOW so the "user wins" rule in
+            # signature_gen preserves structured data instead of preserving prose.
+            # This fixes the root cause of 6/8 subform columns arriving prose-baked.
+            try:
+                from dspy_components.runtime_builders import _parse_embedded_sections as _pes
+                # Pre-split parent description
+                raw_desc = enriched_field.get("field_description") or ""
+                if raw_desc and not (enriched_field.get("hints") or enriched_field.get("rules") or enriched_field.get("examples")):
+                    parsed = _pes(raw_desc)
+                    if parsed["hints"] or parsed["rules"] or parsed["examples"]:
+                        enriched_field["field_description"] = parsed["description"]
+                        if parsed["hints"]:
+                            enriched_field.setdefault("hints", parsed["hints"])
+                        if parsed["rules"]:
+                            enriched_field.setdefault("rules", parsed["rules"])
+                        if parsed["examples"]:
+                            enriched_field.setdefault("examples", parsed["examples"])
+
+                # Pre-split each subfield column description
+                raw_sfs = enriched_field.get("subform_fields") or []
+                if raw_sfs:
+                    cleaned_sfs = []
+                    for col in raw_sfs:
+                        col = dict(col)
+                        col_desc = col.get("field_description") or ""
+                        if col_desc and not (col.get("hints") or col.get("rules") or col.get("examples")):
+                            col_parsed = _pes(col_desc)
+                            if col_parsed["hints"] or col_parsed["rules"] or col_parsed["examples"]:
+                                col["field_description"] = col_parsed["description"]
+                                if col_parsed["hints"]:
+                                    col.setdefault("hints", col_parsed["hints"])
+                                if col_parsed["rules"]:
+                                    col.setdefault("rules", col_parsed["rules"])
+                                if col_parsed["examples"]:
+                                    col.setdefault("examples", col_parsed["examples"])
+                        cleaned_sfs.append(col)
+                    enriched_field["subform_fields"] = cleaned_sfs
+            except ImportError:
+                pass
 
             enriched_sig["fields"][field_name] = enriched_field
 
@@ -210,6 +301,61 @@ def _enrich_signatures_with_metadata(
 
     logger.info(f"Enriched {len(enriched_signatures)} signatures")
     return enriched_signatures
+
+
+def _isolate_table_fields(enriched_signatures: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Give every subform/table field its own single-field signature.
+
+    The two-stage table extractor only activates for signatures with exactly
+    one output field (runtime_builders.build_schema_classes). The decompose
+    prompt asks the LLM to isolate tables but cannot guarantee it — enforce it
+    here so a table grouped with scalars never silently loses its extraction
+    strategy at runtime.
+    """
+    result: List[Dict[str, Any]] = []
+    used_names = {sig["name"] for sig in enriched_signatures}
+
+    for sig in enriched_signatures:
+        fields = sig.get("fields", {})
+        table_items = [
+            (fname, fmeta) for fname, fmeta in fields.items()
+            if (fmeta or {}).get("subform_fields")
+        ]
+        if not table_items or len(fields) == 1:
+            result.append(sig)
+            continue
+
+        scalar_fields = {
+            fname: fmeta for fname, fmeta in fields.items()
+            if not (fmeta or {}).get("subform_fields")
+        }
+        original_name_taken = False
+        if scalar_fields:
+            result.append({**sig, "fields": scalar_fields})
+            original_name_taken = True
+
+        for fname, fmeta in table_items:
+            if not original_name_taken:
+                new_name = sig["name"]
+                original_name_taken = True
+            else:
+                base = "ExtractAll" + "".join(w.capitalize() for w in fname.split("_") if w)
+                new_name, n = base, 2
+                while new_name in used_names:
+                    new_name = f"{base}{n}"
+                    n += 1
+            used_names.add(new_name)
+            result.append({
+                "name": new_name,
+                "fields": {fname: fmeta},
+                "depends_on": list(sig.get("depends_on") or []),
+            })
+            logger.info(
+                "Isolated table field '%s' from signature '%s' into '%s'",
+                fname, sig["name"], new_name,
+            )
+
+    return result
 
 
 def _auto_generate_pipeline(signatures: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -374,14 +520,22 @@ def decompose_form(
 
     logger.info("Decomposition complete")
 
-    # Build field coverage map
-    field_coverage = _build_field_coverage(stage1_result.signatures)
-
     # Enrich signatures with metadata from form_data
     enriched_signatures = _enrich_signatures_with_metadata(
         stage1_result.signatures,
         form_data
     )
+
+    # Give every table (subform) field its own signature — the two-stage
+    # extractor only activates for single-output signatures.
+    enriched_signatures = _isolate_table_fields(enriched_signatures)
+
+    # Build field coverage map from the final (post-isolation) grouping
+    field_coverage = {
+        fname: sig["name"]
+        for sig in enriched_signatures
+        for fname in sig.get("fields", {}).keys()
+    }
 
     # Auto-generate pipeline from dependencies
     pipeline = _auto_generate_pipeline(enriched_signatures)

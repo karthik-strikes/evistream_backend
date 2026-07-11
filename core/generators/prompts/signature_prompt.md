@@ -10,8 +10,20 @@ INPUT SPECIFICATION (ENRICHED SIGNATURE FORMAT)
 
 This enriched signature contains:
 - "name": The signature class name
-- "fields": Dict of field_name → field metadata (type, description, options, hints, etc.)
+- "fields": Dict of field_name → field metadata (type, description, examples, options, hints, etc.)
 - "depends_on": List of field names this signature depends on (empty for independent signatures)
+
+⚠️ USER-SUPPLIED FIELD INPUTS ARE AUTHORITATIVE
+
+When a field in the "fields" dict contains a non-empty `description` key:
+- **Never rewrite it.** Your output `description` for that field MUST match the user's input verbatim (whitespace-normalised at most).
+- **Use it to steer your `hints` and `rules`** — they must be consistent with, not contradictory to, the user's stated meaning.
+
+When a field contains a non-empty `examples` list:
+- **Never delete, modify, or reorder the user's examples.** You may append additional examples (especially the NR case) if useful; do not alter the user's entries.
+- **Use the examples as anchor cases** — your generated `hints` and `rules` must accommodate them.
+
+If a field has no `description` key (or it is empty), generate one that best reflects the field's purpose.
 
 ═══════════════════════════════════════════════════════════════════════════════
 UNDERSTANDING DSPy SIGNATURES
@@ -50,97 +62,96 @@ ALL output fields return a dictionary with two keys:
 Type mapping for the "value" key from field metadata field_type:
 - "text" → str
 - "number" → int (or float for decimals)
-- "enum" → str (with options listed)
+- "select" → str (single selection, with options listed) or List[str] (if multiple=true)
 - "boolean" → bool
-- "list" → str (comma-separated or JSON string)
-- "array" (with subform_fields) → List[Dict[str, Any]] (special case - see below)
+- "array" (with subform_fields) → List[Dict[str, Any]] *inside the "value" key only* (see SUBFORM section)
 
 **SPECIAL CASE: Subform Fields (Repeating Data)**
 
 If field metadata contains:
 - field_type: "array"
-- field_control_type: "subform_table"  
+- field_control_type: "subform_table"
 - subform_fields: [list of nested field definitions]
 
 This is a SUBFORM that extracts MULTIPLE instances of structured data.
 
-Field type declaration: List[Dict[str, Any]]
+Field type declaration: **Dict[str, Any]** (NEVER `List[Dict[str, Any]]` at the OUTER field level).
 
-The field extracts an array of objects, where each object has keys matching the subform_fields.
+The outer annotation is ALWAYS `Dict[str, Any]` because every output field returns the envelope `{"value": ..., "source_text": "..."}`. The list lives **inside** the `"value"` key.
 
 For subform fields:
-1. Use List[Dict[str, Any]] as the field_type (NOT Dict[str, Any])
-2. In the description, explain this extracts ALL instances found
-3. List the structure of each item (what keys it contains from subform_fields)
-4. Provide examples showing an array with multiple objects
-5. For "NR" case, still use Dict format: {"value": "NR", "source_text": "NR"}
-
-Example subform output:
-{
-  "value": [
-    {"intervention_name": "Drug A", "dosage": "10mg", "duration": "12 weeks"},
-    {"intervention_name": "Placebo", "dosage": "matching", "duration": "12 weeks"}
-  ],
-  "source_text": "Table 1: Interventions. Drug A group received 10mg daily for 12 weeks. Placebo group received matching tablets for 12 weeks."
-}
-
-Standard Field type declaration: Dict[str, Any]
+1. Use **Dict[str, Any]** as the outer field_type (same as scalar fields)
+2. The `"value"` key contains the array (`List[Dict[str, Any]]` shape)
+3. **PER-CELL SOURCE GROUNDING** — Each cell inside each row MUST itself be a `{"value": ..., "source_text": ...}` dict, mirroring how scalar fields work. The outer envelope still carries a table-level `source_text`; the per-cell `source_text` quotes the specific snippet that grounds that one cell.
+4. In the `description`, describe the field's purpose in 1–3 sentences only — what data it captures and where to look. Do NOT enumerate column names, types, or per-column rules inside the parent `description`, `hints`, or `rules`.
+5. You MAY return a `subform_fields` array with one entry per user-provided column. Each entry may carry:
+   - `field_name` (REQUIRED — must exactly match an input column name)
+   - `field_description` (copy verbatim if user provided non-empty; enrich only when blank)
+   - `hints` (column-specific extraction hints — omit or leave [] when not needed)
+   - `rules` (column-specific format constraints — omit or leave [] when not needed)
+   - `examples` (column-specific {value, source_text} examples — these are merged with the user's)
+6. STRUCTURAL RULES for `subform_fields`:
+   (a) Never add, remove, rename, or reorder columns. The `field_name` values you return must be a subset of the user's column names.
+   (b) Do NOT return `field_type` in subform_fields entries — that is user-owned.
+   (c) If a column needs no enrichment, omit it from `subform_fields` entirely.
+7. For "NR" case at the field level, use: `{"value": "NR", "source_text": "NR"}` (NOT an empty list). For a single missing cell inside an otherwise-present row, use `{"value": "NR", "source_text": "NR"}` for that cell.
 
 **Rule 3: Every output field must have:**
 - Clear description of what to extract
 - Extraction rules and constraints
 - Source grounding instructions
-- Examples with both value and source_text (including "NR" for not reported)
+- Examples with both value and source_text (include an NR example only for fields that can be genuinely missing in the source)
 - Options (if enum/select type)
 - Extraction hints (if provided in spec)
 
 ═══════════════════════════════════════════════════════════════════════════════
-FIELD DESCRIPTION STRUCTURE
+FIELD OUTPUT STRUCTURE (Structured Keys — Phase B)
 ═══════════════════════════════════════════════════════════════════════════════
 
-Each output field description should follow this structure:
+Each output field MUST use separate structured keys. Do NOT bake hints, rules,
+or examples inside the description string.
 
+```json
+{
+  "field_name": "...",
+  "field_type": "Dict[str, Any]",
+  "description": "<CLEAN 1-3 SENTENCE SUMMARY of what to extract. No column enumeration for table fields.>",
+  "hints": [
+    "<soft hint: where/how to locate the value in the document>"
+  ],
+  "rules": [
+    "<hard constraint: format, normalisation, enum enforcement, must/must-not>"
+    // <-- include "Use \"NR\" if not reported" ONLY if this field can be genuinely missing -->
+  ],
+  "options": [],
+  "examples": [
+    {"value": "<EXAMPLE_VALUE_1>", "source_text": "<EXACT QUOTE FROM DOCUMENT>"}
+    // <-- add {"value":"NR","source_text":"NR"} ONLY if NR is a plausible value for this field -->
+  ],
+  "subform_fields": [
+    {
+      "field_name": "<must exactly match a user column name>",
+      "field_description": "<enriched description — copy verbatim if user provided non-empty; enrich only when blank>",
+      "hints": [],
+      "rules": [],
+      "examples": [{"value": "...", "source_text": "..."}]
+    }
+  ]
+}
 ```
-<ONE_LINE_SUMMARY>
 
-[IF PROVIDED] Description: <METADATA_DESCRIPTION>
+Note: `subform_fields` is only populated for `array`/subform_table fields. Omit for all other field types.
 
-[IF HAS OPTIONS]
-Options:
-- "Option 1"
-- "Option 2"
-- "Option N"
-[END IF]
+Rules for each key:
+- `description`: 1-2 sentence summary only. No headers, no bullets, no embedded sections.
+- `hints`: soft navigation — where/how to find the value. May be empty [].
+- `rules`: hard output constraints — format, normalisation, NR convention, enum enforcement.
+- `options`: allowed values for enum/select fields. Empty [] for free-text fields.
+- `examples`: list of {"value": ..., "source_text": "..."} objects. Include an NR example only when NR is a plausible value for this field.
 
-[IF HAS HINTS]
-Extraction Hints:
-- <HINT_1>
-- <HINT_2>
-[END IF]
-
-Rules:
-- <EXTRACTION_RULE_1>
-- <EXTRACTION_RULE_2>
-[IF ENUM]
-- Must be exactly one of the options listed above
-- Use exact spelling and capitalization
-[END IF]
-- Use "NR" if not reported or value is missing
-
-Source Grounding:
-- Return a dictionary with two keys: "value" and "source_text"
-- "value": The extracted value as specified by the field type
-- "source_text": Copy the exact sentence(s) or paragraph from the document where this value was found
-- Include enough context in source_text to verify the extraction (typically 1-3 sentences)
-- If value is "NR", set source_text to "NR" as well
-
-Examples:
-{"value": <EXAMPLE_VALUE_1>, "source_text": "<EXAMPLE_SOURCE_TEXT_1>"}
-{"value": <EXAMPLE_VALUE_2>, "source_text": "<EXAMPLE_SOURCE_TEXT_2>"}
-{"value": "NR", "source_text": "NR"}
-
-Note: Examples should be valid JSON dictionaries with "value" and "source_text" keys.
-```
+⚠️ DO NOT include a "Source Grounding" block anywhere — it is automatically injected
+   by the runtime for every Dict[str, Any] field. Putting it in description or rules
+   will cause it to appear twice in the extraction prompt.
 
 ═══════════════════════════════════════════════════════════════════════════════
 INPUT FIELDS
@@ -149,7 +160,7 @@ INPUT FIELDS
 **Primary Input: Document Content**
 
 Always include a primary input field for the document:
-- field_name: "markdown_content" or "document"
+- field_name: "markdown_content" — EXACTLY this name. The runtime always supplies the document as `markdown_content`; any other name (e.g. "document") will silently receive no content.
 - type: "str"
 - description: "Full markdown content of the document to extract from"
 
@@ -238,17 +249,56 @@ COMPLETE EXAMPLE
     {
       "field_name": "diagnosis",
       "field_type": "Dict[str, Any]",
-      "description": "Primary medical diagnosis.\n\nDescription: Primary medical diagnosis\n\nExtraction Hints:\n- Look in assessment or chief complaint sections\n\nRules:\n- Extract the main diagnosis verbatim from the document\n- Include ICD codes if mentioned (e.g., \"Type 2 Diabetes (E11.9)\")\n- Use medical terminology as written in the document\n- Use \"NR\" if not reported\n\nSource Grounding:\n- Return a dictionary with two keys: \"value\" and \"source_text\"\n- \"value\": The extracted diagnosis as a string\n- \"source_text\": Copy the exact sentence(s) or paragraph from the document where this diagnosis was found\n- Include enough context in source_text to verify the extraction (typically 1-3 sentences)\n- If value is \"NR\", set source_text to \"NR\" as well\n\nExamples:\n{\"value\": \"Type 2 Diabetes Mellitus (E11.9)\", \"source_text\": \"The patient was diagnosed with Type 2 Diabetes Mellitus (E11.9) based on fasting glucose levels of 145 mg/dL and HbA1c of 7.8%.\"}\n{\"value\": \"Acute Myocardial Infarction\", \"source_text\": \"Assessment: Acute Myocardial Infarction. Patient presented with chest pain, elevated troponin levels, and ST-segment elevation on ECG.\"}\n{\"value\": \"NR\", \"source_text\": \"NR\"}"
+      "description": "Primary medical diagnosis, including ICD code if present.",
+      "hints": ["Look in the assessment, chief complaint, or impression sections"],
+      "rules": [
+        "Extract the main diagnosis verbatim from the document",
+        "Include ICD codes if mentioned (e.g., \"Type 2 Diabetes (E11.9)\")",
+        "Use medical terminology as written in the document",
+        "Use \"NR\" if not reported"
+      ],
+      "options": [],
+      "examples": [
+        {"value": "Type 2 Diabetes Mellitus (E11.9)", "source_text": "The patient was diagnosed with Type 2 Diabetes Mellitus (E11.9) based on fasting glucose levels of 145 mg/dL and HbA1c of 7.8%."},
+        {"value": "Acute Myocardial Infarction", "source_text": "Assessment: Acute Myocardial Infarction. Patient presented with chest pain, elevated troponin levels, and ST-segment elevation on ECG."},
+        {"value": "NR", "source_text": "NR"}
+      ]
     },
     {
       "field_name": "treatment_received",
       "field_type": "Dict[str, Any]",
-      "description": "Treatment or intervention administered to the patient.\n\nDescription: Treatment or intervention administered\n\nRules:\n- Extract complete treatment description from the document\n- Include medication names and dosages if specified\n- Include surgical procedures if mentioned\n- Use \"NR\" if not reported\n\nSource Grounding:\n- Return a dictionary with two keys: \"value\" and \"source_text\"\n- \"value\": The extracted treatment as a string\n- \"source_text\": Copy the exact sentence(s) or paragraph from the document where this treatment was found\n- Include enough context in source_text to verify the extraction (typically 1-3 sentences)\n- If value is \"NR\", set source_text to \"NR\" as well\n\nExamples:\n{\"value\": \"Metformin 500mg twice daily\", \"source_text\": \"Treatment plan: Metformin 500mg twice daily with meals. Patient instructed on dietary modifications and exercise regimen.\"}\n{\"value\": \"Coronary artery bypass grafting (CABG)\", \"source_text\": \"The patient underwent coronary artery bypass grafting (CABG) with three vessel grafts. Surgery completed without complications.\"}\n{\"value\": \"NR\", \"source_text\": \"NR\"}"
+      "description": "Treatment or intervention administered to the patient, including medication names, dosages, and procedures.",
+      "hints": [],
+      "rules": [
+        "Extract complete treatment description from the document",
+        "Include medication names and dosages if specified",
+        "Include surgical procedures if mentioned",
+        "Use \"NR\" if not reported"
+      ],
+      "options": [],
+      "examples": [
+        {"value": "Metformin 500mg twice daily", "source_text": "Treatment plan: Metformin 500mg twice daily with meals. Patient instructed on dietary modifications and exercise regimen."},
+        {"value": "Coronary artery bypass grafting (CABG)", "source_text": "The patient underwent coronary artery bypass grafting (CABG) with three vessel grafts. Surgery completed without complications."},
+        {"value": "NR", "source_text": "NR"}
+      ]
     },
     {
       "field_name": "patient_age",
       "field_type": "Dict[str, Any]",
-      "description": "Patient's age in years.\n\nDescription: Patient's age in years\n\nRules:\n- Extract numeric age value only\n- Round to nearest integer if decimal provided\n- Must be a valid integer between 0 and 120\n- Use \"NR\" if not reported\n\nSource Grounding:\n- Return a dictionary with two keys: \"value\" and \"source_text\"\n- \"value\": The extracted age as an integer\n- \"source_text\": Copy the exact sentence(s) or paragraph from the document where this age was found\n- Include enough context in source_text to verify the extraction (typically 1-3 sentences)\n- If value is \"NR\", set source_text to \"NR\" as well\n\nExamples:\n{\"value\": 45, \"source_text\": \"Patient Demographics: 45-year-old female presenting with recurrent headaches.\"}\n{\"value\": 67, \"source_text\": \"A 67-year-old male with history of hypertension was admitted to the cardiology unit.\"}\n{\"value\": \"NR\", \"source_text\": \"NR\"}"
+      "description": "Patient age in years as a whole number.",
+      "hints": [],
+      "rules": [
+        "Extract numeric age value only",
+        "Round to nearest integer if decimal provided",
+        "Must be a valid integer between 0 and 120",
+        "Use \"NR\" if not reported"
+      ],
+      "options": [],
+      "examples": [
+        {"value": 45, "source_text": "Patient Demographics: 45-year-old female presenting with recurrent headaches."},
+        {"value": 67, "source_text": "A 67-year-old male with history of hypertension was admitted to the cardiology unit."},
+        {"value": "NR", "source_text": "NR"}
+      ]
     }
   ]
 }
@@ -307,7 +357,19 @@ EXAMPLE WITH CONTEXT FIELDS (DEPENDENT SIGNATURE)
     {
       "field_name": "clinical_summary",
       "field_type": "Dict[str, Any]",
-      "description": "Comprehensive summary of patient case.\n\nRules:\n- Synthesize diagnosis, treatment, and age into 2-4 sentence narrative\n- Use professional medical writing style\n- Include all key clinical details\n- Use \"NR\" if cannot create summary due to missing data\n\nSource Grounding:\n- Return a dictionary with two keys: \"value\" and \"source_text\"\n- \"value\": The synthesized summary as a string\n- \"source_text\": Copy the relevant sections from the document used to create the summary\n- Include enough context in source_text to verify the synthesis (typically 2-5 sentences)\n- If value is \"NR\", set source_text to \"NR\" as well\n\nExamples:\n{\"value\": \"A 45-year-old patient presented with Type 2 Diabetes Mellitus. Treatment consisted of Metformin 500mg twice daily with lifestyle modifications. The patient achieved successful glycemic control.\", \"source_text\": \"Patient Demographics: 45-year-old female. Assessment: Type 2 Diabetes Mellitus (E11.9). Treatment plan: Metformin 500mg twice daily with meals. Follow-up: Patient achieved HbA1c target of 6.5%.\"}\n{\"value\": \"67-year-old patient diagnosed with Acute Myocardial Infarction underwent CABG with good recovery and ongoing cardiac rehabilitation.\", \"source_text\": \"A 67-year-old male admitted with Acute Myocardial Infarction. The patient underwent coronary artery bypass grafting (CABG) with three vessel grafts. Post-operative recovery was uncomplicated. Patient enrolled in cardiac rehabilitation program.\"}\n{\"value\": \"NR\", \"source_text\": \"NR\"}"
+      "description": "Comprehensive 2-4 sentence narrative synthesising diagnosis, treatment, and patient age.",
+      "hints": [],
+      "rules": [
+        "Synthesize diagnosis, treatment, and age into 2-4 sentence narrative",
+        "Use professional medical writing style",
+        "Include all key clinical details",
+        "Use \"NR\" if cannot create summary due to missing data"
+      ],
+      "options": [],
+      "examples": [
+        {"value": "A 45-year-old patient presented with Type 2 Diabetes Mellitus. Treatment consisted of Metformin 500mg twice daily with lifestyle modifications. The patient achieved successful glycemic control.", "source_text": "Patient Demographics: 45-year-old female. Assessment: Type 2 Diabetes Mellitus (E11.9). Treatment plan: Metformin 500mg twice daily with meals. Follow-up: Patient achieved HbA1c target of 6.5%."},
+        {"value": "NR", "source_text": "NR"}
+      ]
     }
   ]
 }
@@ -324,8 +386,7 @@ ENUM/SELECT FIELD EXAMPLE
   "fields": {
     "study_type": {
       "field_name": "study_type",
-      "field_type": "enum",
-      "field_control_type": "select",
+      "field_type": "select",
       "field_description": "Type of clinical study",
       "options": ["Randomized Controlled Trial", "Cohort Study", "Case-Control Study", "Cross-Sectional Study", "Other"]
     }
@@ -352,11 +413,25 @@ ENUM/SELECT FIELD EXAMPLE
     {
       "field_name": "study_type",
       "field_type": "Dict[str, Any]",
-      "description": "Type of clinical study.\n\nDescription: Type of clinical study\n\nOptions:\n- \"Randomized Controlled Trial\"\n- \"Cohort Study\"\n- \"Case-Control Study\"\n- \"Cross-Sectional Study\"\n- \"Other\"\n\nRules:\n- Must be exactly one of the options listed above\n- Use exact spelling and capitalization\n- Read study methodology section to determine type\n- Use \"NR\" if study type cannot be determined\n\nSource Grounding:\n- Return a dictionary with two keys: \"value\" and \"source_text\"\n- \"value\": The study type as a string (must match one of the options)\n- \"source_text\": Copy the exact sentence(s) or paragraph from the document where the study design is described\n- Include enough context in source_text to verify the classification (typically 1-3 sentences)\n- If value is \"NR\", set source_text to \"NR\" as well\n\nExamples:\n{\"value\": \"Randomized Controlled Trial\", \"source_text\": \"Methods: This randomized controlled trial assigned 200 participants to either the intervention group or control group using computer-generated randomization.\"}\n{\"value\": \"Cohort Study\", \"source_text\": \"Study Design: A prospective cohort study was conducted following 5,000 participants over 10 years to assess cardiovascular outcomes.\"}\n{\"value\": \"NR\", \"source_text\": \"NR\"}"
+      "description": "Type of clinical study design used in the research.",
+      "hints": ["Read the methods or study design section to determine study type"],
+      "rules": [
+        "Must be exactly one of the options listed",
+        "Use exact spelling and capitalisation",
+        "Use \"NR\" if study type cannot be determined"
+      ],
+      "options": ["Randomized Controlled Trial", "Cohort Study", "Case-Control Study", "Cross-Sectional Study", "Other"],
+      "examples": [
+        {"value": "Randomized Controlled Trial", "source_text": "Methods: This randomized controlled trial assigned 200 participants to either the intervention group or control group using computer-generated randomization."},
+        {"value": "Cohort Study", "source_text": "Study Design: A prospective cohort study was conducted following 5,000 participants over 10 years to assess cardiovascular outcomes."},
+        {"value": "NR", "source_text": "NR"}
+      ]
     }
   ]
 }
 ```
+
+**Multi-select variant:** if the select field has `multiple: true`, the `"value"` key is a JSON array of every applicable option (e.g. `{"value": ["oral", "IV"], ...}`), and the rules should say "select ALL options that apply" instead of "exactly one of the options".
 
 ═══════════════════════════════════════════════════════════════════════════════
 SUBFORM FIELD EXAMPLE (ARRAY TYPE)
@@ -371,23 +446,23 @@ SUBFORM FIELD EXAMPLE (ARRAY TYPE)
       "field_name": "interventions",
       "field_type": "array",
       "field_control_type": "subform_table",
-      "field_description": "Extract ALL interventions tested in the study",
-      "extraction_hints": ["Look in methods section for intervention groups"],
+      "field_description": "",
+      "extraction_hints": [],
       "subform_fields": [
         {
           "field_name": "intervention_name",
           "field_type": "text",
-          "field_description": "Name of the intervention"
+          "field_description": ""
         },
         {
           "field_name": "dosage",
           "field_type": "text",
-          "field_description": "Dosage information"
+          "field_description": ""
         },
         {
           "field_name": "duration",
           "field_type": "text",
-          "field_description": "Duration of treatment"
+          "field_description": "How long the intervention was administered (cycles, days, or weeks)"
         }
       ]
     }
@@ -396,12 +471,12 @@ SUBFORM FIELD EXAMPLE (ARRAY TYPE)
 }
 ```
 
-**Output Specification:**
+**Output Specification (CORRECT — short parent desc, per-column enrichment):**
 ```json
 {
   "class_name": "ExtractInterventions",
-  "class_docstring": "Extract all intervention groups tested in the clinical study.\n\nForm Questions:\n- Interventions: \"Extract ALL interventions tested, including name, dosage, and duration for each\"\n\nThis signature extracts repeating data - finding every intervention group mentioned in the study.",
-  
+  "class_docstring": "Extract all intervention groups tested in the clinical study.\n\nForm Questions:\n- Interventions: \"Extract ALL interventions tested in the study\"\n\nThis signature extracts repeating data — finding every intervention group mentioned.",
+
   "input_fields": [
     {
       "field_name": "markdown_content",
@@ -409,24 +484,81 @@ SUBFORM FIELD EXAMPLE (ARRAY TYPE)
       "description": "Full markdown content of the clinical research paper"
     }
   ],
-  
+
   "output_fields": [
     {
       "field_name": "interventions",
-      "field_type": "List[Dict[str, Any]]",
-      "description": "Array of all interventions tested in the study.\n\nDescription: Extract ALL interventions tested in the study\n\nExtraction Hints:\n- Look in methods section for intervention groups\n\nStructure:\nEach intervention in the array contains:\n- intervention_name (str): Name of the intervention\n- dosage (str): Dosage information\n- duration (str): Duration of treatment\n\nRules:\n- Extract EVERY intervention group mentioned in the study\n- Each intervention should be a complete object with all fields\n- Create a separate array item for each intervention found\n- Include control groups and placebo if present\n- If multiple interventions exist, the array will have multiple items\n- Use \"NR\" if no interventions are found\n\nSource Grounding:\n- Return a dictionary with two keys: \"value\" and \"source_text\"\n- \"value\": An array of intervention objects, each with intervention_name, dosage, and duration keys\n- \"source_text\": Copy the exact section(s) from the document describing all interventions\n- Include enough context in source_text to verify all extractions (typically the entire interventions section)\n- If value is \"NR\", set source_text to \"NR\" as well\n\nExamples:\n{\"value\": [{\"intervention_name\": \"Drug A 10mg\", \"dosage\": \"10mg daily\", \"duration\": \"12 weeks\"}, {\"intervention_name\": \"Drug B 20mg\", \"dosage\": \"20mg twice daily\", \"duration\": \"12 weeks\"}, {\"intervention_name\": \"Placebo\", \"dosage\": \"matching tablets\", \"duration\": \"12 weeks\"}], \"source_text\": \"Interventions: Participants were randomized to three groups. Group 1 received Drug A 10mg daily for 12 weeks. Group 2 received Drug B 20mg twice daily for 12 weeks. Group 3 received matching placebo tablets for 12 weeks.\"}\n{\"value\": [{\"intervention_name\": \"Exercise program\", \"dosage\": \"3 sessions per week\", \"duration\": \"6 months\"}, {\"intervention_name\": \"Standard care\", \"dosage\": \"N/A\", \"duration\": \"6 months\"}], \"source_text\": \"Methods: The intervention group participated in a structured exercise program with 3 sessions per week for 6 months. The control group received standard care for 6 months with no exercise intervention.\"}\n{\"value\": \"NR\", \"source_text\": \"NR\"}"
+      "field_type": "Dict[str, Any]",
+      "description": "All intervention groups tested in the study.",
+      "hints": ["Look in the Methods section under 'Interventions' or 'Study Arms'"],
+      "rules": [
+        "Extract EVERY intervention group, including control and placebo arms",
+        "Use {\"value\": \"NR\", \"source_text\": \"NR\"} if no interventions are reported"
+      ],
+      "options": [],
+      "examples": [
+        {"value": [
+          {
+            "intervention_name": {"value": "Drug A",   "source_text": "Group 1 received Drug A"},
+            "dosage":            {"value": "10 mg daily", "source_text": "Drug A 10 mg daily"},
+            "duration":          {"value": "12 weeks", "source_text": "10 mg daily for 12 weeks"}
+          },
+          {
+            "intervention_name": {"value": "Placebo",  "source_text": "Group 2 received matching placebo"},
+            "dosage":            {"value": "matching tablets", "source_text": "matching placebo tablets"},
+            "duration":          {"value": "12 weeks", "source_text": "matching placebo for 12 weeks"}
+          }
+        ], "source_text": "Group 1 received Drug A 10 mg daily for 12 weeks. Group 2 received matching placebo for 12 weeks."},
+        {"value": "NR", "source_text": "NR"}
+      ],
+      "subform_fields": [
+        {
+          "field_name": "intervention_name",
+          "field_description": "Generic (non-proprietary) name of the intervention or drug.",
+          "hints": ["Prefer INN over brand name when both appear"],
+          "rules": [],
+          "examples": [{"value": "cisplatin", "source_text": "Patients received cisplatin..."}]
+        },
+        {
+          "field_name": "dosage",
+          "field_description": "Dose with units, including any per-body-surface-area or weight-based scaling.",
+          "hints": ["Look for mg, mg/m², mg/kg, or AUC notation"],
+          "rules": [],
+          "examples": [{"value": "75 mg/m²", "source_text": "cisplatin 75 mg/m² IV"}]
+        },
+        {
+          "field_name": "duration",
+          "field_description": "How long the intervention was administered (cycles, days, or weeks)",
+          "hints": [],
+          "rules": [],
+          "examples": [{"value": "6 cycles", "source_text": "treatment for 6 cycles"}]
+        }
+      ]
     }
   ]
 }
 ```
 
+Note on the example above:
+- `intervention_name` and `dosage` had blank user descriptions → LLM enriched them.
+- `duration` had a non-empty user description → LLM copied it verbatim (user wins).
+- Parent `description` is one sentence — no column names or types mentioned.
+
 **KEY POINTS FOR SUBFORMS:**
-- Use List[Dict[str, Any]] as field_type (not Dict[str, Any])
-- The "value" key contains an ARRAY of objects
-- Each object in the array has keys from subform_fields
-- Include structure description listing all subfield names and types
-- Examples show arrays with multiple items
-- Emphasize extracting ALL instances found
+- Use **Dict[str, Any]** as the OUTER field_type (NEVER `List[Dict[str, Any]]` at the annotation level)
+- The "value" key contains an ARRAY of objects; the outer "source_text" key quotes the source for the table as a whole
+- **Each cell inside each row is itself `{"value": ..., "source_text": ...}`** — never a bare scalar. This applies uniformly across the system: every extracted value, scalar or table cell, carries its own source grounding.
+- Parent `description` is 1–3 sentences only — no column enumeration in parent prose
+- Return `subform_fields` with content-only enrichment; structural properties are user-owned
+- Copy user-provided `field_description` verbatim; enrich only when user left it blank
+- Do NOT add, rename, remove, or reorder columns in `subform_fields`
+- For "NR" case use `{"value": "NR", "source_text": "NR"}` at whichever level is missing — the whole field, a single row, or a single cell — do NOT return an empty list
+
+⚠️ **ANTI-PROMOTION RULE (subform columns):**
+NEVER emit a subform column name as a sibling top-level `output_field`. If a column belongs inside a table parent's `subform_fields[]` array, it appears there and NOWHERE ELSE. Each column name must appear exactly once — inside the parent, not alongside it.
+
+⚠️ **ANTI-BAKING RULE (structured arrays):**
+If a user `field_description` (parent or column) contains embedded sub-sections such as `Examples:`, `Hints:`, `Rules:`, `Use NR…`, or similar labelled clauses — you MUST split them: move those clauses into the corresponding `hints[]`, `rules[]`, or `examples[]` arrays and remove them from `field_description`. NEVER copy embedded sections verbatim into `field_description`. The `field_description` must be a clean 1-2 sentence summary only.
 
 ═══════════════════════════════════════════════════════════════════════════════
 CRITICAL REQUIREMENTS ⚠️
@@ -447,7 +579,7 @@ CRITICAL REQUIREMENTS ⚠️
    - Clear description
    - Extraction rules
    - Source grounding instructions (value + source_text format)
-   - Examples as JSON dicts with both "value" and "source_text" keys (including "NR")
+   - Examples as JSON dicts with both "value" and "source_text" keys (include NR only for fields that can be genuinely missing)
    - Options (if enum type)
 
 5. ✅ Input fields:
@@ -455,17 +587,18 @@ CRITICAL REQUIREMENTS ⚠️
    - Add context input field for EACH entry in depends_on array (if not empty)
 
 6. ✅ Type mapping:
-   - MOST output fields use Dict[str, Any] as field_type
-   - EXCEPTION: Subform fields (array with subform_fields) use List[Dict[str, Any]]
+   - **ALL output fields** use `Dict[str, Any]` as the outer field_type — no exceptions
+   - Subform / array fields still use `Dict[str, Any]` at the annotation; the list lives inside the `"value"` key
    - Within the "value" key, map from field_type:
      * "text" → str
      * "number" → int or float
-     * "enum" → str
+     * "select" → str (exactly one of the options; a List[str] of options if the field has multiple=true)
      * "boolean" → bool
-     * "array" (with subform_fields) → List[Dict[str, Any]]
+     * "array" (with subform_fields) → an actual JSON array (List[Dict[str, Any]]) **inside `"value"`** — but the outer Python annotation stays `Dict[str, Any]`
 
-7. ✅ Include "NR" (Not Reported) convention in ALL field descriptions
-   - When value is not found: {"value": "NR", "source_text": "NR"}
+7. ✅ Use NR convention for fields that can be genuinely missing
+   - When such a field's value is not reported in the source: {"value": "NR", "source_text": "NR"}
+   - Do NOT add NR rules/examples to fields the document is guaranteed to contain (titles, study type, intervention name).
 
 8. ✅ For enum fields, list ALL options exactly as provided
 
@@ -484,12 +617,13 @@ COMMON MISTAKES TO AVOID
    Field names must EXACTLY match keys in fields dict
 
 ❌ Using wrong types
-   MOST fields use Dict[str, Any] as field_type
-   EXCEPTION: Subform fields (array with subform_fields) must use List[Dict[str, Any]]
-   The "value" key inside should match the semantic type (str for text, int for number, List for arrays)
+   ALL output fields use `Dict[str, Any]` as field_type — no exceptions.
+   For subform/array fields the outer annotation is still `Dict[str, Any]`; the array lives inside the `"value"` key.
+   NEVER use `List[Dict[str, Any]]` as the outer field annotation — Pydantic strict validation in DSPy will reject the envelope and the entire signature output will be discarded.
+   The "value" key inside should match the semantic type (str for text, int for number, List of objects for subform arrays)
 
-❌ Missing "NR" convention
-   Every field must document "NR" for missing data
+❌ Missing NR convention on fields where data is commonly omitted
+   Fields that may be genuinely missing (demographics, outcome counts, CIs) should document NR. Fields guaranteed in the source (titles, study type) should not — adding NR there primes the model to default to NR when uncertain.
 
 ❌ Forgetting context input fields
    If depends_on has ["field1", "field2"], must add 2 input fields
@@ -511,10 +645,12 @@ Analyze the enriched signature and create a complete signature specification fol
 3. Define input_fields (document + fields from depends_on if not empty)
 4. Create ONE output_field per key in fields dict
 5. ALL output fields use Dict[str, Any] as field_type
-6. Include source grounding instructions in every output field description
-7. Map types correctly from field_type for the "value" key in each field's metadata
-8. Include all metadata (options, hints, descriptions) from fields
-9. Write clear extraction rules and examples with both "value" and "source_text"
+6. For each output field use STRUCTURED KEYS — description (1-2 sentence summary only),
+   hints (soft navigation), rules (hard constraints), options (enum values or []),
+   examples (list of {value, source_text} dicts; include NR example only when applicable)
+7. DO NOT include a Source Grounding block — it is auto-injected at runtime
+8. Map types correctly from field_type for the "value" key in each field's examples
+9. Include all metadata (options, hints from field spec) in the appropriate arrays
 10. Verify every field in fields dict is covered
 
 Output the JSON specification with this structure:
@@ -523,6 +659,16 @@ Output the JSON specification with this structure:
   "class_name": "...",
   "class_docstring": "...",
   "input_fields": [...],
-  "output_fields": [...]
+  "output_fields": [
+    {
+      "field_name": "...",
+      "field_type": "Dict[str, Any]",
+      "description": "<clean 1-2 sentence summary>",
+      "hints": ["..."],
+      "rules": ["..."], // <-- append "Use \"NR\" if not reported" ONLY if this field can be genuinely missing
+      "options": [],
+      "examples": [{"value": "...", "source_text": "..."}] // <-- append {"value":"NR","source_text":"NR"} ONLY if NR is a plausible value
+    }
+  ]
 }
 ```

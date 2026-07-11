@@ -64,7 +64,18 @@ CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at DESC
 -- ============================================================================
 -- FORMS TABLE
 -- ============================================================================
--- Stores custom extraction forms and their generated code
+-- Stores custom extraction forms and their generated pipeline specs.
+--
+-- Two JSONB columns serve different consumers:
+--   fields     — user-designed field list (names, hints, rules, options).
+--                Read by the form builder UI.
+--   schema_def — compiled DSPy pipeline spec (signatures, pipeline_stages,
+--                field_to_signature_map). Written by the LangGraph finalize
+--                node; read by runtime_builders.py to construct dspy.Signature
+--                and dspy.Module classes without touching disk.
+--
+-- metadata holds LangGraph workflow state: thread_id, decomposition,
+-- pilot calibration feedback, current_job_id.
 
 CREATE TABLE IF NOT EXISTS forms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -74,9 +85,11 @@ CREATE TABLE IF NOT EXISTS forms (
   fields JSONB NOT NULL,
   status VARCHAR(50) DEFAULT 'draft',
   schema_name VARCHAR(255),
-  task_dir VARCHAR(512),
+  task_dir VARCHAR(512),           -- legacy, always NULL after Phase C
   statistics JSONB,
   error TEXT,
+  metadata JSONB,                  -- thread_id, decomposition, pilot feedback
+  schema_def JSONB,                -- compiled pipeline spec for runtime builders
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -88,6 +101,8 @@ CREATE INDEX IF NOT EXISTS idx_forms_created_at ON forms(created_at DESC);
 
 -- GIN index for JSONB fields column (for field searches)
 CREATE INDEX IF NOT EXISTS idx_forms_fields ON forms USING GIN (fields);
+CREATE INDEX IF NOT EXISTS idx_forms_metadata ON forms USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_forms_schema_def_not_null ON forms ((schema_def IS NOT NULL)) WHERE schema_def IS NOT NULL;
 
 -- ============================================================================
 -- JOBS TABLE
@@ -121,16 +136,27 @@ CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC);
 -- ============================================================================
 -- SCHEMAS TABLE
 -- ============================================================================
--- Stores dynamically generated schemas (replaces in-memory registry)
+-- Fast-lookup cache table for the schema registry (L3 tier).
+-- Mirrors forms.schema_def keyed by schema_name so extraction workers can
+-- load a pipeline spec without scanning the forms table.
+--
+-- Populated by register_schema() after code generation and kept in sync
+-- with forms.schema_def by update_field_edits() on every hint/rule edit.
+--
+-- module_path and signatures_path are legacy importlib paths retained for
+-- backwards compatibility; extraction no longer uses them (USE_RUNTIME_BUILDERS=true).
 
 CREATE TABLE IF NOT EXISTS schemas (
   schema_name TEXT PRIMARY KEY,
   task_name TEXT NOT NULL,
-  signature_names JSONB NOT NULL,
+  signature_class_names JSONB NOT NULL,  -- ["ExtractStudyDesign", "ExtractOutcomes", ...]
   pipeline_stages JSONB NOT NULL,
-  task_dir TEXT,
+  module_path TEXT,                      -- legacy importlib path, unused
+  signatures_path TEXT,                  -- legacy importlib path, unused
+  task_dir TEXT,                         -- legacy, always NULL after Phase C
   form_id UUID REFERENCES forms(id) ON DELETE SET NULL,
   form_name TEXT,
+  schema_def JSONB,                      -- full compiled spec, mirrors forms.schema_def
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -300,3 +326,33 @@ CREATE TABLE IF NOT EXISTS project_members (
 
 CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id);
 CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id);
+
+-- ============================================================================
+-- INCREMENTAL MIGRATIONS
+-- ============================================================================
+-- The following changes were applied after initial setup via individual
+-- migration files in backend/migrations/. They are listed here for reference;
+-- the ALTER TABLE statements are idempotent (IF NOT EXISTS / IF EXISTS) and
+-- safe to re-run on a fresh database.
+
+-- users: role column (migrations/ROLE_COLUMN_MIGRATION — inline above)
+
+-- forms: workflow state + compiled pipeline spec
+ALTER TABLE forms ADD COLUMN IF NOT EXISTS metadata  JSONB;
+ALTER TABLE forms ADD COLUMN IF NOT EXISTS schema_def JSONB;
+
+-- schemas: runtime builder columns
+ALTER TABLE schemas ADD COLUMN IF NOT EXISTS signature_class_names JSONB;
+ALTER TABLE schemas ADD COLUMN IF NOT EXISTS module_path           TEXT;
+ALTER TABLE schemas ADD COLUMN IF NOT EXISTS signatures_path       TEXT;
+ALTER TABLE schemas ADD COLUMN IF NOT EXISTS schema_def            JSONB;
+
+-- Additional tables added via migrations in backend/migrations/:
+--   review_assignments    — phase2_002_review_assignments.sql
+--   consensus_results     — create_consensus_results.sql
+--   qa_reviews            — phase2_004_qa_reviews.sql
+--   audit_trail           — phase2_007_audit_trail.sql
+--   project_invitations   — add_project_invitations.sql
+--   activity_notifications — add_activity_notifications.sql
+--   user_settings         — add_user_settings.sql
+-- See each migration file for the full DDL.

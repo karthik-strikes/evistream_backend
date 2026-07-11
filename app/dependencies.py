@@ -2,7 +2,10 @@
 Dependency injection functions for FastAPI endpoints.
 """
 
+import time
+import logging
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
@@ -12,7 +15,28 @@ from supabase import Client
 from app.services.auth_service import auth_service
 from app.config import settings
 from app.database import get_supabase_client
-from app.context import user_id_var
+from app.context import user_id_var, user_role_var
+
+logger = logging.getLogger(__name__)
+
+# Throttle last_seen_at updates to at most once per 60s per user (in-memory, per-worker)
+_last_seen_timestamps: dict[str, float] = {}
+_LAST_SEEN_TTL = 60.0
+
+
+def _maybe_update_last_seen(user_id: UUID) -> None:
+    uid = str(user_id)
+    now = time.monotonic()
+    if now - _last_seen_timestamps.get(uid, 0) < _LAST_SEEN_TTL:
+        return
+    _last_seen_timestamps[uid] = now
+    try:
+        db = get_supabase_client()
+        db.table("users").update(
+            {"last_seen_at": datetime.now(timezone.utc).isoformat()}
+        ).eq("id", uid).execute()
+    except Exception as e:
+        logger.debug("last_seen_at update failed for %s: %s", uid, e)
 
 
 security = HTTPBearer(auto_error=False)
@@ -49,8 +73,10 @@ async def get_current_user(
             detail="Authentication required"
         )
     token = credentials.credentials
-    user_id, _role = auth_service.verify_token(token)
+    user_id, role = auth_service.verify_token(token)
     user_id_var.set(str(user_id))
+    user_role_var.set(role)
+    _maybe_update_last_seen(user_id)
     return user_id
 
 

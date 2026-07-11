@@ -9,6 +9,14 @@ class UserRole(str, Enum):
     USER = "user"
 
 
+class ProjectRole(str, Enum):
+    """Project-level roles for members."""
+    OWNER = "owner"
+    MANAGER = "manager"
+    MEMBER = "member"
+    VIEWER = "viewer"
+
+
 class JobType(str, Enum):
     """Types of background jobs."""
     PDF_PROCESSING = "pdf_processing"

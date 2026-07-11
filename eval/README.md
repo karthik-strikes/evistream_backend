@@ -1,3 +1,27 @@
+# eviStream — Evaluation Harness
+
+Grounded **F1 / precision / recall** scoring for eviStream extractions, plus the ablation
+studies behind the paper. Lives in `backend/eval/`; a top-level `eval` symlink points here so
+the scripts' existing absolute paths run unchanged.
+
+## Prerequisites
+- Run in the **`topics` conda env** (`dspy`, `supabase`, `rapidfuzz`) —
+  `/home/ubuntu/miniconda3/envs/topics/bin/python`. Plain `base` lacks `dspy`.
+- API keys live in `eval/.env` (Anthropic / OpenAI / Gemini / Bedrock) — **git-ignored, never committed**.
+
+## Running
+- **Interactive:** open `eval_walkthrough.ipynb`, set `VARIANT / DATASET / MODEL`, run each form.
+- **Score one form:** `python score_form.py ...`
+- **Ablation studies:** `python -m eval.<study>.<script>` from the repo root
+  (e.g. `eval.stage_ablation.run_prompt_arm`).
+
+> **Data is not in the repo.** Only the *code* is committed. The two data trees —
+> `sheets/` (ground-truth + AI sheets, ~22 MB) and `outputs/` (scored results, ~14 MB) — are
+> git-ignored and live locally. The rest of this document describes their layout and the
+> scoring methodology; recreate or mount them locally to run.
+
+---
+
 # eval/ — data layout
 
 Inputs live in `sheets/ai sheets/`, scored outputs in `outputs/`, ground truth in `sheets/gt sheets/`.

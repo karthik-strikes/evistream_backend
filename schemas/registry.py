@@ -276,6 +276,8 @@ def refresh_registry():
 
                     if config.schema_def is None:
                         null_schema_def_names.append(config.schema_name)
+                    else:
+                        _audit_table_fields(config.schema_name, config.schema_def)
 
                     # Update cache
                     _SCHEMA_REGISTRY[config.schema_name] = config
@@ -292,6 +294,63 @@ def refresh_registry():
             logger.warning(f"Failed to refresh registry from database: {e}")
 
     return list_schemas()
+
+
+def _audit_table_fields(schema_name: str, schema_def: dict) -> None:
+    """Shout if a table field could no longer reach its intended pipeline.
+
+    `build_schema_classes` picks the pipeline by exact string match on
+    `extraction_strategy` and falls through to single-pass **silently** on an
+    unrecognised value — no exception, no warning. A half-finished rename of
+    those values would therefore drop live forms out of the verified pipeline
+    with nothing in the logs. Likewise a keyed pipeline with an empty composite
+    key degrades to single-pass with only a debug-level hint.
+
+    Both are cheap to detect here, where every schema is already being walked,
+    and both are logged at ERROR with the schema name so they are actionable
+    rather than archaeological.
+    """
+    from utils.table_schema import (
+        AGENTIC,
+        DISCOVER_THEN_FILL,
+        field_key_columns,
+        resolve_strategy,
+    )
+
+    unknown: List[str] = []
+    keyless: List[str] = []
+    try:
+        for sig in (schema_def.get("signatures") or []):
+            for field in (sig.get("output_fields") or []):
+                if not (field.get("subform_fields") or []):
+                    continue  # not a table field
+                raw = field.get("extraction_strategy")
+                if raw is None:
+                    continue  # unset is a legitimate "use the default"
+                pipeline = resolve_strategy(raw)
+                if pipeline is None:
+                    unknown.append(f"{field.get('name')}={raw!r}")
+                    continue
+                if pipeline in (DISCOVER_THEN_FILL, AGENTIC) and not field_key_columns(field):
+                    keyless.append(str(field.get("name")))
+    except Exception:
+        logger.debug("table-field audit failed for %s", schema_name, exc_info=True)
+        return
+
+    if unknown:
+        logger.error(
+            "Schema '%s': unrecognised extraction_strategy on %s — these table "
+            "fields will SILENTLY fall back to single-pass extraction. Add the "
+            "spelling to utils.table_schema.STRATEGY_ALIASES or fix the value.",
+            schema_name, ", ".join(unknown),
+        )
+    if keyless:
+        logger.error(
+            "Schema '%s': table field(s) %s use a keyed pipeline but have no "
+            "composite key (key_columns/anchor_columns) — rows cannot be "
+            "identified and extraction falls back to single-pass.",
+            schema_name, ", ".join(keyless),
+        )
 
 
 def invalidate_schema(schema_name: str) -> None:

@@ -20,6 +20,7 @@ celery_app = Celery(
         "app.workers.extraction_tasks",
         "app.workers.generation_tasks",
         "app.workers.watchdog_tasks",
+        "app.workers.import_tasks",
     ]
 )
 
@@ -52,6 +53,9 @@ celery_app.conf.task_routes = {
     "process_pdf_document": {"queue": "pdf_processing"},
     "check_pdf_processor_health": {"queue": "pdf_processing"},
     "clean_pdf_document": {"queue": "pdf_processing"},
+    "backfill_pdf_blocks": {"queue": "pdf_processing"},
+    "import_endnote_library": {"queue": "pdf_processing"},
+    "import_citations": {"queue": "pdf_processing"},
 
     # Code generation tasks
     "generate_form_code": {"queue": "code_generation"},
@@ -63,7 +67,9 @@ celery_app.conf.task_routes = {
     "run_extraction": {"queue": "extraction"},
     "check_extraction_service_health": {"queue": "extraction"},
 
-    # Watchdog tasks (use default queue or specify one)
+    # Watchdog tasks. The pdf worker consumes this queue in addition to its own
+    # (see evistream-worker-pdf.service) — without a consumer these silently
+    # accumulate in Redis and the watchdog never runs.
     "watchdog_cleanup_stuck_jobs": {"queue": "celery"},
     "watchdog_cleanup_stuck_forms": {"queue": "celery"},
 }
@@ -73,10 +79,14 @@ celery_app.conf.beat_schedule = {
     "cleanup-stuck-jobs-every-5-min": {
         "task": "watchdog_cleanup_stuck_jobs",
         "schedule": 300.0,  # every 5 minutes
+        # Drop a tick rather than queue it behind a busy worker — a late sweep
+        # is fine, a backlog of identical sweeps is not.
+        "options": {"expires": 240},
     },
     "cleanup-stuck-forms-every-5-min": {
         "task": "watchdog_cleanup_stuck_forms",
         "schedule": 300.0,  # every 5 minutes
+        "options": {"expires": 240},
     },
 }
 

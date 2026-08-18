@@ -66,8 +66,25 @@ def _load_papers(limit: int | None) -> list[dict]:
 
 
 def _unwrap(value: Any) -> str:
-    """Extract the scalar value from a {value, source_text} dict, or pass through."""
+    """Extract the scalar value from a {value, source_text} dict, or pass through.
+
+    Pinned to the pre-absence-vocabulary strings so scores stay comparable with
+    the published numbers. Before the four-state split, a failed cell and a
+    genuine "not reported" both reached this function carrying the literal "NR",
+    so both must keep emitting "NR" here; "NA" is already an NR token in
+    eval/engine/config/nr_synonyms.py, so emitting it is inert.
+
+    Making the eval reflect the real statuses is a worthwhile change, but a
+    deliberate one to run on its own — not a side effect of the extraction fix.
+    """
     if isinstance(value, dict) and "value" in value:
+        from utils import absence
+
+        st = absence.normalize_status(value.get("status"))
+        if st in absence.FAILURE_STATUSES or st == absence.NOT_REPORTED:
+            return "NR"
+        if st == absence.NOT_APPLICABLE:
+            return "NA"
         v = value["value"]
         if isinstance(v, list):
             return ", ".join(str(x) for x in v)

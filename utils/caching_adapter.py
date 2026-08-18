@@ -150,17 +150,37 @@ class CachingChatAdapter(ChatAdapter):
         if not isinstance(user_content, str):
             return messages
 
+        # Excise exactly `marker + "\n" + paper_text`. Do NOT scan for the next
+        # "[[ ## " to find where the paper section ends: DSPy's own trailing
+        # prose contains that pattern ("...starting with the field
+        # `[[ ## outcomes ## ]]`"), so when markdown_content is the LAST input
+        # field the scan landed inside that sentence and deleted the output
+        # instruction along with the paper. A paper body containing the literal
+        # text "[[ ## " broke it the same way, leaking the paper's tail into the
+        # user message. We are handed paper_text, so no boundary guessing is
+        # needed — match it verbatim.
         marker = f"[[ ## {self.paper_field} ## ]]"
-        start = user_content.find(marker)
-        if start < 0:
-            return messages
-        next_marker_start = user_content.find("[[ ## ", start + len(marker))
-        if next_marker_start < 0:
-            next_marker_start = len(user_content)
+        paper_str = str(paper_text)
+        span: tuple[int, int] | None = None
+        # Second candidate covers a future DSPy that normalizes field values.
+        for candidate in (f"{marker}\n{paper_str}", f"{marker}\n{paper_str.strip()}"):
+            idx = user_content.find(candidate)
+            if idx >= 0:
+                span = (idx, idx + len(candidate))
+                break
 
-        stripped_user = (
-            user_content[:start] + user_content[next_marker_start:]
-        ).strip()
+        if span is None:
+            # Unrecognized layout. Skipping the promotion costs a cache hit;
+            # guessing at the boundary costs prompt integrity — which is exactly
+            # the trade the previous implementation got backwards.
+            logger.warning(
+                "CachingChatAdapter: could not locate the '%s' section verbatim in "
+                "the user message — skipping paper promotion for this call.",
+                self.paper_field,
+            )
+            return messages
+
+        stripped_user = (user_content[: span[0]] + user_content[span[1] :]).strip()
         if not stripped_user:
             return messages
         last_user["content"] = stripped_user

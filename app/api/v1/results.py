@@ -17,7 +17,12 @@ from datetime import datetime, timezone
 from app.dependencies import get_current_user
 from app.config import settings
 from app.services.project_access import check_project_access
-from app.services.blinding_service import filter_results_for_user
+from app.services.blinding_service import (
+    filter_results_for_user,
+    get_project_review_settings,
+    get_user_assignments_for_documents,
+    _decide_visible_rows,
+)
 from app.models.schemas import ExtractionResultResponse, ConsensusResultResponse, SourceIndexResponse
 from app.services.settings_service import get_user_settings
 from app.services.storage_service import storage_service
@@ -33,6 +38,10 @@ from postgrest.exceptions import APIError as PostgRESTError
 
 
 logger = logging.getLogger(__name__)
+
+from utils import absence
+from utils import consensus_summary
+from utils import value_compare
 
 router = APIRouter()
 
@@ -57,42 +66,110 @@ SOURCE_LOCATION_SUFFIX = ".source_location"
 async def _apply_blinding_grouped(
     results: List[Dict[str, Any]],
     user_id: UUID,
+    project_id: Optional[UUID] = None,
+    viewer_role: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Apply per-(document_id, form_id) blinding to a heterogeneous result list.
+    Apply per-document blinding to a heterogeneous result list.
 
-    `filter_results_for_user` resolves the reviewer's role against a single
-    (document, form) pair, so any endpoint that returns rows spanning multiple
-    pairs must group → filter → recombine. Without this, reviewer-role
-    blinding silently leaks on the `?extraction_id`, `?project_id`, and
-    `/export` paths (see issue #6 in the audit).
+    Blinding decisions are per-document (a reviewer's role/visibility can
+    differ document-to-document), so any endpoint that returns rows spanning
+    multiple documents must group → filter → recombine. Without this,
+    reviewer-role blinding silently leaks on the `?extraction_id`,
+    `?project_id`, and `/export` paths (see issue #6 in the audit).
+
+    When `project_id`/`viewer_role` are known up front (the common
+    single-project case), they're reused for every group with no extra
+    queries. When omitted (the "list across all my projects" branch), the
+    caller's role is resolved and cached per distinct project_id found on
+    the rows themselves.
+
+    Performance: this used to call `filter_results_for_user` once per
+    document group, which re-queried `projects.review_settings` (identical
+    for every group in the same project) on every single call — an N+1 that
+    made a ~100-document form page ~100 sequential round trips. Instead,
+    `review_settings` is resolved once per distinct project_id, and
+    `review_assignments` is fetched in one batched query for all documents
+    (skipped entirely when every relevant project has blinding off, the
+    default). `_decide_visible_rows` is blinding_service's pure, I/O-free
+    rules function — shared here so the per-document loop below does no I/O.
     """
     if not results:
         return results
     from collections import defaultdict
-    groups: Dict[tuple, list] = defaultdict(list)
-    passthrough: list = []
+    groups: Dict[str, list] = defaultdict(list)
     for r in results:
         doc_id = r.get("document_id")
-        f_id = r.get("form_id")
-        if not doc_id or not f_id:
-            # Defensive: a row missing either key can't be blinded.
-            # Drop it rather than leak — these rows should not exist in
-            # practice (NOT NULL on schema).
+        if not doc_id:
+            # Defensive: a row missing this key can't be blinded.
+            # Should not exist in practice (NOT NULL on schema).
             continue
-        groups[(doc_id, f_id)].append(r)
-    out: list = list(passthrough)
-    for (doc_id, f_id), group in groups.items():
+        groups[doc_id].append(r)
+
+    role_cache: Dict[str, Optional[str]] = {}
+    if project_id is not None:
+        role_cache[str(project_id)] = viewer_role
+
+    # Resolve (project_id, viewer_role) per document group. Only touches the
+    # DB (via check_project_access) in the multi-project branch, memoized per
+    # distinct project_id — same as before.
+    doc_context: Dict[str, tuple] = {}
+    for doc_id, group in groups.items():
+        group_project_id = project_id
+        group_role = viewer_role
+        if group_project_id is None:
+            pid = group[0].get("project_id")
+            if not pid:
+                continue
+            if pid not in role_cache:
+                try:
+                    access = await check_project_access(UUID(pid), user_id)
+                    role_cache[pid] = access.get("role")
+                except HTTPException:
+                    role_cache[pid] = None
+            group_role = role_cache.get(pid)
+            group_project_id = UUID(pid)
+        doc_context[doc_id] = (group_project_id, group_role)
+
+    # review_settings once per distinct project_id — not once per document.
+    settings_cache: Dict[str, Dict[str, Any]] = {}
+    for group_project_id, _ in doc_context.values():
+        pid_str = str(group_project_id)
+        if pid_str not in settings_cache:
+            settings_cache[pid_str] = await get_project_review_settings(group_project_id)
+
+    # review_assignments in one batched query — and only if some relevant
+    # project actually has blinding enabled. Default config never queries this.
+    needs_assignments = any(
+        settings_cache[str(pid)].get("blinding", "none") != "none"
+        for pid, _ in doc_context.values()
+    )
+    assignments = (
+        await get_user_assignments_for_documents(user_id, list(doc_context.keys()))
+        if needs_assignments else {}
+    )
+
+    out: list = []
+    for doc_id, group in groups.items():
+        if doc_id not in doc_context:
+            continue
+        group_project_id, group_role = doc_context[doc_id]
         try:
-            filtered = await filter_results_for_user(
-                group, user_id, UUID(doc_id), UUID(f_id)
+            review_settings = settings_cache[str(group_project_id)]
+            filtered = _decide_visible_rows(
+                group, user_id, group_role, review_settings, assignments.get(doc_id)
             )
             out.extend(filtered)
         except Exception:
             logger.exception(
-                "Blinding failed for doc=%s form=%s; dropping group", doc_id, f_id
+                "Blinding failed for doc=%s; dropping group", doc_id
             )
     return out
+
+
+# Absence rendering lives in utils/absence so the rule is shared and testable;
+# it also recurses into table rows, which _apply_export_prefs never did.
+_export_cell = absence.export_cell
 
 
 def _apply_export_prefs(data: dict, prefs: dict) -> dict:
@@ -113,16 +190,11 @@ def _apply_export_prefs(data: dict, prefs: dict) -> dict:
         # Filter source_location keys from CSV/JSON exports (too verbose)
         if k.endswith(SOURCE_LOCATION_SUFFIX):
             continue
-        # Nested value-cell: apply the NR-vs-blank provenance rule and drop internal keys.
-        # Genuine "not reported" → "NR"; any failure (error/missing) → "" (blank).
+        # Nested value-cell: label absence from `status` and drop internal keys.
+        # not_reported → "NR", not_applicable → "NA", failure → the failure
+        # marker (never blank — a blank column reads as "not reported").
         if isinstance(v, dict) and "value" in v:
-            status = v.get("status")
-            v = {dk: dv for dk, dv in v.items()
-                 if dk not in ("source_location", "status", "error")}
-            if status in ("error", "missing"):
-                v["value"] = ""
-            elif status == "not_reported":
-                v["value"] = "NR"
+            v = _export_cell(v)
         # Filter source_location from other nested dicts
         elif isinstance(v, dict) and "source_location" in v:
             v = {dk: dv for dk, dv in v.items() if dk != "source_location"}
@@ -158,6 +230,9 @@ async def list_results(
     Returns extraction results sorted by creation date (newest first).
     """
     try:
+        resolved_project_id: Optional[UUID] = None
+        resolved_role: Optional[str] = None
+
         if extraction_id:
             # Verify extraction exists and user has access to its project
             extraction_result = supabase.table("extractions")\
@@ -172,7 +247,9 @@ async def list_results(
                 )
 
             extraction_project_id = extraction_result.data[0]["project_id"]
-            await check_project_access(UUID(extraction_project_id), user_id, "can_view_results")
+            access = await check_project_access(UUID(extraction_project_id), user_id, "can_view_results")
+            resolved_project_id = UUID(extraction_project_id)
+            resolved_role = access.get("role")
 
             # Get results for specific extraction
             query = supabase.table("extraction_results")\
@@ -188,7 +265,9 @@ async def list_results(
 
         elif project_id:
             # Verify user has access to this project
-            await check_project_access(project_id, user_id, "can_view_results")
+            access = await check_project_access(project_id, user_id, "can_view_results")
+            resolved_project_id = project_id
+            resolved_role = access.get("role")
 
             # Get all extractions for project
             extractions_result = supabase.table("extractions")\
@@ -278,8 +357,8 @@ async def list_results(
 
         # Apply blinding on every path. The grouped helper handles broad
         # queries (?extraction_id, ?project_id, no-filter) by partitioning by
-        # (document, form) and filtering each group.
-        results = await _apply_blinding_grouped(results, user_id)
+        # document and filtering each group.
+        results = await _apply_blinding_grouped(results, user_id, project_id=resolved_project_id, viewer_role=resolved_role)
 
         return [ExtractionResultResponse(**r) for r in results]
 
@@ -596,7 +675,7 @@ async def compare_results(
 
         project_id = doc_result.data[0]["project_id"]
 
-        await check_project_access(UUID(project_id), user_id, "can_view_results")
+        access = await check_project_access(UUID(project_id), user_id, "can_view_results")
 
         # Get all results for this document + form
         results = supabase.table("extraction_results")\
@@ -618,9 +697,9 @@ async def compare_results(
             }
 
         # Apply blinding rules — hide other reviewer's manual results when caller
-        # is an active reviewer for this (doc, form) and blinding is enabled.
+        # is an active reviewer for this document and blinding is enabled.
         visible_results = await filter_results_for_user(
-            results.data, user_id, document_id, form_id
+            results.data, user_id, document_id, UUID(project_id), viewer_role=access.get("role")
         )
 
         # Separate manual vs AI results
@@ -639,14 +718,19 @@ async def compare_results(
                     ai_data = {k: v for k, v in extracted.items()}
 
         # Build field-by-field comparison
-        all_fields = set(list(manual_data.keys()) + list(ai_data.keys()))
+        all_fields = value_compare.comparable_fields(manual_data, ai_data)
         comparisons = []
         matching = 0
 
         for field in sorted(all_fields):
             manual_val = manual_data.get(field)
             ai_val = ai_data.get(field)
-            is_match = str(manual_val).strip().lower() == str(ai_val).strip().lower() if manual_val and ai_val else False
+            # One shared comparator (utils/value_compare) so this endpoint, the
+            # consensus dashboard and the adjudication screen cannot disagree
+            # about whether a field matched. A failed cell is incomparable, not
+            # agreement with a reviewer's genuine NR.
+            verdict = value_compare.agreement(manual_val, ai_val)
+            is_match = verdict == value_compare.AGREE
 
             if is_match:
                 matching += 1
@@ -656,6 +740,7 @@ async def compare_results(
                 "manual_value": manual_val,
                 "ai_value": ai_val,
                 "match": is_match,
+                "comparable": verdict != value_compare.INCOMPARABLE,
                 "manual_present": manual_val is not None,
                 "ai_present": ai_val is not None
             })
@@ -707,17 +792,18 @@ async def get_consensus_summary(
 
         # Get all documents in project
         docs_result = supabase.table("documents")\
-            .select("id, filename")\
+            .select("id, filename, ref_id")\
             .eq("project_id", str(project_id))\
             .order("created_at")\
             .execute()
 
         all_docs = docs_result.data or []
-        doc_map = {d["id"]: d["filename"] for d in all_docs}
 
         # Get all extraction_results for this project + form
+        # reviewer_role is selected so the AI-vs-manual comparison can prefer the
+        # R1 row instead of whichever manual row happens to sort first.
         results_raw = supabase.table("extraction_results")\
-            .select("document_id, extraction_type, extracted_data")\
+            .select("document_id, extraction_type, reviewer_role, extracted_data")\
             .eq("project_id", str(project_id))\
             .eq("form_id", str(form_id))\
             .order("created_at", desc=False)\
@@ -738,197 +824,56 @@ async def get_consensus_summary(
         except Exception:
             logger.warning("role_data query failed for project=%s form=%s", project_id, form_id, exc_info=True)
 
-        # Fetch current reviewer assignments to know who currently holds each role.
-        # We also build a reverse map: (doc_id, user_id) -> current_role so that
-        # when a user's role was swapped their saved work is counted under their NEW role.
+        # Fetch current reviewer assignments so saved work can be credited to the
+        # role its author holds *now* (see consensus_summary._resolve_reviewer_roles).
+        assignment_data = []
         try:
             asg_rows = supabase.table("review_assignments")\
                 .select("document_id, reviewer_role, reviewer_user_id")\
                 .eq("project_id", str(project_id))\
                 .execute()
-            current_assignee = {
-                (a["document_id"], a["reviewer_role"]): a.get("reviewer_user_id")
-                for a in (asg_rows.data or [])
-            }
-            # (doc_id, str(user_id)) -> "reviewer_1" | "reviewer_2"
-            user_current_role: dict = {}
-            for (doc_id, role), user_id in current_assignee.items():
-                if role in ("reviewer_1", "reviewer_2") and user_id:
-                    user_current_role[(doc_id, str(user_id))] = role
+            assignment_data = asg_rows.data or []
         except Exception:
-            current_assignee = {}
-            user_current_role = {}
+            logger.warning(
+                "review_assignments query failed for project=%s", project_id, exc_info=True
+            )
 
-        def normalize_ai_data(extracted: dict) -> dict:
-            """
-            AI extraction stores keys as 'field_name.value'.
-            Strip the '.value' suffix so keys match manual extraction keys.
-            Skip non-value keys (e.g. confidence, reasoning, source_location).
-            """
-            normalized = {}
-            for k, v in extracted.items():
-                if k.endswith(".value"):
-                    normalized[k[:-6]] = v
-                elif k.endswith((".source_location", ".source_text", ".confidence", ".reasoning")):
-                    continue  # Skip metadata keys
-            # If no .value keys found, use raw (manual/consensus data)
-            return normalized if normalized else extracted
-
-        # Get docs that already have a consensus result (new table)
+        # Docs that already have a consensus result. disputed_count and
+        # total_fields are selected alongside agreement_pct so a reviewed document
+        # reports all three from the human's decision — previously only the
+        # percentage was taken from here, leaving the conflict counts at their
+        # string-match values in the same row.
         consensus_rows = supabase.table("consensus_results")\
-            .select("document_id, agreement_pct")\
+            .select("document_id, agreement_pct, disputed_count, total_fields")\
             .eq("project_id", str(project_id))\
             .eq("form_id", str(form_id))\
             .execute()
-        # Map doc_id → reviewed agreement_pct (human judgment, not string-match)
-        consensus_map = {r["document_id"]: r["agreement_pct"] for r in (consensus_rows.data or [])}
-        consensus_set = set(consensus_map.keys())
-
-        # Docs that have at least one live R1 or R2 assignment.
-        # Used to distinguish "no assignment for this doc" from "person was swapped away".
-        docs_with_role_assignments = {
-            doc_id for (doc_id, r) in current_assignee
-            if r in ("reviewer_1", "reviewer_2") and current_assignee[(doc_id, r)]
-        }
-
-        # Track R1 and R2 results — count non-partial rows, resolving roles:
-        # 1. If the row has a role tag AND the doc has assignments → use swap-aware lookup
-        #    (credits work to the saver's CURRENT role; skips if no longer assigned).
-        # 2. If the row has a role tag AND the doc has NO assignments → trust the tag.
-        # 3. If the row has NO role tag (null) → look up extracted_by in user_current_role
-        #    to infer the role (handles rows saved before/during assignment setup failure).
-        r1_doc_ids = set()
-        r2_doc_ids = set()
-        for r in role_data:
-            role = r.get("reviewer_role")
-            data = r.get("extracted_data") or {}
-            if not data or data.get("_partial") is True:
-                continue
-            doc_id = r["document_id"]
-            extracted_by = str(r.get("extracted_by") or "")
-
-            if role not in ("reviewer_1", "reviewer_2"):
-                continue
-            if doc_id in docs_with_role_assignments and extracted_by:
-                effective_role = user_current_role.get((doc_id, extracted_by))
-                if effective_role is None:
-                    continue  # person no longer assigned to this doc — stranded row
-            else:
-                effective_role = role
-
-            (r1_doc_ids if effective_role == "reviewer_1" else r2_doc_ids).add(doc_id)
+        consensus_data = consensus_rows.data or []
 
         # Get adjudication results (table may not exist before migration)
-        adjudication_map = {}
-        adjudication_set = set()
+        adjudication_data = []
         try:
             adjudication_rows = supabase.table("adjudication_results")\
                 .select("document_id, agreement_pct, status")\
                 .eq("project_id", str(project_id))\
                 .eq("form_id", str(form_id))\
                 .execute()
-            adjudication_map = {r["document_id"]: r for r in (adjudication_rows.data or [])}
-            adjudication_set = set(adjudication_map.keys())
+            adjudication_data = adjudication_rows.data or []
         except Exception:
             pass
 
-        # Group by document_id → {ai: {...}, manual: {...}}
-        doc_data: dict = {}
-        for r in (results_raw.data or []):
-            doc_id = r["document_id"]
-            etype = r.get("extraction_type", "ai")
-            extracted = r.get("extracted_data") or {}
-            if etype == "consensus":
-                continue  # Skip legacy consensus rows — we use consensus_results now
-            if doc_id not in doc_data:
-                doc_data[doc_id] = {}
-            # Keep most recent (last write wins; data already ordered by Supabase)
-            if etype not in doc_data[doc_id]:
-                # Normalize AI keys so they match manual keys
-                if etype == "ai":
-                    doc_data[doc_id][etype] = normalize_ai_data(extracted)
-                else:
-                    doc_data[doc_id][etype] = extracted
-
-        # Build per-document summary
-        documents_out = []
-        for doc in all_docs:
-            doc_id = doc["id"]
-            data = doc_data.get(doc_id, {})
-            has_ai = "ai" in data
-            has_manual = "manual" in data
-            has_consensus = doc_id in consensus_set
-
-            agreement_pct = None
-            disputed_fields = None
-            total_fields = None
-
-            if has_ai and has_manual:
-                ai_vals = data["ai"]
-                manual_vals = data["manual"]
-                all_fields = set(list(ai_vals.keys()) + list(manual_vals.keys()))
-                total = len(all_fields)
-                if total > 0:
-                    matching = sum(
-                        1 for f in all_fields
-                        if ai_vals.get(f) is not None and manual_vals.get(f) is not None
-                        and str(ai_vals.get(f, "")).strip().lower() == str(manual_vals.get(f, "")).strip().lower()
-                    )
-                    agreement_pct = round(matching / total * 100)
-                    disputed_fields = total - matching
-                    total_fields = total
-
-            # If reviewed, use the human-reviewed agreement_pct (not string-match)
-            if has_consensus:
-                agreement_pct = consensus_map[doc_id]
-
-            # Dual-reviewer fields
-            has_r1 = doc_id in r1_doc_ids
-            has_r2 = doc_id in r2_doc_ids
-            has_adjudication = doc_id in adjudication_set
-            r1_r2_agreement_pct = None
-            if has_adjudication:
-                adj = adjudication_map[doc_id]
-                r1_r2_agreement_pct = float(adj["agreement_pct"]) if adj.get("agreement_pct") is not None else None
-
-            documents_out.append({
-                "document_id": doc_id,
-                "filename": doc["filename"],
-                "has_ai": has_ai,
-                "has_manual": has_manual,
-                "has_consensus": has_consensus,
-                "agreement_pct": agreement_pct,
-                "disputed_fields": disputed_fields,
-                "total_fields": total_fields,
-                "has_r1": has_r1,
-                "has_r2": has_r2,
-                "has_adjudication": has_adjudication,
-                "r1_r2_agreement_pct": r1_r2_agreement_pct,
-            })
-
-        # Aggregate stats
-        ai_done = sum(1 for d in documents_out if d["has_ai"])
-        manual_done = sum(1 for d in documents_out if d["has_manual"])
-        consensus_done = sum(1 for d in documents_out if d["has_consensus"])
-        r1_done = sum(1 for d in documents_out if d["has_r1"])
-        r2_done = sum(1 for d in documents_out if d["has_r2"])
-        adjudication_done = sum(1 for d in documents_out if d["has_adjudication"])
-        agreements = [d["agreement_pct"] for d in documents_out if d["agreement_pct"] is not None]
-        avg_agreement = round(sum(agreements) / len(agreements)) if agreements else None
-
-        response = {
-            "summary": {
-                "total_docs": len(all_docs),
-                "ai_done": ai_done,
-                "manual_done": manual_done,
-                "consensus_done": consensus_done,
-                "avg_agreement_pct": avg_agreement,
-                "r1_done": r1_done,
-                "r2_done": r2_done,
-                "adjudication_done": adjudication_done,
-            },
-            "documents": documents_out,
-        }
+        # All the arithmetic lives in utils/consensus_summary so it can be tested:
+        # this module can't be imported in a test (storage_service calls
+        # sts:GetCallerIdentity at import), which is why this endpoint had no test
+        # coverage at all while carrying four separate counting bugs.
+        response = consensus_summary.build_consensus_summary(
+            documents=all_docs,
+            extraction_rows=results_raw.data or [],
+            role_rows=role_data,
+            consensus_rows=consensus_data,
+            adjudication_rows=adjudication_data,
+            assignment_rows=assignment_data,
+        )
 
         # Cache for 60 seconds (invalidated on consensus save)
         cache_service.set(cache_key, response, ttl=60)
@@ -1017,18 +962,20 @@ async def save_consensus(
             "disputed_count": data.disputed_count,
             "total_fields": data.total_fields,
             "agreement_pct": data.agreement_pct,
-            "created_by": str(user_id),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
 
         if existing.data:
+            # created_by is deliberately NOT in the update: it records who first
+            # submitted this consensus, and rewriting it on every re-save erased
+            # the original author the moment anyone else edited the review.
             result = supabase.table("consensus_results")\
                 .update(payload)\
                 .eq("id", existing.data[0]["id"])\
                 .execute()
         else:
             result = supabase.table("consensus_results")\
-                .insert(payload)\
+                .insert({**payload, "created_by": str(user_id)})\
                 .execute()
 
         if not result.data:
@@ -1180,10 +1127,10 @@ async def get_source_index(
             .execute()
         if not extraction_q.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not found")
-        await check_project_access(UUID(extraction_q.data[0]["project_id"]), user_id, "can_view_results")
+        access = await check_project_access(UUID(extraction_q.data[0]["project_id"]), user_id, "can_view_results")
 
         visible = await filter_results_for_user(
-            [row], user_id, UUID(row["document_id"]), UUID(row["form_id"])
+            [row], user_id, UUID(row["document_id"]), UUID(extraction_q.data[0]["project_id"]), viewer_role=access.get("role")
         )
         if not visible:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Result not visible under blinding rules")
@@ -1341,13 +1288,13 @@ async def get_result(
 
         project_id = extraction_query.data[0]["project_id"]
 
-        await check_project_access(UUID(project_id), user_id, "can_view_results")
+        access = await check_project_access(UUID(project_id), user_id, "can_view_results")
 
         # Blinding: a reviewer with can_view_results could otherwise fetch a peer
-        # reviewer's row by id. filter_results_for_user enforces per-form rules.
+        # reviewer's row by id. filter_results_for_user enforces per-project rules.
         visible = await filter_results_for_user(
             [extraction_result], user_id,
-            UUID(extraction_result["document_id"]), UUID(extraction_result["form_id"]),
+            UUID(extraction_result["document_id"]), UUID(project_id), viewer_role=access.get("role"),
         )
         if not visible:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Result not visible under blinding rules")
@@ -1406,12 +1353,12 @@ async def export_result(
 
         project_id = extraction_query.data[0]["project_id"]
 
-        await check_project_access(UUID(project_id), user_id, "can_view_results")
+        access = await check_project_access(UUID(project_id), user_id, "can_view_results")
 
         # Blinding: same rule as get_result — block exports of peer reviewer rows.
         visible = await filter_results_for_user(
             [extraction_result], user_id,
-            UUID(extraction_result["document_id"]), UUID(extraction_result["form_id"]),
+            UUID(extraction_result["document_id"]), UUID(project_id), viewer_role=access.get("role"),
         )
         if not visible:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Result not visible under blinding rules")
@@ -1510,7 +1457,7 @@ async def export_extraction_results(
 
         project_id = extraction_result.data[0]["project_id"]
 
-        await check_project_access(UUID(project_id), user_id, "can_view_results")
+        access = await check_project_access(UUID(project_id), user_id, "can_view_results")
 
         # Get all results for extraction
         results = supabase.table("extraction_results")\
@@ -1527,7 +1474,7 @@ async def export_extraction_results(
 
         # Apply blinding before export — the previous code dumped every row
         # in the extraction regardless of reviewer_role, leaking R2/R1 data.
-        rows = await _apply_blinding_grouped(list(results.data), user_id)
+        rows = await _apply_blinding_grouped(list(results.data), user_id, project_id=UUID(project_id), viewer_role=access.get("role"))
         if not rows:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

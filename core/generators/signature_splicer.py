@@ -7,7 +7,9 @@ None = leave as-is.  [] = remove the key entirely.
 
 import copy
 import logging
-from typing import Optional
+from utils.table_schema import DISCOVER_THEN_FILL, KEY_COLUMN_FIELDS, field_key_columns, field_strategy, set_field_key_columns
+from utils import absence
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +112,11 @@ def add_schema_def_field(
 
     schema_def.setdefault("field_to_signature_map", {})[field_name] = target_signature_class
 
-    default_fallback = {"value": "NR", "source_text": "NR"} if source_grounded else "NR"
+    # A spliced field has never been extracted yet, so its fallback is a
+    # pipeline-failure placeholder, not an assertion that the paper is silent.
+    default_fallback = (
+        absence.failure_envelope(absence.MISSING) if source_grounded else ""
+    )
     schema_def.setdefault("fallback_structures", {}).setdefault(
         target_signature_class, {}
     )[field_name] = default_fallback
@@ -124,11 +130,21 @@ def add_schema_def_field(
     return schema_def
 
 
-def remove_schema_def_field(schema_def: dict, *, field_name: str) -> dict:
+def remove_schema_def_field(
+    schema_def: dict, *, field_name: str
+) -> Tuple[dict, Optional[str], Optional[int]]:
     """Remove an output_field from schema_def.
 
     Raises ValueError if the field has downstream consumers or is not found.
     Bumps schema_def["version"] on success.
+
+    If removing the field leaves its owning signature with zero output_fields,
+    the signature is cascade-removed from schema_def["signatures"] and from
+    every pipeline_stages[].signatures list. If that empties a stage's
+    signatures list, the stage is cascade-removed from pipeline_stages too.
+
+    Returns (schema_def, removed_signature_class_name, removed_stage_number) —
+    the latter two are None when no cascade occurred.
     """
     consumers = signatures_consuming_field(schema_def, field_name)
     if consumers:
@@ -161,8 +177,30 @@ def remove_schema_def_field(schema_def: dict, *, field_name: str) -> dict:
                 f for f in stage["provides_fields"] if f != field_name
             ]
 
+    removed_signature: Optional[str] = None
+    removed_stage: Optional[int] = None
+    for sig_def in schema_def.get("signatures", []):
+        if sig_def.get("class_name") == producer_class and not sig_def.get("output_fields"):
+            removed_signature = producer_class
+            break
+    if removed_signature:
+        schema_def["signatures"] = [
+            s for s in schema_def["signatures"] if s.get("class_name") != removed_signature
+        ]
+        fs.pop(removed_signature, None)
+        for stage in schema_def.get("pipeline_stages", []):
+            if removed_signature in stage.get("signatures", []):
+                stage["signatures"] = [s for s in stage["signatures"] if s != removed_signature]
+        remaining_stages = []
+        for stage in schema_def.get("pipeline_stages", []):
+            if stage.get("signatures"):
+                remaining_stages.append(stage)
+            elif removed_stage is None:
+                removed_stage = stage.get("stage")
+        schema_def["pipeline_stages"] = remaining_stages
+
     schema_def["version"] = schema_def.get("version", 1) + 1
-    return schema_def
+    return schema_def, removed_signature, removed_stage
 
 
 def update_schema_def_subfield(
@@ -197,40 +235,41 @@ def update_schema_def_subfield(
             else:
                 out_field.pop("subform_fields", None)
 
-            # Reconcile two-stage config with the new column set: a renamed or
-            # deleted anchor column would otherwise leave anchor_columns
-            # pointing at nothing and Stage 1 with zero columns to discover
+            # Reconcile the keyed config with the new column set: a renamed or
+            # deleted key column would otherwise leave the composite key
+            # pointing at nothing and record discovery with nothing to find
             # rows with.
-            if out_field.get("anchor_columns") is not None:
+            if any(k in out_field for k in KEY_COLUMN_FIELDS):
                 new_names = [
                     sf.get("field_name") for sf in (subform_fields or [])
                     if isinstance(sf, dict) and sf.get("field_name")
                 ]
-                kept = [a for a in out_field["anchor_columns"] if a in set(new_names)]
+                kept = [a for a in field_key_columns(out_field) if a in set(new_names)]
                 if not kept and new_names:
-                    from core.generators.signature_gen import _auto_detect_anchors
-                    kept = sorted(_auto_detect_anchors(subform_fields))
+                    from core.generators.signature_gen import _auto_detect_key_columns
+                    kept = sorted(_auto_detect_key_columns(subform_fields))
                     logger.warning(
-                        "All anchor columns of '%s' were removed/renamed — "
-                        "re-detected anchors: %s", field_name, kept,
+                        "Every key column of '%s' was removed/renamed — "
+                        "re-detected composite key: %s", field_name, kept,
                     )
                 if not new_names or not kept or len(kept) >= len(new_names):
                     # Degenerate split (no columns, no anchors, or no value
-                    # columns left) — two-stage cannot run; fall back.
-                    out_field.pop("anchor_columns", None)
-                    if out_field.get("extraction_strategy") == "row_then_columns":
+                    # columns left) — the keyed pipeline cannot run; fall back.
+                    for _k in KEY_COLUMN_FIELDS:
+                        out_field.pop(_k, None)
+                    if field_strategy(out_field) == DISCOVER_THEN_FILL:
                         out_field["extraction_strategy"] = "single_call"
                         logger.warning(
                             "Demoted '%s' to single_call — column edit left no "
                             "valid anchor/value split.", field_name,
                         )
                 else:
-                    out_field["anchor_columns"] = kept
-                anchor_set = set(out_field.get("anchor_columns") or [])
+                    set_field_key_columns(out_field, kept)
+                key_set = set(field_key_columns(out_field))
                 for sf in (subform_fields or []):
                     if isinstance(sf, dict):
                         sf["extraction_role"] = (
-                            "anchor" if sf.get("field_name") in anchor_set else "value"
+                            "anchor" if sf.get("field_name") in key_set else "value"
                         )
 
             schema_def["version"] = schema_def.get("version", 1) + 1
@@ -274,17 +313,58 @@ def add_decomposition_field(
     return decomposition
 
 
-def remove_decomposition_field(decomposition: dict, field_name: str) -> dict:
+def remove_decomposition_field(
+    decomposition: dict, field_name: str
+) -> Tuple[dict, Optional[str], Optional[int]]:
     """Sync metadata.decomposition after remove_schema_def_field.
 
     Removes field_name from all signatures' fields dicts and from all
     pipeline stages' provides_fields lists. Idempotent.
+
+    If removing the field leaves its owning signature with zero fields, the
+    signature is cascade-removed from decomposition["signatures"] and from
+    every pipeline stage's signatures list. If that empties a stage's
+    signatures list, the stage is cascade-removed from decomposition["pipeline"].
+
+    Returns (decomposition, removed_signature_name, removed_stage_number) —
+    the latter two are None when no cascade occurred. Computed independently
+    against decomposition's own shape rather than trusting schema_def's
+    cascade result, since the two stores can drift.
     """
     decomposition = copy.deepcopy(decomposition)
+    producer_name = None
     for sig in decomposition.get("signatures", []):
+        if field_name in (sig.get("fields") or {}):
+            producer_name = sig.get("name") or sig.get("class_name")
         sig.get("fields", {}).pop(field_name, None)
     for stage in decomposition.get("pipeline", []):
         pf = stage.get("provides_fields", [])
         if field_name in pf:
             stage["provides_fields"] = [f for f in pf if f != field_name]
-    return decomposition
+
+    removed_signature: Optional[str] = None
+    removed_stage: Optional[int] = None
+    if producer_name:
+        for sig in decomposition.get("signatures", []):
+            name = sig.get("name") or sig.get("class_name")
+            if name == producer_name and not sig.get("fields"):
+                removed_signature = producer_name
+                break
+    if removed_signature:
+        decomposition["signatures"] = [
+            s for s in decomposition["signatures"]
+            if (s.get("name") or s.get("class_name")) != removed_signature
+        ]
+        for stage in decomposition.get("pipeline", []):
+            sigs = stage.get("signatures") or []
+            if removed_signature in sigs:
+                stage["signatures"] = [s for s in sigs if s != removed_signature]
+        remaining_stages = []
+        for stage in decomposition.get("pipeline", []):
+            if stage.get("signatures"):
+                remaining_stages.append(stage)
+            elif removed_stage is None:
+                removed_stage = stage.get("stage")
+        decomposition["pipeline"] = remaining_stages
+
+    return decomposition, removed_signature, removed_stage

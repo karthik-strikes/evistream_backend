@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 from supabase import create_client
 
+from utils.table_schema import DISCOVER_THEN_FILL, field_key_columns, field_strategy
 from app.workers.celery_app import celery_app
 from app.config import settings
 from app.services.extraction_service import extraction_service
@@ -76,8 +77,12 @@ def run_extraction(
         # Stamp this job onto every llm_history row flushed during the run so
         # per-run cost/token attribution is exact. asyncio.run() copies this
         # context into the extraction coroutine. See utils/run_context.py.
-        from utils.run_context import set_current_job_id
+        from utils.run_context import set_current_extraction_id, set_current_job_id
         set_current_job_id(job_id)
+        # Also stamp the extraction: it is the FK /usage groups runs by, so
+        # without it per-run cost falls back to a time window and a concurrent
+        # run of the same form lands in this run's numbers.
+        set_current_extraction_id(extraction_id)
 
         # Update job status to processing (record wall-clock start for duration).
         supabase.table("jobs").update({
@@ -151,15 +156,15 @@ def run_extraction(
                             if _f.get("examples"):
                                 _lines.append(f"      examples: {[e.get('value') for e in _f['examples']]}")
 
-                            # Reflect runtime 2-stage wrap (row_then_columns)
-                            if _f.get("extraction_strategy") == "row_then_columns" and _f.get("anchor_columns"):
-                                _anchors = list(_f.get("anchor_columns") or [])
+                            # Reflect the runtime keyed wrap (discover_then_fill)
+                            if field_strategy(_f) == DISCOVER_THEN_FILL and field_key_columns(_f):
+                                _records = field_key_columns(_f)
                                 _all_subs = [_sf.get("field_name") for _sf in (_f.get("subform_fields") or [])]
-                                _value_cols = [_c for _c in _all_subs if _c not in set(_anchors)]
-                                _lines.append(f"      ↳ RUNTIME 2-STAGE WRAP for '{_f['name']}'")
-                                _lines.append(f"        ├─ S1 (1 call):  DiscoverRows  anchors={_anchors}")
-                                _lines.append(f"        └─ S2 (1 call per discovered row, parallel — each row fills all {len(_value_cols)} value cols):")
-                                for _vc in _value_cols:
+                                _attr_cols = [_c for _c in _all_subs if _c not in set(_records)]
+                                _lines.append(f"      ↳ RUNTIME KEYED PIPELINE for '{_f['name']}'")
+                                _lines.append(f"        ├─ record discovery (1 call)   composite key={_records}")
+                                _lines.append(f"        └─ slot filling (set-at-a-time, falls back to row-at-a-time) — fills {len(_attr_cols)} attribute(s) per record:")
+                                for _vc in _attr_cols:
                                     _lines.append(f"             • {_vc}")
                 with open(_sig_log, "a") as _fh:
                     _fh.write("\n".join(_lines) + "\n")
@@ -193,10 +198,36 @@ def run_extraction(
 
         # Get documents for this project
         project_id = extraction.get("project_id")
+
+        # Project-level review scope — extraction CONTEXT, never a row filter.
+        # Loaded here rather than inside the pipeline because get_schema() is
+        # keyed by schema_name and never sees the project (same reason
+        # pilot_feedback is threaded from this task).
+        review_scope = None
+        try:
+            _proj = supabase.table("projects")\
+                .select("review_scope")\
+                .eq("id", project_id)\
+                .execute()
+            if _proj.data:
+                review_scope = (_proj.data[0].get("review_scope") or "").strip() or None
+            if review_scope:
+                logger.info(
+                    f"Loaded review scope for project {project_id} "
+                    f"({len(review_scope)} chars)"
+                )
+        except Exception as e:
+            # A missing scope must never fail an extraction — it is additive context.
+            logger.warning(f"Could not load review_scope for project {project_id}: {e}")
+        # `completed` = full text available. `metadata_only` = thin evidence
+        # (abstract-only PubMed, registration-only trial) and is included ONLY
+        # once a reviewer accepted it, so a run never silently treats an abstract
+        # as a full paper. Post-filtered in Python rather than a PostgREST or()
+        # so the rule stays legible.
         documents_query = supabase.table("documents")\
-            .select("id, s3_markdown_path, s3_blocks_path, processing_status")\
+            .select("id, s3_markdown_path, s3_blocks_path, processing_status, metadata_extraction_approved")\
             .eq("project_id", project_id)\
-            .eq("processing_status", "completed")
+            .in_("processing_status", ["completed", "metadata_only"])
 
         # Filter by specific document IDs if provided
         if document_ids:
@@ -204,10 +235,21 @@ def run_extraction(
 
         documents_result = documents_query.execute()
 
-        if not documents_result.data:
+        documents = [
+            d for d in (documents_result.data or [])
+            if d.get("processing_status") == "completed"
+            or d.get("metadata_extraction_approved")
+        ]
+        skipped_thin = len(documents_result.data or []) - len(documents)
+
+        if not documents:
             raise Exception(f"No processed documents found for project {project_id}")
 
-        documents = documents_result.data
+        if skipped_thin:
+            logger.info(
+                "Skipping %d metadata-only document(s) not yet accepted for extraction",
+                skipped_thin,
+            )
         logger.info(f"Found {len(documents)} processed documents")
 
         # Update job progress
@@ -356,6 +398,7 @@ def run_extraction(
                 pilot_feedback=pilot_feedback,
                 path_to_blocks_path=valid_path_to_blocks_path or None,
                 model_name=model,
+                review_scope=review_scope,
             )
 
             # Broadcast a cost summary for rows logged since job start.
@@ -404,7 +447,7 @@ def run_extraction(
         if result.get("success"):
             logger.info(f"Extraction successful for job {extraction_id}")
 
-            # LOG STAGE-1 ROWS to signatures.log for 2-stage fields
+            # LOG DISCOVERED RECORDS to signatures.log for keyed fields
             try:
                 _sig_log = os.path.join(os.path.dirname(__file__), "../../../logs/signatures.log")
                 _sig_log = os.path.normpath(_sig_log)
@@ -412,38 +455,38 @@ def run_extraction(
                 if isinstance(_sd, str):
                     import json as _json
                     _sd = _json.loads(_sd)
-                # Build map: field_name → anchor_columns for 2-stage fields
-                _two_stage_fields: dict = {}
+                # Build map: field_name → composite key for keyed fields
+                _keyed_fields: dict = {}
                 for _sig in (_sd.get("signatures") or []):
                     for _of in (_sig.get("output_fields") or []):
                         if (
-                            _of.get("extraction_strategy") == "row_then_columns"
-                            and _of.get("anchor_columns")
+                            field_strategy(_of) == DISCOVER_THEN_FILL
+                            and field_key_columns(_of)
                         ):
-                            _two_stage_fields[_of["name"]] = _of["anchor_columns"]
+                            _keyed_fields[_of["name"]] = field_key_columns(_of)
 
-                if _two_stage_fields and paper_results:
-                    _s1_lines = [f"\n{'='*60}", f"STAGE 1 RESULTS — job {extraction_id}"]
+                if _keyed_fields and paper_results:
+                    _discovery_lines = [f"\n{'='*60}", f"RECORD DISCOVERY RESULTS — job {extraction_id}"]
                     for _doc_id, _extracted in paper_results.items():
-                        _s1_lines.append(f"  doc: {_doc_id}")
-                        for _fname, _anchors in _two_stage_fields.items():
+                        _discovery_lines.append(f"  doc: {_doc_id}")
+                        for _fname, _records in _keyed_fields.items():
                             _rows = _extracted.get(_fname) or []
                             if isinstance(_rows, dict):
                                 # Envelope shape: rows live under "value".
                                 _inner = _rows.get("value")
                                 _rows = _inner if isinstance(_inner, list) else [_rows]
-                            _s1_lines.append(f"  [{_fname}]  {len(_rows)} row(s) discovered:")
+                            _discovery_lines.append(f"  [{_fname}]  {len(_rows)} row(s) discovered:")
                             for _ri, _row in enumerate(_rows):
-                                _anchor_vals = []
-                                for _ac in _anchors:
+                                _key_vals = []
+                                for _ac in _records:
                                     _v = _row.get(_ac)
                                     if isinstance(_v, dict):
                                         _v = _v.get("value", _v)
-                                    _anchor_vals.append(f"{_ac}={str(_v)[:40]!r}")
-                                _s1_lines.append(f"    row[{_ri}]: {',  '.join(_anchor_vals)}")
-                    _s1_lines.append("")
+                                    _key_vals.append(f"{_ac}={str(_v)[:40]!r}")
+                                _discovery_lines.append(f"    row[{_ri}]: {',  '.join(_key_vals)}")
+                    _discovery_lines.append("")
                     with open(_sig_log, "a") as _fh:
-                        _fh.write("\n".join(_s1_lines) + "\n")
+                        _fh.write("\n".join(_discovery_lines) + "\n")
             except Exception as _e:
                 logger.debug(f"Stage-1 row logger failed: {_e}")
             # END LOG STAGE-1 ROWS

@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator, mo
 from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 from uuid import UUID
+from utils.table_schema import STRATEGY_ALIASES, resolve_strategy
 from .enums import (
     JobStatus, JobType, FormStatus, DocumentStatus, UserRole,
     IssueCategory, IssuePriority, IssueStatus,
@@ -161,12 +162,35 @@ class ProjectResponse(BaseModel):
     description: Optional[str]
     created_at: datetime
     updated_at: datetime
+    review_settings: Optional[Dict[str, Any]] = None
+    review_scope: Optional[str] = None
+
+    # Soft archive: archived_at is None for active projects. Archived projects
+    # are hidden from the default list and are read-only until restored.
+    archived_at: Optional[datetime] = None
+    archived_by: Optional[UUID] = None
 
     # Counts
     forms_count: int = 0
     documents_count: int = 0
 
+    # Caller's role on this project (owner/manager/member/viewer, or "admin"
+    # for global admins) — lets the frontend show owner-only controls (e.g.
+    # delete) to co-owners who aren't the original creator.
+    my_role: Optional[str] = None
+
     model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewSettingsUpdate(BaseModel):
+    """Update a project's manual-review blinding settings."""
+    blinding: BlindingMode
+    hide_ai_results: bool = False
+
+
+class ReviewScopeUpdate(BaseModel):
+    """Update a project's review scope — extraction context, not a row filter."""
+    review_scope: Optional[str] = Field(None, max_length=4000)
 
 
 # ============================================================================
@@ -198,17 +222,38 @@ class DocumentResponse(BaseModel):
     """Document information response."""
     id: UUID
     project_id: UUID
+    ref_id: int
     filename: str
     unique_filename: Optional[str]
     s3_pdf_path: Optional[str]
     s3_markdown_path: Optional[str]
     processing_status: DocumentStatus
     processing_error: Optional[str]
+    blocks_status: Optional[str] = None
+    blocks_error: Optional[str] = None
     content_hash: Optional[str] = None
+    doi: Optional[str] = None
+    doi_source: Optional[str] = None
+    title: Optional[str] = None
     labels: List[str] = []
     created_at: datetime
+    source_type: Optional[str] = None
+    nct_id: Optional[str] = None
+    trial_status: Optional[str] = None
+    trial_phase: Optional[str] = None
+    pmid: Optional[str] = None
+    # Only meaningful when processing_status == metadata_only: a reviewer has
+    # accepted this thin-evidence document for extraction. Deliberately separate
+    # from processing_status so the "evidence was thin" fact survives approval.
+    metadata_extraction_approved: bool = False
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ApproveMetadataRequest(BaseModel):
+    """Accept (or un-accept) thin-evidence documents for extraction."""
+    document_ids: List[UUID] = Field(..., min_length=1)
+    approved: bool = True
 
 
 class DocumentLabelsUpdate(BaseModel):
@@ -269,7 +314,7 @@ class FieldDefinition(BaseModel):
     # Table extraction strategy (only meaningful on array fields).
     # Mirrors schema_def.output_fields[].extraction_strategy / .anchor_columns
     # so the UI can roundtrip without going through schema_def.
-    extraction_strategy: Optional[str] = None   # 'single_call' | 'row_then_columns'
+    extraction_strategy: Optional[str] = None   # 'single_call' | 'row_then_columns' | 'agentic'
     anchor_columns: Optional[List[str]] = None
 
     @field_validator('field_type', mode='before')
@@ -313,10 +358,20 @@ class FormResponse(BaseModel):
     statistics: Optional[Dict[str, Any]]
     error: Optional[str]
     metadata: Optional[Dict[str, Any]] = None  # Workflow state for human review
+    # HITL #1. This is the ONLY home for the flag — it is a top-level column,
+    # never a metadata key. The UI used to read `metadata.enable_review`, which
+    # is absent on every form, so review silently never re-ran.
+    enable_review: bool = False
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator('enable_review', mode='before')
+    @classmethod
+    def default_enable_review(cls, v):
+        """The column is nullable — a NULL means "off", not a validation error."""
+        return bool(v)
 
     @field_validator('metadata', mode='before')
     @classmethod
@@ -361,13 +416,52 @@ class FieldEditUpdate(BaseModel):
     hints: Optional[List[str]] = None
     rules: Optional[List[str]] = None
     options: Optional[List[str]] = None         # select-field answer choices
-    extraction_strategy: Optional[str] = None   # 'single_call' | 'row_then_columns'
-    anchor_columns: Optional[List[str]] = None  # column names used as row identifiers
+    # Accepts every spelling utils.table_schema knows, old and new. Validating
+    # against a hardcoded triple is how the canonical names would have started
+    # returning 422 the moment anything sent them.
+    extraction_strategy: Optional[str] = None
+    # The composite key. `key_columns` is the new name; both are accepted on
+    # input and the handler dual-writes them.
+    key_columns: Optional[List[str]] = None
+    anchor_columns: Optional[List[str]] = None
+
+    @field_validator("extraction_strategy")
+    @classmethod
+    def _valid_extraction_strategy(cls, v):
+        if v is not None and resolve_strategy(v) is None:
+            raise ValueError(
+                "extraction_strategy must be one of: "
+                + ", ".join(sorted(STRATEGY_ALIASES))
+            )
+        return v
 
 
 class FieldEditsRequest(BaseModel):
-    """Bulk field-level review edits (examples/hints/rules)."""
-    field_updates: List[FieldEditUpdate] = Field(..., min_length=1)
+    """Bulk field-level review edits (examples/hints/rules).
+
+    `table_extraction_mode` is form-level, not per-field: it selects which
+    extractor runs for this form's TABLE fields. It is sent on this endpoint
+    rather than a new one so it reuses the existing atomic
+    schema_def + fields + metadata write, its OCC guard, and the schemas-table
+    mirror.
+    """
+    field_updates: List[FieldEditUpdate] = Field(default_factory=list)
+    table_extraction_mode: Optional[str] = None   # 'standard' | 'agentic'
+
+    @field_validator("table_extraction_mode")
+    @classmethod
+    def _valid_mode(cls, v):
+        if v is not None and v not in ("standard", "agentic"):
+            raise ValueError("table_extraction_mode must be 'standard' or 'agentic'")
+        return v
+
+    @model_validator(mode="after")
+    def _not_empty(self):
+        if not self.field_updates and self.table_extraction_mode is None:
+            raise ValueError(
+                "provide at least one field update or a table_extraction_mode"
+            )
+        return self
 
 
 class AddFieldRequest(BaseModel):
@@ -693,6 +787,9 @@ class MyPermissionsResponse(BaseModel):
     can_qa_review: bool = False
     can_manage_assignments: bool = False
     can_manage_members: bool = False
+    # Derived (not stored on project_members): rename / archive / restore.
+    # True for owners, global admins, and managers.
+    can_manage_project: bool = False
 
 
 class OwnershipTransferRequest(BaseModel):
@@ -877,14 +974,44 @@ class ReviewAssignmentResponse(BaseModel):
 # Adjudication Schemas
 # ============================================================================
 
+#: How an adjudicator settled one field. This is stored, exported, and consumed
+#: by data_cleaning_service as the provenance of `final_value`, so a wrong label
+#: silently poisons any later audit of who decided what.
+#:
+#: `suggestion` is a legacy alias for `majority` — nothing can have written it
+#: (the button did not exist until the review screen was rebuilt), but accepting
+#: it costs nothing. `not_reported` / `not_applicable` used to be smuggled through
+#: `custom` with a "NR"/"NA" final_value and recovered by parsing that string
+#: back; they are explicit now, and the parsing fallback stays for stored rows.
+ResolutionSource = Literal[
+    "agreed",
+    "ai",
+    "reviewer_1",
+    "reviewer_2",
+    "majority",
+    "suggestion",
+    "custom",
+    "not_reported",
+    "not_applicable",
+]
+
+
 class FieldResolution(BaseModel):
     """Resolution for a single field during adjudication."""
     reviewer_1_value: Optional[Any] = None
     reviewer_2_value: Optional[Any] = None
     agreed: bool = False
     final_value: Optional[Any] = None
-    resolution_source: str = "agreed"  # reviewer_1|reviewer_2|custom|agreed
+    resolution_source: ResolutionSource = "agreed"
     adjudicator_note: Optional[str] = None
+
+    # field_resolutions is a JSONB column that previously stored whatever the
+    # client sent, verbatim. Pydantic v2 defaults to extra="ignore", so typing the
+    # value would have silently DROPPED any per-field key not declared above —
+    # turning validation into data loss. Allow extras: this model exists to
+    # validate resolution_source, not to narrow what can be stored.
+    model_config = ConfigDict(extra="allow")
+
 
 class AdjudicationResolveRequest(BaseModel):
     """Request to save adjudication decisions."""
@@ -893,8 +1020,8 @@ class AdjudicationResolveRequest(BaseModel):
     document_id: UUID
     reviewer_1_result_id: Optional[UUID] = None
     reviewer_2_result_id: Optional[UUID] = None
-    field_resolutions: Dict[str, Any]
-    status: str = "in_progress"
+    field_resolutions: Dict[str, FieldResolution]
+    status: Literal["in_progress", "completed"] = "in_progress"
 
 class AdjudicationResultResponse(BaseModel):
     """Adjudication result response."""

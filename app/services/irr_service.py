@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 
 from app.config import settings
 
+from utils import value_compare
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,10 +54,10 @@ def _percent_agreement(values_1: List[Any], values_2: List[Any]) -> Optional[flo
     if len(values_1) != len(values_2) or len(values_1) == 0:
         return None
 
-    agreements = sum(
-        1 for v1, v2 in zip(values_1, values_2)
-        if str(v1).strip().lower() == str(v2).strip().lower()
-    )
+    # Compare the tokens as-is. Callers hand this already-canonical tokens from
+    # value_compare, so a second, weaker canonicalization here would be a seam
+    # through which the two could disagree.
+    agreements = sum(1 for v1, v2 in zip(values_1, values_2) if v1 == v2)
     return round(agreements / len(values_1), 4)
 
 
@@ -105,9 +107,14 @@ async def compute_irr(
     for r in (results.data or []):
         doc_id = r["document_id"]
         role = r["reviewer_role"]
+        data = r.get("extracted_data", {})
+        # An in-progress draft is not a rating: scoring it would compare a
+        # half-filled form against a finished one.
+        if not data or data.get("_partial") is True:
+            continue
         if doc_id not in by_doc:
             by_doc[doc_id] = {}
-        by_doc[doc_id][role] = r.get("extracted_data", {})
+        by_doc[doc_id][role] = data
 
     # Only use documents where both reviewers completed
     paired_docs = [
@@ -121,8 +128,9 @@ async def compute_irr(
     # Collect field-level values
     all_fields: set = set()
     for doc_id in paired_docs:
-        all_fields.update(by_doc[doc_id].get("reviewer_1", {}).keys())
-        all_fields.update(by_doc[doc_id].get("reviewer_2", {}).keys())
+        all_fields.update(value_compare.comparable_fields(
+            by_doc[doc_id].get("reviewer_1"), by_doc[doc_id].get("reviewer_2"),
+        ))
 
     field_metrics = {}
     overall_r1 = []
@@ -134,11 +142,25 @@ async def compute_irr(
         for doc_id in paired_docs:
             v1 = by_doc[doc_id].get("reviewer_1", {}).get(field)
             v2 = by_doc[doc_id].get("reviewer_2", {}).get(field)
-            if v1 is not None and v2 is not None:
-                r1_vals.append(str(v1))
-                r2_vals.append(str(v2))
-                overall_r1.append(str(v1))
-                overall_r2.append(str(v2))
+            if v1 is None or v2 is None:
+                continue
+            # Compare canonical tokens, not str(envelope): the raw repr put
+            # `status` inside the compared string and made "NR", "NA" and ""
+            # three separate kappa categories.
+            #
+            # compare_pair, not a per-value token: multi-select alignment is
+            # inherently pairwise (a list agreeing with a comma-joined string
+            # cannot be seen one side at a time), so tokenizing separately gave
+            # IRR a stricter rule than the adjudication screen showed the user.
+            k1, k2 = value_compare.compare_pair(v1, v2)
+            if k1 is None or k2 is None:
+                # An extraction failure is not a rating — excluding the pair is
+                # honest; scoring it would invent agreement or disagreement.
+                continue
+            r1_vals.append(k1)
+            r2_vals.append(k2)
+            overall_r1.append(k1)
+            overall_r2.append(k2)
 
         if not r1_vals:
             continue

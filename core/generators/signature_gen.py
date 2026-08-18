@@ -9,6 +9,7 @@ import logging
 import re
 from pathlib import Path
 from typing import Dict, Any
+from utils.table_schema import field_key_columns, set_field_key_columns
 from .models import SignatureGenerationState, SignatureSpec, AddFieldSpec
 from utils.lm_config import get_langchain_model
 from config.models import CODEGEN_SIGNATURE_MODEL
@@ -40,19 +41,171 @@ _ROLE_CONTEXT: Dict[str, str] = {
     ),
 }
 
+# A table field's extraction mode is a user choice made per field in the form
+# builder (see FieldEditUpdate.extraction_strategy), not inferred from column
+# count. New/unset fields default to "single_call" at every width.
+_VALID_TABLE_STRATEGIES = {"single_call", "row_then_columns", "agentic"}
 
-def _auto_detect_anchors(subfields: list) -> set:
-    """Heuristic: columns whose names contain identity-like keywords are anchor candidates.
 
-    Per-arm/per-group MEASUREMENTS (e.g. ``mean_arm1``, ``sd_arm2``, ``n_arm1``) are always
-    values, never anchors — guard against them first. Without this, the ``"arm"`` keyword
-    matched the ``*_arm<N>`` suffix on every numeric column, putting them all in the anchor
-    set and leaving ``value_cols`` empty (Stage 2 then extracts nothing → all NR).
+# Stray control characters and doubled words have shipped into a live prompt
+# (one form of 118 carried a literal CR mid-sentence — "repeated-measures data
+# \r ow a distinct timepoint" — plus a doubled "use use"). Rare, but it lands in
+# every extraction that form runs, so normalize at the point of generation
+# instead of discovering it in a rendered prompt weeks later.
+_CTRL_CHARS = re.compile(r"[\x00-\x08\x0b-\x1f]")
+_DOUBLED_WORD = re.compile(r"\b(\w{3,})(\s+)\1\b", re.I)
+
+
+def _sanitize_generated_prose(value, field_label: str, key: str):
+    """Strip control characters and collapse doubled words in LLM-authored prose.
+
+    Applied to hints/rules/examples/options as they are produced. Logs loudly so
+    a systematic generation problem is visible rather than silently repaired.
+    Non-string members (e.g. example dicts) pass through untouched.
+    """
+    def _clean(s: str) -> str:
+        original = s
+        s = _CTRL_CHARS.sub(" ", s)
+        s = _DOUBLED_WORD.sub(r"\1", s)
+        s = re.sub(r"\s{2,}", " ", s).strip()
+        if s != original:
+            logger.warning(
+                "Sanitized malformed generated %s on '%s': %r -> %r",
+                key, field_label, original[:120], s[:120],
+            )
+        return s
+
+    if isinstance(value, str):
+        return _clean(value)
+    if isinstance(value, list):
+        return [_clean(v) if isinstance(v, str) else v for v in value]
+    return value
+
+
+# Matches a hand-typed row key such as
+#   "One row per (comparison × outcome_type × reporter × timepoint)"
+# so it can be compared against the computed anchor set. Accepts ×, x or * as
+# the separator and tolerates the tuple being unparenthesised.
+_PROSE_ROW_KEY = re.compile(
+    r"(?:one|1)\s+(?:row|entry|record)\s+per\s*\(?([A-Za-z0-9_\s×x*]+?)\)?[.\n]",
+    re.I,
+)
+
+
+def _warn_on_row_key_mismatch(field_name: str, key_cols, texts: list) -> None:
+    """Log when a hand-typed row key disagrees with the computed anchor set.
+
+    The row key is composed from ``anchor_columns`` at prompt-render time
+    (``runtime_builders._compose_field_desc``), which is authoritative. Many
+    forms still carry an older hand-typed sentence; where the two disagree the
+    prompt contains a contradiction, so surface it at codegen rather than
+    silently editing the author's prose.
+    """
+    anchors = {str(a).strip().lower() for a in (key_cols or []) if a}
+    if not anchors:
+        return
+    for text in texts:
+        if not text:
+            continue
+        m = _PROSE_ROW_KEY.search(str(text))
+        if not m:
+            continue
+        prose = {
+            t.strip().lower()
+            for t in re.split(r"[×x*]", m.group(1))
+            if t.strip() and len(t.strip()) > 1
+        }
+        # Only meaningful when the prose actually names columns.
+        if not prose or not (prose & anchors):
+            continue
+        if prose != anchors:
+            logger.warning(
+                "Row-key mismatch on '%s': prose says {%s} but the composite key is "
+                "{%s}. The composed Row Identity block (from the composite key) wins "
+                "at runtime — consider removing the stale sentence. Missing from "
+                "prose: %s",
+                field_name, ", ".join(sorted(prose)), ", ".join(sorted(anchors)),
+                sorted(anchors - prose) or "none",
+            )
+        return
+
+
+# ── Row-identity guard (shared by BOTH anchor detectors) ─────────────────────
+# A measured result can never be part of row identity. When it is, a value
+# disagreement becomes an identity disagreement: `arm1_n = 25` and `arm1_n = 26`
+# are two DIFFERENT rows, so a plan/output row-coverage check reports a phantom
+# missing row, and R1-vs-R2 adjudication reports a phantom conflict, on nothing
+# but a one-digit read difference.
+#
+# Found live (Aug 11 2026): `Dichotomous Outcomes v2` had 8 of 11 columns as
+# anchors including every numeric measurement (arm1_events, arm1_n, arm2_events,
+# arm2_n), leaving slot filling with only metadata columns — the keyed split
+# inverted, with the numeric extraction happening in the row-DISCOVERY call.
+# `_auto_detect_key_columns` would have excluded all of them (`field_type == number`
+# → value), but it is only the FALLBACK; the primary path for every >5-column
+# table is `_llm_detect_key_columns`, whose sole guard was "≥1 anchor AND ≥1 value",
+# which 8-of-11 passes.
+#
+# Deliberately a CONJUNCTION (numeric AND result-named), not `field_type ==
+# "number"` alone. Stripping an anchor MERGES rows — the direction that silently
+# destroys data — and legitimate identity dimensions can be numeric (dose_mg,
+# visit_number, timepoint-in-hours, year). A numeric column whose name carries
+# no statistical token is therefore KEPT and logged for review rather than
+# removed.
+_RESULT_TOKENS = {
+    "mean", "median", "sd", "std", "stdev", "se", "sem", "iqr", "ci",
+    "n", "num", "count", "events", "event", "pct", "percent", "proportion",
+    "rate", "effect", "estimate", "pvalue", "pval", "p", "change", "delta",
+    "diff", "var", "variance", "ratio", "rr", "hr", "md", "smd", "nnt",
+}
+
+
+def is_measured_result_column(sf: dict) -> bool:
+    """True when a subform column is a measured RESULT, never a row identity.
+
+    Requires both signals: a numeric field_type AND a statistical token
+    anywhere in the column name. See the comment above for why the numeric
+    test alone is not used.
+    """
+    if not isinstance(sf, dict):
+        return False
+    if (sf.get("field_type") or "").lower() != "number":
+        return False
+    fname = (sf.get("field_name", "") or "").lower()
+    tokens = {t for t in re.split(r"[_\s]+", fname) if t}
+    return bool(tokens & _RESULT_TOKENS)
+
+
+def _auto_detect_key_columns(subfields: list) -> set:
+    """Heuristic anchor (row-identity) detection — the fallback for
+    ``_llm_detect_key_columns``.
+
+    **A column is an anchor unless it looks like a measurement.** The rule used to
+    be the other way round — a column had to match an identity keyword to become
+    an anchor — and that under-detected badly: on the CD015432 continuous-outcomes
+    table it returned only ``{outcome_type, timepoint}``, silently dropping
+    ``comparison`` and ``reporter`` because neither word appears in the keyword
+    list. Anchors are the row key, so missing one MERGES rows that should be
+    distinct: all four comparator arms would have collapsed into a single row and
+    three quarters of the table would have been discarded with no warning.
+
+    The asymmetry is deliberate. Too FEW anchors silently destroys data; too many
+    only splits rows more finely (more Stage-2 calls, no loss) and, in the
+    degenerate case, is caught by the guard below and by the splicer's demotion
+    to ``single_call``. When guessing, guess toward over-splitting.
+
+    Per-arm/per-group MEASUREMENTS (``mean_arm1``, ``sd_arm2``, ``n_arm1``) must
+    still be excluded explicitly: the ``"arm"`` keyword otherwise matched the
+    ``*_arm<N>`` suffix on every numeric column, leaving ``attr_cols`` empty so
+    slot filling extracted nothing and every cell came back NR.
     """
     ANCHOR_KEYWORDS = {
         "name", "label", "type", "subtype", "point", "timepoint", "period",
         "arm", "group", "unit", "category", "intervention", "outcome", "visit",
         "event", "treatment", "identifier", "measure",
+        # Identity words the keyword-only rule missed on real forms.
+        "comparison", "comparator", "reporter", "population", "subgroup",
+        "cohort", "condition", "instrument", "scale", "drug", "regimen",
     }
     # Numeric measurement broken out per arm/group: mean_arm1, sd_arm2, n_arm1, change_group2.
     PER_ARM_VALUE = re.compile(r".*_(arm|group|grp|g)\s*\d+$")
@@ -64,24 +217,47 @@ def _auto_detect_anchors(subfields: list) -> set:
         "min", "max", "sum", "total", "avg", "baseline",
     }
 
-    def _is_value(fname: str) -> bool:
+    def _is_value(sf: dict) -> bool:
+        fname = (sf.get("field_name", "") or "").lower()
         if PER_ARM_VALUE.match(fname):
             return True
         tokens = re.split(r"[_\s]+", fname)
-        return bool(tokens) and tokens[0] in MEASURE_TOKENS
+        if tokens and tokens[0] in MEASURE_TOKENS:
+            return True
+        # A numeric column is a measured quantity, not a row identity. This is
+        # what lets the rule classify `mean_arm1`-style columns as values even
+        # when their names carry no statistic token.
+        if (sf.get("field_type") or "").lower() == "number":
+            return True
+        return False
 
-    anchors = set()
-    for sf in subfields:
-        raw = sf.get("field_name", "")
-        fname = raw.lower()
-        if _is_value(fname):
-            continue  # measurement column → value, never an anchor
-        if any(kw in fname for kw in ANCHOR_KEYWORDS):
-            anchors.add(raw)
-    # Fallback: anchor first column if nothing detected
-    if not anchors and subfields:
-        anchors.add(subfields[0].get("field_name", ""))
-    return anchors
+    names = [
+        sf.get("field_name", "") for sf in subfields
+        if isinstance(sf, dict) and sf.get("field_name")
+    ]
+    if not names:
+        return set()
+
+    value_names = {
+        sf.get("field_name", "") for sf in subfields
+        if isinstance(sf, dict) and sf.get("field_name") and _is_value(sf)
+    }
+    anchors = {n for n in names if n not in value_names}
+
+    # A keyed pipeline needs at least one attribute, or slot filling has no outputs
+    # at all. If every column read as an anchor, fall back to the narrower
+    # keyword rule so the remainder become values.
+    if not (set(names) - anchors):
+        keyword_key_cols = {
+            n for n in names
+            if any(kw in n.lower() for kw in ANCHOR_KEYWORDS)
+        }
+        if keyword_key_cols and keyword_key_cols != set(names):
+            anchors = keyword_key_cols
+        else:
+            anchors = {names[0]}
+
+    return anchors or {names[0]}
 
 
 class SignatureGenerator:
@@ -340,14 +516,14 @@ class SignatureGenerator:
             "errors": ["Max attempts reached"],
         }
 
-    def _llm_detect_anchors(
+    def _llm_detect_key_columns(
         self, field_name: str, field_description: str, subfields: list, semaphore=None
     ) -> set:
         """Ask the LLM which columns are row-identity ANCHORS vs measured VALUES.
 
         Judges each column by its meaning (description first, then name), so columns like
         ``mean_arm1``/``sd_arm2`` are correctly values rather than anchors. Falls back to the
-        keyword heuristic (``_auto_detect_anchors``) if the LLM is unavailable or returns an
+        keyword heuristic (``_auto_detect_key_columns``) if the LLM is unavailable or returns an
         invalid/degenerate split (no anchors, no values, or every column an anchor).
         """
         import contextlib
@@ -380,26 +556,59 @@ class SignatureGenerator:
                     config=make_callback_config("codegen:anchors", schema_name=field_name),
                 )
             if result is None:
-                raise ValueError("LLM returned None for anchor classification")
+                raise ValueError("LLM returned None for key-column classification")
 
             valid = set(col_names)
             anchors = {c for c in (result.anchor_columns or []) if c in valid}
+
+            # Measurement guard — the LLM classifier has put measured numbers in
+            # the row key on live forms (see is_measured_result_column). Strip
+            # them here rather than trusting the classifier's judgement, so the
+            # LLM path is at least as safe as the keyword fallback.
+            by_name = {
+                sf.get("field_name"): sf
+                for sf in subfields if isinstance(sf, dict) and sf.get("field_name")
+            }
+            _stripped = sorted(
+                c for c in anchors if is_measured_result_column(by_name.get(c, {}))
+            )
+            if _stripped:
+                anchors -= set(_stripped)
+                logger.warning(
+                    "Key guard for '%s': removed measured result column(s) %s "
+                    "from the composite key (the classifier proposed them as key columns)",
+                    field_name, _stripped,
+                )
+            # Numeric anchors that survive are legitimate-but-unusual identity
+            # dimensions (dose, visit number, year). Surfaced, not removed —
+            # stripping an anchor merges rows, which destroys data silently.
+            _numeric_kept = sorted(
+                c for c in anchors
+                if (by_name.get(c, {}).get("field_type") or "").lower() == "number"
+            )
+            if _numeric_kept:
+                logger.info(
+                    "Key guard for '%s': numeric column(s) %s KEPT in the composite "
+                    "key (no statistical token in the name) — review if wrong",
+                    field_name, _numeric_kept,
+                )
+
             # Guard against a degenerate split — need ≥1 anchor AND ≥1 value.
             if not anchors or len(anchors) >= len(valid):
                 raise ValueError(
-                    f"Degenerate split for '{field_name}': anchors={sorted(anchors)} of {sorted(valid)}"
+                    f"Degenerate split for '{field_name}': key={sorted(anchors)} of {sorted(valid)}"
                 )
             logger.info(
-                "LLM anchor classification for '%s': anchors=%s | values=%s | %s",
+                "Key classification for '%s': key=%s | attributes=%s | %s",
                 field_name, sorted(anchors), sorted(valid - anchors), result.reasoning,
             )
             return anchors
         except Exception as exc:
             logger.warning(
-                "LLM anchor classification failed for '%s' (%s) — falling back to keyword heuristic",
+                "Key classification failed for '%s' (%s) — falling back to the keyword heuristic",
                 field_name, exc,
             )
-            return _auto_detect_anchors(subfields)
+            return _auto_detect_key_columns(subfields)
 
     def _enrich_subform_columns_independently(
         self,
@@ -435,18 +644,27 @@ class SignatureGenerator:
             if not user_subfields:
                 continue
 
-            # Strategy is auto-decided: two-stage for wide tables, single-call
-            # for narrow ones. Anchors: the LLM classifies for two-stage (with
-            # heuristic fallback); the keyword heuristic covers single-call,
-            # where roles only steer per-column prompt enrichment.
-            user_strategy = "row_then_columns" if len(user_subfields) > 5 else "single_call"
-            if user_strategy == "row_then_columns":
+            # Strategy is a user choice (form builder, per table field) carried
+            # on the field from a previous save; it is NOT inferred from column
+            # count. Unset/invalid values default to single_call.
+            #
+            # Anchors are detected independently of strategy: row_then_columns
+            # needs them to split discovery from slot filling, and agentic needs them too
+            # — for row identity, missing-row detection, and quote grounding —
+            # even though it runs as a single call. Falling back to the keyword
+            # heuristic for every wide table would quietly degrade agentic row
+            # planning, so the LLM classifier still runs on the same >5-column
+            # threshold regardless of which strategy ends up selected.
+            user_strategy = user_field.get("extraction_strategy")
+            if user_strategy not in _VALID_TABLE_STRATEGIES:
+                user_strategy = "single_call"
+            if len(user_subfields) > 5:
                 field_desc = user_field.get("field_description") or out_field.get("description") or ""
-                user_anchor_cols = self._llm_detect_anchors(
+                user_key_cols = self._llm_detect_key_columns(
                     fname, field_desc, user_subfields, semaphore=semaphore
                 )
             else:
-                user_anchor_cols = _auto_detect_anchors(user_subfields)
+                user_key_cols = _auto_detect_key_columns(user_subfields)
 
             # Sibling context list shared across all column calls
             sibling_context = [
@@ -464,7 +682,7 @@ class SignatureGenerator:
             def _enrich_one(col: Dict[str, Any]) -> tuple:
                 """Returns (original_col, enriched_col_or_None)."""
                 cname = col.get("field_name", "")
-                role = "anchor" if cname in user_anchor_cols else "value"
+                role = "anchor" if cname in user_key_cols else "value"
                 target_sig = {
                     "class_name": sig_class_name,
                     "docstring": sig_docstring,
@@ -501,7 +719,9 @@ class SignatureGenerator:
                     for key in ("hints", "rules", "examples", "options"):
                         val = col_spec.get(key)
                         if val:
-                            enriched_col[key] = val
+                            enriched_col[key] = _sanitize_generated_prose(
+                                val, f"{fname}.{cname}", key
+                            )
                     logger.info("  Per-column enrichment OK: %s.%s [%s]", fname, cname, role)
                     return col, enriched_col
                 else:
@@ -526,7 +746,15 @@ class SignatureGenerator:
             ]
             # Store extraction strategy metadata on the parent field for spec_to_sig_def
             out_field["extraction_strategy"] = user_strategy
-            out_field["anchor_columns"] = sorted(user_anchor_cols)
+            set_field_key_columns(out_field, sorted(user_key_cols))
+
+            _warn_on_row_key_mismatch(
+                fname,
+                user_key_cols,
+                [user_field.get("field_description") or "",
+                 out_field.get("description") or ""]
+                + [str(r) for r in (out_field.get("rules") or [])],
+            )
 
         return spec_dict
 
@@ -825,11 +1053,12 @@ class SignatureGenerator:
 
                 out["subform_fields"] = merged_cols
 
-                # Carry through two-stage extraction metadata
+                # Carry through keyed-extraction metadata
                 if f.get("extraction_strategy"):
                     out["extraction_strategy"] = f["extraction_strategy"]
-                if f.get("anchor_columns"):
-                    out["anchor_columns"] = f["anchor_columns"]
+                _key = field_key_columns(f)
+                if _key:
+                    set_field_key_columns(out, _key)
 
                 # Structural-lock: warn if LLM tried to invent / rename columns
                 # (orphan names are excluded — they're legitimate columns re-attached above)

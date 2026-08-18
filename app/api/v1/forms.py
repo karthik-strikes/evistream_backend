@@ -19,6 +19,10 @@ import json
 
 import logging
 from datetime import datetime, timezone
+from utils.table_schema import (
+    AGENTIC, DISCOVER_THEN_FILL, field_key_columns, field_strategy,
+    find_row_tuple, set_field_key_columns,
+)
 from app.dependencies import get_current_user
 from app.config import settings
 from app.models.schemas import FormCreate, FormUpdate, FormResponse, ReviewNote, RejectDecompositionRequest, FieldEditsRequest, AddFieldRequest
@@ -990,6 +994,32 @@ def _soft_warn_field_edits(field: dict, edits: dict) -> list:
                     "level": "soft",
                     "message": f"example value {val!r} is not in options {options}",
                 })
+
+    # ── Hand-typed row tuple vs the ticked columns ────────────────────────
+    # The prompt builder drops a competing tuple, so this cannot corrupt an
+    # extraction — but the author is still looking at prose that contradicts
+    # their own row definition, and only they can say which one they meant.
+    # Surfacing it at save time is how it gets reconciled instead of lingering.
+    key_cols = field_key_columns(field)
+    if key_cols:
+        for where, text in (
+            ("description", edits.get("description") or field.get("field_description")),
+            *[("a rule", r) for r in (edits.get("rules") or field.get("rules") or [])],
+        ):
+            typed = find_row_tuple(str(text) if text else "")
+            if typed and len(typed) != len(key_cols):
+                warnings.append({
+                    "field": field.get("field_name"),
+                    "level": "soft",
+                    "message": (
+                        f"{where} says one row per {' x '.join(typed)} "
+                        f"({len(typed)} columns), but the row definition ticks "
+                        f"{len(key_cols)}: {' x '.join(key_cols)}. The ticked "
+                        "columns are what runs — the sentence is ignored."
+                    ),
+                })
+                break
+
     return warnings
 
 
@@ -1011,7 +1041,7 @@ async def get_field_prompts(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form not found")
     form = result.data[0]
 
-    await _check_can_edit_field_prompts(form, user_id)
+    await _check_can_edit_field_prompts(form, user_id, mutating=False)
 
     # Block only statuses that never have a schema_def yet
     _NO_SCHEMA_STATUSES = {FormStatus.DRAFT.value, FormStatus.GENERATING.value}
@@ -1097,6 +1127,16 @@ async def get_field_prompts(
                 "rules": rules,
                 "examples": examples,
                 "subform_fields": parsed_subfields,
+                # The mode the extractor will ACTUALLY use, and the key it will
+                # group rows by. schema_def is what build_schema_classes compiles
+                # from; forms.fields is only a mirror for the editor, and the two
+                # drifted — 42 table fields carried row_then_columns here and
+                # nothing in fields, so the editor rendered "Fast · 1 model call"
+                # for a field running the 3-call keyed pipeline. Serving these
+                # from schema_def means the editor cannot misreport the mode
+                # again even if the mirror drifts.
+                "extraction_strategy": out_field.get("extraction_strategy"),
+                "key_columns": field_key_columns(out_field) or None,
             }
 
     return {
@@ -1205,8 +1245,12 @@ async def update_field_edits(
             # roundtrips correctly. (schema_def is patched separately below.)
             if upd.extraction_strategy is not None:
                 target["extraction_strategy"] = upd.extraction_strategy
-            if upd.anchor_columns is not None:
-                target["anchor_columns"] = upd.anchor_columns
+            # Either spelling on the wire; new name wins if both are sent.
+            _req_key_cols = (
+                upd.key_columns if upd.key_columns is not None else upd.anchor_columns
+            )
+            if _req_key_cols is not None:
+                set_field_key_columns(target, _req_key_cols)
             warnings.extend(_soft_warn_field_edits(target, {
                 "examples": target.get("examples") or [],
             }))
@@ -1263,47 +1307,86 @@ async def update_field_edits(
 
                 # ── Strategy patch — matches by field name, no map needed ──────────
                 # Runs even when field_to_signature_map has no entry (e.g. table fields).
-                if upd.extraction_strategy is not None or upd.anchor_columns is not None:
+                if upd.extraction_strategy is not None or _req_key_cols is not None:
                     for sig in (schema_def.get("signatures") or []):
                         for of in (sig.get("output_fields") or []):
                             if of.get("name") == upd.field_name:
                                 if upd.extraction_strategy is not None:
                                     of["extraction_strategy"] = upd.extraction_strategy
-                                if upd.anchor_columns is not None:
-                                    # Trim anchor names so trailing-whitespace typos
-                                    # ('intervention   ') don't silently bypass the
-                                    # subfield-membership check.
-                                    trimmed_anchors = [
-                                        (a or "").strip() for a in upd.anchor_columns
+                                if _req_key_cols is not None:
+                                    # Trim key-column names so trailing-whitespace
+                                    # typos ('intervention   ') don't silently bypass
+                                    # the subfield-membership check.
+                                    trimmed_key_cols = [
+                                        (a or "").strip() for a in _req_key_cols
                                         if (a or "").strip()
                                     ]
                                     known = {
                                         sf.get("field_name")
                                         for sf in (of.get("subform_fields") or [])
                                     }
-                                    missing = [a for a in trimmed_anchors if a not in known]
+                                    missing = [a for a in trimmed_key_cols if a not in known]
                                     if missing:
                                         raise HTTPException(
                                             status_code=status.HTTP_400_BAD_REQUEST,
                                             detail=(
-                                                f"Anchor columns not present in '{upd.field_name}' subfields: "
+                                                f"Key columns not present in '{upd.field_name}' subfields: "
                                                 f"{missing}. Add the subfield first, then save the strategy."
                                             ),
                                         )
-                                    of["anchor_columns"] = trimmed_anchors
-                                    anchor_set = set(trimmed_anchors)
+                                    set_field_key_columns(of, trimmed_key_cols)
+                                    key_set = set(trimmed_key_cols)
                                     for sf in (of.get("subform_fields") or []):
                                         sf["extraction_role"] = (
-                                            "anchor" if sf.get("field_name") in anchor_set else "value"
+                                            "anchor" if sf.get("field_name") in key_set else "value"
                                         )
+                                # agentic and row_then_columns both depend on anchor_columns
+                                # for row identity (missing-record detection, record discovery) —
+                                # refuse to switch a field into either mode blind rather than
+                                # let it run degraded.
+                                if (
+                                    field_strategy(of) in (AGENTIC, DISCOVER_THEN_FILL)
+                                    and not field_key_columns(of)
+                                ):
+                                    raise HTTPException(
+                                        status_code=status.HTTP_400_BAD_REQUEST,
+                                        detail=(
+                                            f"'{upd.field_name}' has no anchor columns — set "
+                                            "anchor_columns before switching to agentic or "
+                                            "row_then_columns extraction, so rows can be identified."
+                                        ),
+                                    )
                                 signatures_rewritten = True
                                 logger.info(
-                                    "[field_edits] strategy patched for '%s': strategy=%s anchors=%s",
-                                    upd.field_name, upd.extraction_strategy, of.get("anchor_columns"),
+                                    "[field_edits] pipeline patched for '%s': pipeline=%s composite key=%s",
+                                    upd.field_name, upd.extraction_strategy, field_key_columns(of),
                                 )
                                 break
         else:
             logger.warning("[field_edits] Form %s has no schema_def — fields JSONB updated only", form_id)
+
+        # ── Per-form table extraction mode ───────────────────────────────────
+        # Source of truth is schema_def, NOT metadata: build_schema_classes only
+        # ever sees schema_def, and get_schema() reads the `schemas` table rather
+        # than `forms`. The metadata copy below is for the form builder UI, which
+        # never loads schema_def.
+        if body.table_extraction_mode is not None:
+            if schema_def:
+                if not signatures_rewritten:
+                    # Give concurrent editors something to collide on; when a
+                    # field edit already ran, the splicer has bumped it for us.
+                    schema_def["version"] = int(prev_schema_version or 1) + 1
+                schema_def["table_extraction_mode"] = body.table_extraction_mode
+                signatures_rewritten = True
+                logger.info(
+                    "[field_edits] table_extraction_mode=%s for form %s",
+                    body.table_extraction_mode, form_id,
+                )
+            else:
+                warnings.append(
+                    "Extraction mode saved, but this form has no compiled schema "
+                    "yet — it takes effect after the form finishes generating."
+                )
 
         # ── M8: metadata as native dict (not json.dumps) ─────────────────────
         existing_meta = form.get("metadata") or {}
@@ -1314,6 +1397,9 @@ async def update_field_edits(
                 existing_meta = {}
         existing_meta["field_edits_version"] = int(existing_meta.get("field_edits_version") or 0) + 1
         existing_meta["field_edits_updated_at"] = datetime.now(timezone.utc).isoformat()
+        if body.table_extraction_mode is not None:
+            # UI mirror only — schema_def above is authoritative at runtime.
+            existing_meta["table_extraction_mode"] = body.table_extraction_mode
 
         # ── C3+C6: single atomic update (schema_def + fields + metadata) ─────
         combined_payload: dict = {
@@ -1570,10 +1656,16 @@ async def _check_can_review_form(form: dict, user_id: UUID) -> None:
     await check_project_access(project_id, user_id, "can_manage_members")
 
 
-async def _check_can_edit_field_prompts(form: dict, user_id: UUID) -> None:
-    """Edit Instructions (field prompts): any member with can_create_forms."""
+async def _check_can_edit_field_prompts(
+    form: dict, user_id: UUID, mutating: bool = True
+) -> None:
+    """Edit Instructions (field prompts): any member with can_create_forms.
+
+    Also used to gate the read-only GET /field-prompts view, which passes
+    mutating=False so it keeps working on archived projects.
+    """
     project_id = UUID(form["project_id"])
-    await check_project_access(project_id, user_id, "can_create_forms")
+    await check_project_access(project_id, user_id, "can_create_forms", mutating=mutating)
 
 
 @router.post("/{form_id}/approve-decomposition")
@@ -2071,7 +2163,8 @@ async def get_field_dependencies(
     if not result.data:
         raise HTTPException(status_code=404, detail="Form not found")
     form = result.data[0]
-    await check_project_access(UUID(form["project_id"]), user_id, "can_create_forms")
+    # mutating=False: read-only, so it must keep working on archived projects.
+    await check_project_access(UUID(form["project_id"]), user_id, "can_create_forms", mutating=False)
 
     schema_def = form.get("schema_def") or {}
     from core.generators.signature_splicer import signatures_consuming_field
@@ -2328,7 +2421,9 @@ async def remove_field_from_form(
             )
 
         prev_version = int(schema_def.get("version", 1))
-        schema_def = remove_schema_def_field(schema_def, field_name=field_name)
+        schema_def, sd_removed_signature, sd_removed_stage = remove_schema_def_field(
+            schema_def, field_name=field_name
+        )
 
         # Remove from forms.fields
         fields_raw = form.get("fields") or []
@@ -2348,8 +2443,18 @@ async def remove_field_from_form(
         # Sync metadata.decomposition so the Edit Form dialog rail stays in sync
         from core.generators.signature_splicer import remove_decomposition_field
         decomposition = existing_meta.get("decomposition")
+        dc_removed_signature = dc_removed_stage = None
         if decomposition:
-            existing_meta["decomposition"] = remove_decomposition_field(decomposition, field_name)
+            existing_meta["decomposition"], dc_removed_signature, dc_removed_stage = remove_decomposition_field(
+                decomposition, field_name
+            )
+
+        if (sd_removed_signature, sd_removed_stage) != (dc_removed_signature, dc_removed_stage):
+            logger.warning(
+                "[remove_field] schema_def/decomposition cascade mismatch for form %s field %s: "
+                "schema_def=(%s,%s) decomposition=(%s,%s) — metadata.decomposition may be stale",
+                form_id, field_name, sd_removed_signature, sd_removed_stage, dc_removed_signature, dc_removed_stage,
+            )
 
         occ_result = (
             supabase.table("forms")
@@ -2375,7 +2480,12 @@ async def remove_field_from_form(
 
         _invalidate_form_cache(project_id=form["project_id"], form_id=str(form_id))
 
-        return {"form_id": str(form_id), "field_name": field_name}
+        return {
+            "form_id": str(form_id),
+            "field_name": field_name,
+            "removed_signature": sd_removed_signature,
+            "removed_stage": sd_removed_stage,
+        }
 
     except HTTPException:
         raise

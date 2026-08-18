@@ -11,6 +11,73 @@ from typing import TypedDict, Dict, Any, List, Optional, Literal
 from pydantic import BaseModel, Field
 
 
+ANALYSIS_ROLES = Literal[
+    "events_treatment", "total_treatment", "events_comparator", "total_comparator",
+    "mean_treatment", "sd_treatment", "n_treatment",
+    "mean_comparator", "sd_comparator", "n_comparator",
+    "value", "variability", "denominator", "arm", "outcome", "timepoint",
+]
+
+
+class MappedSlot(BaseModel):
+    """One analysis role filled by one column.
+
+    Deliberately a LIST of these rather than a role -> column dict. A free-form
+    ``Dict[str, str]`` compiles to ``additionalProperties`` in the JSON schema,
+    and under structured output the model cannot invent keys into an open object
+    — it returned ``slots={}`` on every form while naming the right columns in
+    its prose. A closed enum of roles is fillable; an open dict is not.
+    """
+    role: ANALYSIS_ROLES = Field(description="Which analysis input this column provides.")
+    column: str = Field(description="Column name, exactly as it appears in the columns list.")
+    reasoning: str = Field(
+        default="",
+        description="One short clause explaining this choice. Shown to the reviewer on hover "
+        "while they decide whether to confirm the slot.",
+    )
+
+
+class AnalysisMappingSuggestion(BaseModel):
+    """LLM proposal for how a form's table maps onto meta-analysis roles.
+
+    Consumed by ``app/api/v1/synthesis.py``, which validates every returned column
+    against the form's real column list before the frontend ever sees it. The
+    reviewer then confirms each slot individually, so a wrong suggestion costs a
+    click rather than a wrong pooled estimate.
+    """
+    verdict: Literal["dichotomous", "continuous", "diagnostic_accuracy", "not_poolable"] = Field(
+        description="What kind of outcome data this table holds. diagnostic_accuracy (tp/fp/fn/tn) "
+        "and not_poolable (risk of bias, study characteristics, arm descriptions) both mean no "
+        "mapping is offered — explain why in `reasoning`."
+    )
+    layout: Optional[Literal["wide", "long"]] = Field(
+        default=None,
+        description="wide = one row per comparison, both arms side by side in paired columns. "
+        "long = one row per study arm, with a separate column naming the arm.",
+    )
+    slots: List[MappedSlot] = Field(
+        default_factory=list,
+        description="One entry per analysis role you can fill. Omit any role no column genuinely "
+        "fills — a short list is better than a wrong one. Leave empty when the verdict is "
+        "not_poolable or diagnostic_accuracy.",
+    )
+    variability_measure_column: Optional[str] = Field(
+        default=None,
+        description="Column declaring WHICH spread measure the variability column holds "
+        "(SD / SE / IQR / 95% CI), when the form has one.",
+    )
+    comparator_value: Optional[str] = Field(
+        default=None,
+        description="For a long layout, the value of the arm column that identifies the control or "
+        "reference group (placebo, no treatment, standard care).",
+    )
+    reasoning: str = Field(
+        description="One or two plain-English sentences for the reviewer. When the verdict is "
+        "not_poolable or diagnostic_accuracy this is shown to them directly, so name the specific "
+        "columns that led to it."
+    )
+
+
 class AnchorClassification(BaseModel):
     """LLM split of a table's columns into row-identity (anchor) vs measurement (value).
 
@@ -359,11 +426,11 @@ class OutputFieldSpec(BaseModel):
     )
     rules: List[str] = Field(
         default_factory=list,
-        description="Hard output constraints: format, validation, NR convention, must/must-not requirements."
+        description="Hard output constraints: format, validation, NR convention (NR = paper silent; NA = field cannot apply, and only when listed in options), must/must-not requirements."
     )
     examples: List[Dict[str, Any]] = Field(
         default_factory=list,
-        description="Extraction examples as {value, source_text} dicts (include NR case)."
+        description="Extraction examples as {value, source_text} dicts (include NR case; an NA case only when options list one)."
     )
     options: List[str] = Field(
         default_factory=list,
@@ -380,7 +447,11 @@ class OutputFieldSpec(BaseModel):
     )
     extraction_strategy: Optional[str] = Field(
         default=None,
-        description="'single_call' or 'row_then_columns'. Set automatically based on column count.",
+        description=(
+            "'single_call' (default), 'row_then_columns', or 'agentic'. A user "
+            "choice made per table field in the form builder — not inferred "
+            "from column count."
+        ),
     )
     anchor_columns: Optional[List[str]] = Field(
         default=None,
@@ -442,11 +513,11 @@ class AddFieldSpec(BaseModel):
     )
     rules: List[str] = Field(
         default_factory=list,
-        description="Hard output constraints including NR convention."
+        description="Hard output constraints including the NR convention (NR = paper silent; NA = field cannot apply, only when listed in options)."
     )
     examples: List[Dict[str, Any]] = Field(
         default_factory=list,
-        description="Extraction examples as {value, source_text} dicts. Always includes NR case."
+        description="Extraction examples as {value, source_text} dicts. Always includes the NR case; an NA case only when options list one."
     )
     options: List[str] = Field(
         default_factory=list,

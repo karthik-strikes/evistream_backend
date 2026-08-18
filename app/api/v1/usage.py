@@ -11,7 +11,6 @@ full table — there's no per-project filter yet (llm_history has no project_id)
 from __future__ import annotations
 
 import logging
-import re
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
@@ -20,6 +19,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from supabase import create_client
 
+from utils.llm_call_labels import classify_step, label_run_calls, signature_field
+from utils.table_schema import DISCOVER_THEN_FILL, field_key_columns, field_strategy
 from app.config import settings
 from app.dependencies import get_current_user
 from config.pricing import compute_cost, is_priced, is_row_priced
@@ -30,65 +31,36 @@ router = APIRouter()
 supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 
-# DSPy ChatAdapter system prompt has a block like:
-#   Your output fields are:
-#   1. `reasoning` (str): ...
-#   2. `actual_field` (List[...]): ...
-# ChainOfThought always prepends `reasoning`; we want the *first non-meta* field.
-_OUTPUT_BLOCK_RE = re.compile(
-    r"Your output fields are:\s*\n(.*?)(?:\n\s*\n|\nAll interactions|\Z)",
-    re.IGNORECASE | re.DOTALL,
-)
-_NUMBERED_FIELD_RE = re.compile(r"^\s*\d+\.\s*`([A-Za-z_][A-Za-z0-9_]*)`", re.MULTILINE)
-# Fallback: DSPy ChatAdapter wraps each output field in [[ ## name ## ]] markers.
-_FIELD_MARKER_RE = re.compile(r"\[\[\s*##\s*([A-Za-z_][A-Za-z0-9_]*)\s*##\s*\]\]")
-
-_META_FIELDS = {"reasoning", "completed", "done", "output", "answer", "rationale"}
-
-
+# Signature/step/paper derivation lives in utils/llm_call_labels.py: the flush in
+# utils/logging.py stamps those labels into `llm_history.metadata` at write time,
+# and this endpoint re-derives what it can for rows written before that existed.
+# One implementation, two callers — the previous copy here could drift from the
+# writer's idea of what a call was.
 def _parse_signature(messages: Any, source_file: Optional[str]) -> Optional[str]:
-    """Best-effort: extract a human-readable signature/field name from DSPy messages.
+    return signature_field(messages, source_file)
 
-    DSPy's ChainOfThought adds a synthetic `reasoning` field as the first output —
-    we skip it and the next round of generic field names so the user sees the
-    real signature target (e.g. `outcome_reported`, `summary_text`).
+
+def _call_labels(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Labels for one call: from `metadata` when present, else derived on the fly.
+
+    New rows carry paper/step/attempt/duration written at flush time. Legacy rows
+    (every row before this shipped) have `{}` and no way to recover the paper, so
+    they get the step and signature only — which is still more than the flat list
+    they show today.
     """
-    if not isinstance(messages, list):
-        return None
-    system_text = ""
-    user_text = ""
-    for m in messages:
-        if not isinstance(m, dict):
-            continue
-        role = m.get("role")
-        content = m.get("content") or ""
-        if isinstance(content, list):
-            content = " ".join(
-                (c.get("text") or "") for c in content if isinstance(c, dict)
-            )
-        if role == "system" and not system_text:
-            system_text = content
-        elif role == "user" and not user_text:
-            user_text = content
+    meta = row.get("metadata")
+    meta = meta if isinstance(meta, dict) else {}
+    if meta.get("step"):
+        return meta
 
-    for txt in (system_text, user_text):
-        if not txt:
-            continue
-        # Try the numbered output-fields block first
-        block = _OUTPUT_BLOCK_RE.search(txt)
-        if block:
-            for name in _NUMBERED_FIELD_RE.findall(block.group(1)):
-                if name.lower() not in _META_FIELDS:
-                    return name
-        # Fallback: [[ ## name ## ]] markers in either prompt
-        for name in _FIELD_MARKER_RE.findall(txt):
-            if name.lower() not in _META_FIELDS:
-                return name
-
-    # Codegen fallback: use last segment of source_file (e.g. codegen:signatures:enrich → enrich)
-    if source_file and ":" in source_file:
-        return source_file.rsplit(":", 1)[-1]
-    return None
+    messages = row.get("messages")
+    derived: Dict[str, Any] = dict(meta)
+    if messages:
+        derived.setdefault("step", classify_step(messages))
+        field = signature_field(messages, row.get("source_file"))
+        if field:
+            derived.setdefault("field_name", field)
+    return derived
 
 
 def _row_cost(row: Dict[str, Any]) -> float:
@@ -142,7 +114,7 @@ def _fetch_rows(days: int) -> List[Dict[str, Any]]:
     return _paginated(
         lambda: (
             supabase.table("llm_history")
-            .select("extraction_id,model,cost,prompt_tokens,completion_tokens,total_tokens,cache_creation_input_tokens,cache_read_input_tokens,cache_hit,source_file,schema_name,created_at")
+            .select("extraction_id,job_id,model,cost,prompt_tokens,completion_tokens,total_tokens,cache_creation_input_tokens,cache_read_input_tokens,cache_hit,source_file,schema_name,created_at,metadata")
             .gte("created_at", cutoff)
             .order("created_at", desc=True)
         )
@@ -310,8 +282,8 @@ async def get_usage_by_run(
             for of in (sig.get("output_fields") or []):
                 if (
                     isinstance(of, dict)
-                    and of.get("extraction_strategy") == "row_then_columns"
-                    and of.get("anchor_columns")
+                    and field_strategy(of) == DISCOVER_THEN_FILL
+                    and field_key_columns(of)
                 ):
                     return True
         return False
@@ -349,10 +321,34 @@ async def get_usage_by_run(
     # otherwise drop the row from per-run aggregates).
     valid_ext_ids = {e["id"] for e in extractions}
 
+    # job_id → extraction_id. This is the exact link, and the reason it goes via
+    # `jobs` rather than `llm_history.extraction_id`: that column's FK references
+    # `extraction_results(id)`, so the run's own id can never be stored in it
+    # (insert fails with 23503) — which is why it is NULL in every row.
+    job_to_ext: Dict[str, str] = {}
+    try:
+        job_rows = _paginated(
+            lambda: (
+                supabase.table("jobs")
+                .select("id,input_data")
+                .eq("job_type", "extraction")
+                .gte("created_at", cutoff)
+            )
+        )
+        for j in job_rows:
+            eid = (j.get("input_data") or {}).get("extraction_id")
+            if eid:
+                job_to_ext[j["id"]] = str(eid)
+    except Exception as e:
+        logger.warning(f"job→extraction map failed, falling back to time windows: {e}")
+
     def _assign_extraction(call_row: Dict[str, Any]) -> Optional[str]:
-        # Prefer the direct FK on llm_history when present and valid — this is
-        # the canonical link and avoids cross-run leakage from the time-window
-        # heuristic when multiple extractions of the same schema overlap.
+        # Exact: the job that made the call knows its extraction.
+        via_job = job_to_ext.get(call_row.get("job_id") or "")
+        if via_job and via_job in valid_ext_ids:
+            return via_job
+        # Legacy rows carried the id nowhere else; kept in case the column is
+        # ever repointed at `extractions`.
         direct = call_row.get("extraction_id")
         if direct and direct in valid_ext_ids:
             return direct
@@ -376,7 +372,14 @@ async def get_usage_by_run(
 
     # 5. Aggregate per extraction_id
     agg: Dict[str, Dict[str, Any]] = defaultdict(
-        lambda: {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "cost_usd": 0.0, "models": set()}
+        lambda: {
+            "calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0,
+            "cost_usd": 0.0, "models": set(),
+            # From the write-time labels (utils/llm_call_labels.py); zero for rows
+            # written before labelling shipped.
+            "model_time_ms": 0.0, "wasted_calls": 0, "wasted_cost_usd": 0.0,
+            "last_call_at": "",
+        }
     )
     for r in history_rows:
         eid = _assign_extraction(r)
@@ -390,6 +393,16 @@ async def get_usage_by_run(
         b["cost_usd"] += _row_cost(r)
         if r.get("model"):
             b["models"].add(r["model"])
+        meta = r.get("metadata") if isinstance(r.get("metadata"), dict) else {}
+        _ms = meta.get("duration_ms")
+        if isinstance(_ms, (int, float)) and not isinstance(_ms, bool):
+            b["model_time_ms"] += float(_ms)
+        if meta.get("superseded"):
+            b["wasted_calls"] += 1
+            b["wasted_cost_usd"] += _row_cost(r)
+        _ts = r.get("created_at") or ""
+        if _ts > b["last_call_at"]:
+            b["last_call_at"] = _ts
 
     # 6. extraction_results → pdf_count per extraction (count rows = paper instances in this run)
     ext_ids = [e["id"] for e in extractions]
@@ -415,9 +428,27 @@ async def get_usage_by_run(
         total_tokens = int(a["total_tokens"]) if a else 0
         avg = round(total_tokens / pdf_count, 1) if pdf_count else None
 
+        # Wall clock: run start → last recorded call. Deliberately separate from
+        # model_time (the sum of call durations), which is larger because papers
+        # run in parallel — reporting one as the other would misstate both.
+        elapsed = None
+        _last = (a or {}).get("last_call_at") or ""
+        if _last and e.get("created_at"):
+            try:
+                elapsed = max(0.0, round(
+                    (datetime.fromisoformat(_last.replace("Z", "+00:00"))
+                     - datetime.fromisoformat(str(e["created_at"]).replace("Z", "+00:00"))
+                     ).total_seconds(), 1))
+            except (ValueError, TypeError):
+                elapsed = None
+
         out.append({
             "extraction_id": eid,
             "started_at": e.get("created_at"),
+            "elapsed_seconds": elapsed,
+            "model_time_seconds": round((a or {}).get("model_time_ms", 0.0) / 1000.0, 1) or None,
+            "wasted_calls": int((a or {}).get("wasted_calls", 0)),
+            "wasted_cost_usd": round((a or {}).get("wasted_cost_usd", 0.0), 4),
             "project_id": e.get("project_id"),
             "project_name": project_name_map.get(e.get("project_id") or "") or "(unmatched)",
             "form_id": e.get("form_id"),
@@ -850,37 +881,183 @@ async def get_usage_by_project(
 @router.get("/calls")
 async def get_usage_calls(
     schema_name: Optional[str] = Query(None),
+    extraction_id: Optional[str] = Query(None, description="Exact run filter — preferred over since/until"),
+    job_id: Optional[str] = Query(None, description="Exact job filter (pilot/codegen runs have no extraction_id)"),
     source_prefix: Optional[str] = Query(None, description="Filter source_file LIKE 'codegen' or 'extraction'"),
-    since: Optional[str] = Query(None, description="ISO timestamp lower bound (inclusive) — narrows to a single run window"),
+    since: Optional[str] = Query(None, description="ISO timestamp lower bound (inclusive) — legacy rows only"),
     until: Optional[str] = Query(None, description="ISO timestamp upper bound (exclusive)"),
     days: int = Query(30, ge=1, le=365),
     limit: int = Query(500, ge=1, le=5000),
     user_id: UUID = Depends(get_current_user),
 ):
-    """Return individual llm_history rows for drill-down (newest first)."""
+    """Return individual llm_history rows for drill-down (newest first).
+
+    `extraction_id` / `job_id` are exact: they select the calls a run actually
+    made. `since`/`until` is the old time-window bridge, kept because rows
+    written before `extraction_id` was stamped have no other way to be grouped —
+    it silently includes any concurrent run of the same form, which is why it is
+    no longer the default.
+
+    `messages` (the full prompt, tens of KB per row) is fetched only for rows
+    whose labels were not stamped at write time.
+    """
     cutoff = since or (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-    try:
+
+    # An extraction is addressed through its job(s): `llm_history.extraction_id`
+    # cannot hold an extraction id (its FK points at `extraction_results`), so
+    # `job_id` is the run key that is actually stored. A retry creates a new
+    # extraction, so this is normally one job — but read them all rather than
+    # assume.
+    job_ids: List[str] = [job_id] if job_id else []
+    if extraction_id and not job_id:
+        try:
+            j_resp = (
+                supabase.table("jobs")
+                .select("id")
+                .eq("input_data->>extraction_id", extraction_id)
+                .execute()
+            )
+            job_ids = [j["id"] for j in (j_resp.data or [])]
+        except Exception as e:
+            logger.warning(f"extraction→job lookup failed for {extraction_id}: {e}")
+    exact = bool(job_ids)
+
+    _COLS = (
+        "id,call_timestamp,created_at,model,prompt_tokens,completion_tokens,total_tokens,"
+        "cache_creation_input_tokens,cache_read_input_tokens,cost,cache_hit,source_file,"
+        "schema_name,extraction_id,job_id,metadata"
+    )
+
+    def _query(use_exact: bool):
         q = (
             supabase.table("llm_history")
-            .select("id,call_timestamp,created_at,model,prompt_tokens,completion_tokens,total_tokens,cache_creation_input_tokens,cache_read_input_tokens,cost,cache_hit,source_file,schema_name,messages")
-            .gte("created_at", cutoff)
+            .select(_COLS)
             .order("created_at", desc=True)
             .limit(limit)
         )
-        if until:
-            q = q.lt("created_at", until)
-        if schema_name:
-            q = q.eq("schema_name", schema_name)
+        if use_exact and job_ids:
+            q = q.in_("job_id", job_ids)
+        else:
+            q = q.gte("created_at", cutoff)
+            if until:
+                q = q.lt("created_at", until)
+            if schema_name:
+                q = q.eq("schema_name", schema_name)
         if source_prefix:
             q = q.like("source_file", f"{source_prefix}%")
-        resp = q.execute()
-        rows = resp.data or []
+        return q.execute().data or []
+
+    try:
+        rows = _query(exact)
+        if exact and not rows and (since or schema_name):
+            # Runs from before `extraction_id` was stamped cannot be found by it.
+            # Fall back to the old window bridge so an old run still opens, and
+            # report exact=False so the UI can say the grouping is approximate.
+            exact = False
+            rows = _query(False)
     except Exception as e:
         logger.error(f"llm_history calls query failed: {e}")
         rows = []
 
-    enriched = []
+    # Second pass for unlabeled (legacy) rows only — `messages` is the expensive
+    # column, so it is never fetched for rows labelled at write time.
+    unlabeled_ids = [
+        r["id"] for r in rows
+        if r.get("id") and not (isinstance(r.get("metadata"), dict) and r["metadata"].get("step"))
+    ]
+    messages_by_id: Dict[str, Any] = {}
+    legacy_labels: Dict[str, Dict[str, Any]] = {}
+    if unlabeled_ids:
+        try:
+            m_resp = (
+                supabase.table("llm_history")
+                .select("id,messages,assistant_response")
+                .in_("id", unlabeled_ids[:500])
+                .execute()
+            )
+            legacy_rows = [m for m in (m_resp.data or []) if m.get("messages")]
+            for m in legacy_rows:
+                messages_by_id[m["id"]] = m.get("messages")
+
+            # Run the same run-level pass the writer uses. Everything except the
+            # paper name and the call duration is recoverable from the stored
+            # prompt, so an old run still shows its retries and refills — the two
+            # things a reader most wants explained.
+            ts_by_id = {r["id"]: (r.get("call_timestamp") or r.get("created_at") or "") for r in rows}
+            legacy_rows.sort(key=lambda m: ts_by_id.get(m["id"], ""))
+            entries = [
+                {
+                    "messages": m.get("messages"),
+                    "assistant_response": m.get("assistant_response"),
+                    "timestamp": ts_by_id.get(m["id"], ""),
+                }
+                for m in legacy_rows
+            ]
+            for m, lab in zip(legacy_rows, label_run_calls(entries)):
+                legacy_labels[m["id"]] = lab
+        except Exception as e:
+            logger.warning(f"llm_history legacy labelling failed: {e}")
+
+    # Resolve real document names. The label's own filename is the basename of the
+    # markdown path, which is a content hash — fine as provenance, useless to read.
+    doc_names: Dict[str, str] = {}
+    doc_ids = {
+        (r.get("metadata") or {}).get("document_id")
+        for r in rows if isinstance(r.get("metadata"), dict)
+    }
+    doc_ids.discard(None)
+    if doc_ids:
+        try:
+            d_resp = (
+                supabase.table("documents")
+                .select("id,filename,title")
+                .in_("id", list(doc_ids))
+                .execute()
+            )
+            for d in (d_resp.data or []):
+                doc_names[d["id"]] = d.get("filename") or d.get("title") or ""
+        except Exception as e:
+            logger.warning(f"document name lookup failed: {e}")
+
+    # Which fields run the keyed (Rigorous) pipeline in this run. The form's own
+    # schema is the authority, because a scalar field's single call and a record
+    # discovery that found nothing look identical from the prompt alone — both
+    # send only the paper. Guessing "any single call in a run with table fields is
+    # record discovery" mislabels every scalar field on a mixed form.
+    keyed_fields: set = set()
+    if exact:
+        try:
+            form_id = None
+            if extraction_id:
+                e_rows = supabase.table("extractions").select("form_id").eq("id", extraction_id).limit(1).execute().data
+                form_id = (e_rows or [{}])[0].get("form_id")
+            elif job_ids:
+                j_rows = supabase.table("jobs").select("input_data").eq("id", job_ids[0]).limit(1).execute().data
+                form_id = ((j_rows or [{}])[0].get("input_data") or {}).get("form_id")
+            if form_id:
+                f_rows = supabase.table("forms").select("schema_def").eq("id", form_id).limit(1).execute().data
+                schema_def = (f_rows or [{}])[0].get("schema_def")
+                if isinstance(schema_def, str):
+                    import json as _json
+                    schema_def = _json.loads(schema_def)
+                for sig in ((schema_def or {}).get("signatures") or []):
+                    for of in (sig.get("output_fields") or []):
+                        if isinstance(of, dict) and of.get("name") and field_strategy(of) == DISCOVER_THEN_FILL:
+                            keyed_fields.add(of["name"])
+        except Exception as e:
+            logger.warning(f"keyed-field lookup failed: {e}")
+
+    # Labels first, then counts: "this paper produced only record discovery for
+    # this field" is what identifies a paper the pipeline stopped on.
+    row_labels: List[Dict[str, Any]] = []
+    per_paper_field: Dict[Any, int] = defaultdict(int)
     for r in rows:
+        lab = legacy_labels.get(r.get("id")) or _call_labels(r)
+        row_labels.append(lab)
+        per_paper_field[(lab.get("document_id"), lab.get("field_name"))] += 1
+
+    enriched = []
+    for r, labels in zip(rows, row_labels):
         cost = float(r.get("cost") or 0)
         if cost == 0:
             cost = compute_cost(
@@ -890,6 +1067,25 @@ async def get_usage_calls(
                 int(r.get("cache_creation_input_tokens") or 0),
                 int(r.get("cache_read_input_tokens") or 0),
             )
+        if r.get("id") in messages_by_id:
+            r = {**r, "messages": messages_by_id[r["id"]]}
+
+        # A keyed field whose paper produced nothing but the first pass: record
+        # discovery came back empty and the pipeline stopped there.
+        _step = labels.get("step")
+        _field = labels.get("field_name")
+        _stopped = False
+        if _step == "extract" and _field in keyed_fields:
+            _step = "record_discovery"
+            _stopped = per_paper_field.get((labels.get("document_id"), _field), 0) <= 1
+
+        # Same formula as /summary's cache_savings_usd: what these input tokens
+        # would have cost at the full rate instead of the 0.1x cache-read rate.
+        _read = int(r.get("cache_read_input_tokens") or 0)
+        _saved = 0.0
+        if _read:
+            _model = r.get("model") or ""
+            _saved = compute_cost(_model, _read, 0) - compute_cost(_model, 0, 0, 0, _read)
         enriched.append({
             "id": r.get("id"),
             "timestamp": r.get("call_timestamp") or r.get("created_at"),
@@ -900,9 +1096,31 @@ async def get_usage_calls(
             "cache_creation_input_tokens": int(r.get("cache_creation_input_tokens") or 0),
             "cache_read_input_tokens": int(r.get("cache_read_input_tokens") or 0),
             "cost_usd": round(cost, 6),
+            "cache_savings_usd": round(_saved, 6),
             "cache_hit": bool(r.get("cache_hit")),
             "source_file": r.get("source_file"),
             "schema_name": r.get("schema_name"),
-            "signature": _parse_signature(r.get("messages"), r.get("source_file")),
+            "signature": labels.get("field_name") or _parse_signature(r.get("messages"), r.get("source_file")),
+            # What the call was for (empty for pre-labelling rows)
+            "step": _step,
+            "stopped": _stopped,
+            "document_id": labels.get("document_id"),
+            "filename": doc_names.get(labels.get("document_id") or "") or labels.get("filename"),
+            "field_name": labels.get("field_name"),
+            "n_records": labels.get("n_records"),
+            "attempt": labels.get("attempt"),
+            "attempts_total": labels.get("attempts_total"),
+            "superseded": bool(labels.get("superseded")),
+            "superseded_reason": labels.get("superseded_reason"),
+            "response_shape": labels.get("response_shape"),
+            "duration_ms": labels.get("duration_ms"),
+            "transport": labels.get("transport"),
+            "num_turns": labels.get("num_turns"),
         })
-    return {"window_days": days, "schema_name": schema_name, "rows": enriched}
+    return {
+        "window_days": days,
+        "schema_name": schema_name,
+        "extraction_id": extraction_id,
+        "exact": exact,
+        "rows": enriched,
+    }

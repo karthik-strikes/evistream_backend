@@ -15,6 +15,8 @@ from app.dependencies import get_current_user
 from app.services.project_access import check_project_access
 from app.context import user_role_var
 
+from utils import absence
+
 logger = logging.getLogger(__name__)
 from app.config import settings
 
@@ -122,25 +124,11 @@ async def get_dashboard_stats(
         #     and resolve document filenames. Both done with targeted single queries.
         recent_ext_ids = [e["id"] for e in extractions_data[:5]]
 
-        # Fetch first result row per recent extraction (for field fill count)
-        def _extract_value(data) -> str:
-            """Mirror the frontend extractValue() helper."""
-            if data is None:
-                return "—"
-            if isinstance(data, str):
-                return data
-            if isinstance(data, (int, float, bool)):
-                return str(data)
-            if isinstance(data, dict) and "value" in data:
-                v = str(data["value"]) if data["value"] is not None else "—"
-                return v[:100] + "…" if len(v) > 100 else v
-            if isinstance(data, list):
-                return f"[{len(data)} items]"
-            return str(data)[:100]
-
+        # Fetch result rows per recent extraction (for the field fill count)
         fields_filled_map: dict = {}
         total_fields_map: dict = {}
         doc_count_map: dict = {}  # extraction_id → set of doc_ids
+        first_doc_map_recent: dict = {}
         if recent_ext_ids:
             detail_resp = (
                 supabase.table("extraction_results")
@@ -157,6 +145,8 @@ async def get_dashboard_stats(
                 doc_id = row.get("document_id")
                 if doc_id:
                     agg_docs.setdefault(eid, set()).add(doc_id)
+                    if eid not in first_doc_map_recent:
+                        first_doc_map_recent[eid] = doc_id
                 data_blob = row.get("extracted_data") or {}
                 if isinstance(data_blob, str):
                     try:
@@ -167,21 +157,27 @@ async def get_dashboard_stats(
                     k for k in data_blob
                     if "source_text" not in k.lower() and "source text" not in k.lower()
                 ]
+                # Classify the raw cell, not its stringified form: the literal
+                # "NR" used to count as a filled field here. Inapplicable fields
+                # leave the denominator — they are not gaps in the paper.
+                considered = [
+                    k for k in field_keys
+                    if not absence.field_is_not_applicable(data_blob[k])
+                ]
                 filled = sum(
-                    1 for k in field_keys
-                    if (v := _extract_value(data_blob[k])) and v not in ("—", "N/A")
+                    1 for k in considered if not absence.field_is_empty(data_blob[k])
                 )
                 agg_filled[eid] = agg_filled.get(eid, 0) + filled
-                agg_total[eid] = agg_total.get(eid, 0) + len(field_keys)
+                agg_total[eid] = agg_total.get(eid, 0) + len(considered)
             fields_filled_map = agg_filled
             total_fields_map = agg_total
             doc_count_map = {eid: len(docs) for eid, docs in agg_docs.items()}
 
         # Resolve filenames only for single-doc extractions
         single_doc_ids = [
-            first_doc_map[eid]
+            first_doc_map_recent[eid]
             for eid in recent_ext_ids
-            if eid in first_doc_map and doc_count_map.get(eid, 0) <= 1
+            if eid in first_doc_map_recent and doc_count_map.get(eid, 0) <= 1
         ]
         doc_name_map: dict = {}
         if single_doc_ids:
@@ -203,7 +199,7 @@ async def get_dashboard_stats(
         for e in extractions_data[:5]:
             eid = e["id"]
             n_docs = doc_count_map.get(eid, 0)
-            first_doc_id = first_doc_map.get(eid)
+            first_doc_id = first_doc_map_recent.get(eid)
             if n_docs > 1:
                 doc_name = f"{n_docs} docs"
             elif n_docs == 1 and first_doc_id:
@@ -230,6 +226,7 @@ async def get_dashboard_stats(
             projects_resp = (
                 supabase.table("projects")
                 .select("id,name,description,created_at")
+                .is_("archived_at", "null")
                 .order("created_at", desc=True)
                 .execute()
             )
@@ -239,6 +236,7 @@ async def get_dashboard_stats(
                 supabase.table("projects")
                 .select("id,name,description,created_at")
                 .eq("user_id", str(user_id))
+                .is_("archived_at", "null")
                 .order("created_at", desc=True)
                 .execute()
             )
@@ -258,6 +256,7 @@ async def get_dashboard_stats(
                     supabase.table("projects")
                     .select("id,name,description,created_at")
                     .in_("id", member_project_ids)
+                    .is_("archived_at", "null")
                     .order("created_at", desc=True)
                     .execute()
                 )
@@ -269,6 +268,11 @@ async def get_dashboard_stats(
                 if p["id"] not in seen:
                     seen.add(p["id"])
                     all_projects.append(p)
+
+            # Same fix as projects.py:list_projects — concatenating two sorted
+            # lists puts all owned projects ahead of all member-of ones, so
+            # re-sort the merged list to be globally newest-first.
+            all_projects.sort(key=lambda p: p.get("created_at") or "", reverse=True)
 
         # Batch-fetch counts for all projects in 2 queries (not 2N)
         all_project_ids = [proj["id"] for proj in all_projects]

@@ -33,6 +33,9 @@ langgraph-checkpoint-postgres>=3.0.0
 dspy>=3.0.0
 litellm>=1.30.0,!=1.82.7,!=1.82.8
 anthropic>=0.75.0
+# Agentic table extraction (forms with table_extraction_mode="agentic").
+# Bundles its own CLI; spawns one subprocess per extraction session.
+claude-agent-sdk>=0.2.130
 openai>=2.8.0
 google-generativeai>=0.8.0
 langchain>=1.0.0

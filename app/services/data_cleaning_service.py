@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from app.config import settings
 from app.services.audit_service import log_audit
 
+from utils import absence
+
 logger = logging.getLogger(__name__)
 
 
@@ -169,7 +171,16 @@ def _check_rule(
     field_name = rule["field_name"]
 
     if rule_type == "required":
-        if value is None or (isinstance(value, str) and not value.strip()):
+        # Envelope-aware: an envelope dict is neither None nor a str, so the old
+        # test could never fire on an AI extraction at all.
+        if isinstance(value, dict) and "value" in value:
+            # NR and NA are answers a reviewer gave, so they satisfy the rule
+            # (a bare "NR" string always did). Only a pipeline failure means
+            # nothing was captured.
+            missing = absence.cell_status(value) in absence.FAILURE_STATUSES
+        else:
+            missing = value is None or (isinstance(value, str) and not value.strip())
+        if missing:
             return {
                 "field_name": field_name,
                 "rule_id": rule["id"],

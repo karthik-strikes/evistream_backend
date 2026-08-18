@@ -27,6 +27,8 @@ from app.services.cache_service import cache_service
 
 logger = logging.getLogger(__name__)
 
+from utils import absence
+
 router = APIRouter()
 supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
@@ -39,19 +41,22 @@ class PilotStartRequest(BaseModel):
 
 
 class SubfieldCorrection(BaseModel):
+    rating: Optional[str] = None  # "correct" | "incorrect" — per-column thumbs
     correct_value: Optional[str] = None
     correct_source_text: Optional[str] = None
     note: Optional[str] = None
 
 
 class PilotFeedbackEntry(BaseModel):
-    rating: str  # "correct" | "incorrect"
+    # None when the reviewer rated only individual table columns and never the
+    # parent field itself — every column carries its own thumbs.
+    rating: Optional[str] = None  # "correct" | "incorrect"
     correct_value: Optional[str] = None
     correct_source_text: Optional[str] = None
     note: Optional[str] = None
     document_id: str
     subfield_corrections: Optional[Dict[str, SubfieldCorrection]] = None
-    # {col_name: correction} — populated when table field has row_then_columns strategy
+    # {col_name: rating + optional correction} — one entry per rated table column
 
 
 class PilotFeedbackRequest(BaseModel):
@@ -100,6 +105,53 @@ def _save_pilot(form_id: str, project_id: str, pilot_data: dict):
     cache_service.delete(f"forms:detail:{form_id}")
 
 
+def _harvest_column_examples(
+    doc_results: dict,
+    field_name: str,
+    col_name: str,
+    iter_num: int,
+    doc_id: str,
+    limit: int = 2,
+) -> list:
+    """
+    Turn a thumbs-up on one table column into per-column few-shot examples.
+
+    Reads the parent table's extracted rows and pulls that column's cell out of
+    each. Blank cells are skipped, and so are pipeline failures — a failure
+    placeholder must never become a worked example (same rule as the
+    top-level branch in _accumulate_feedback).
+    """
+    field_data = doc_results.get(field_name)
+    rows = field_data.get("value") if isinstance(field_data, dict) else field_data
+    if not isinstance(rows, list):
+        return []
+
+    out: list = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        cell = row.get(col_name)
+        if isinstance(cell, dict):
+            if absence.normalize_status(cell.get("status")) in absence.FAILURE_STATUSES:
+                continue
+            value = cell.get("value")
+            source = cell.get("source_text", "") or ""
+        else:
+            value = cell
+            source = ""
+        if value is None or (isinstance(value, str) and not value.strip()):
+            continue
+        out.append({
+            "value": value,
+            "source_text": source,
+            "iteration": iter_num,
+            "document_id": doc_id,
+        })
+        if len(out) >= limit:
+            break
+    return out
+
+
 def _accumulate_feedback(pilot_data: dict) -> dict:
     """
     Recompute field_examples and field_instructions from all iterations' feedback.
@@ -107,6 +159,10 @@ def _accumulate_feedback(pilot_data: dict) -> dict:
     - 'correct' ratings: the original extraction becomes a few-shot example
     - 'incorrect' ratings: the user's corrected value becomes a few-shot example,
       and the note (if any) is appended to field_instructions
+
+    Table columns are rated individually and land under a "parent.col" compound
+    key, which augment_signature_with_feedback splits back out into per-column
+    calibration blocks.
     """
     field_examples: Dict[str, list] = {}
     field_instructions: Dict[str, list] = {}
@@ -126,7 +182,15 @@ def _accumulate_feedback(pilot_data: dict) -> dict:
                 field_data = doc_results.get(field_name, {})
                 value = field_data.get("value") if isinstance(field_data, dict) else field_data
                 source = field_data.get("source_text", "") if isinstance(field_data, dict) else ""
-                if value is not None:
+                # A thumbs-up on a cell the pipeline failed on must not become a
+                # worked example — that would teach the model to emit the
+                # failure placeholder as if it were an answer.
+                failed = (
+                    isinstance(field_data, dict)
+                    and absence.normalize_status(field_data.get("status"))
+                    in absence.FAILURE_STATUSES
+                )
+                if value is not None and not failed:
                     field_examples.setdefault(field_name, []).append({
                         "value": value,
                         "source_text": source,
@@ -152,27 +216,38 @@ def _accumulate_feedback(pilot_data: dict) -> dict:
                 if note:
                     field_instructions.setdefault(field_name, []).append(note)
 
-                # Per-column subfield corrections (row_then_columns table fields)
-                subfield_corrections = fb.get("subfield_corrections") or {}
-                for col_name, col_fb in subfield_corrections.items():
-                    if isinstance(col_fb, dict):
-                        col_val = col_fb.get("correct_value")
-                        col_src = col_fb.get("correct_source_text", "")
-                        col_note = (col_fb.get("note") or "").strip()
-                    else:
-                        col_val = getattr(col_fb, "correct_value", None)
-                        col_src = getattr(col_fb, "correct_source_text", "") or ""
-                        col_note = (getattr(col_fb, "note", "") or "").strip()
-                    compound_key = f"{field_name}.{col_name}"
-                    if col_val is not None:
-                        field_examples.setdefault(compound_key, []).append({
-                            "value": col_val,
-                            "source_text": col_src,
-                            "iteration": iter_num,
-                            "document_id": doc_id,
-                        })
-                    if col_note:
-                        field_instructions.setdefault(compound_key, []).append(col_note)
+            # Per-column feedback on table fields. Runs regardless of the parent's
+            # rating: each column carries its own thumbs, so a column can be rated
+            # while the parent field itself never was.
+            subfield_corrections = fb.get("subfield_corrections") or {}
+            for col_name, col_fb in subfield_corrections.items():
+                if isinstance(col_fb, dict):
+                    col_rating = col_fb.get("rating")
+                    col_val = col_fb.get("correct_value")
+                    col_src = col_fb.get("correct_source_text", "")
+                    col_note = (col_fb.get("note") or "").strip()
+                else:
+                    col_rating = getattr(col_fb, "rating", None)
+                    col_val = getattr(col_fb, "correct_value", None)
+                    col_src = getattr(col_fb, "correct_source_text", "") or ""
+                    col_note = (getattr(col_fb, "note", "") or "").strip()
+                compound_key = f"{field_name}.{col_name}"
+                if col_val is not None:
+                    field_examples.setdefault(compound_key, []).append({
+                        "value": col_val,
+                        "source_text": col_src,
+                        "iteration": iter_num,
+                        "document_id": doc_id,
+                    })
+                elif col_rating == "correct":
+                    # No correction supplied — the extracted cells are the example.
+                    field_examples.setdefault(compound_key, []).extend(
+                        _harvest_column_examples(
+                            iter_results.get(doc_id, {}), field_name, col_name, iter_num, doc_id
+                        )
+                    )
+                if col_note:
+                    field_instructions.setdefault(compound_key, []).append(col_note)
 
     # Cap examples per field (keep most recent)
     max_per_field = 5

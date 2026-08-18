@@ -174,6 +174,10 @@ def get_dspy_model(
             extra["cache_control_injection_points"] = [
                 {"location": "message", "role": "system"},
             ]
+        # Thinking + effort, gated to Anthropic (the fallbacks 400 on them).
+        from config.models import EXTRACTION_LLM_TIMEOUT_SECONDS, reasoning_kwargs
+        extra.update(reasoning_kwargs(model))
+        extra.setdefault("timeout", EXTRACTION_LLM_TIMEOUT_SECONDS)
         lm = dspy.LM(model, max_tokens=max_tokens, temperature=temperature, **extra)
         # NOTE: We intentionally do NOT call dspy.configure(lm=lm) here.
         # The ModelRouter uses dspy.context(lm=...) per-coroutine for

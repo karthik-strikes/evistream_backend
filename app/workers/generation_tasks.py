@@ -182,10 +182,27 @@ def _build_completion_metadata(form_id: str, result: dict) -> dict:
             or new_decomp.get("validation_results", {}),
         "revision_history": history,
     }
-    for k in ("review_notes", "current_job_id"):
+    # Carried forward, not regenerated: these are user choices, not codegen
+    # output. table_extraction_mode in particular would otherwise be silently
+    # reset to standard by every regenerate.
+    for k in ("review_notes", "current_job_id", "table_extraction_mode"):
         if k in existing:
             meta[k] = existing[k]
     return meta
+
+
+def _carry_extraction_mode(schema_def: dict, metadata: dict) -> dict:
+    """Re-apply the per-form table extraction mode onto a freshly built schema_def.
+
+    Codegen rebuilds schema_def from scratch, and schema_def — not metadata — is
+    what the runtime reads (build_schema_classes). Without this, every regenerate
+    silently reverts an agentic form to standard while the UI still shows agentic.
+    """
+    mode = (metadata or {}).get("table_extraction_mode")
+    if mode and isinstance(schema_def, dict):
+        schema_def["table_extraction_mode"] = mode
+        logger.info("Carried table_extraction_mode=%s into regenerated schema_def", mode)
+    return schema_def
 
 
 @celery_app.task(
@@ -350,7 +367,9 @@ def generate_form_code(self, form_id: str, job_id: str, enable_review: bool = Fa
                 "error": None,
             }
             if result.get("schema_def"):
-                update_data["schema_def"] = result["schema_def"]
+                update_data["schema_def"] = _carry_extraction_mode(
+                    result["schema_def"], metadata
+                )
                 # Mirror enriched subform_fields into forms.fields (Move 5)
                 enriched_fields = _mirror_enriched_subfields(fields, result["schema_def"])
                 if enriched_fields is not fields:
@@ -647,7 +666,7 @@ def resume_after_approval(self, form_id: str, job_id: str, thread_id: str, task_
                 "statistics": json.dumps(result.get("statistics", {})),
                 "metadata": json.dumps(metadata),
                 "error": None,
-                "schema_def": schema_def,
+                "schema_def": _carry_extraction_mode(schema_def, metadata),
             }
             # Mirror enriched subform_fields into forms.fields (Move 5)
             enriched_fields = _mirror_enriched_subfields(fields, schema_def)

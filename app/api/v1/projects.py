@@ -4,7 +4,8 @@ Project management endpoints - Full CRUD operations.
 
 import logging
 from collections import Counter
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from supabase import create_client
 from uuid import UUID
 from typing import List
@@ -14,7 +15,8 @@ from app.config import settings
 from app.context import user_role_var
 from app.models.schemas import (
     ProjectCreate, ProjectUpdate, ProjectResponse,
-    MyPermissionsResponse, OwnershipTransferRequest,
+    MyPermissionsResponse, OwnershipTransferRequest, ReviewSettingsUpdate,
+    ReviewScopeUpdate,
 )
 from app.services.project_access import check_project_access, OWNER_PERMISSIONS, MANAGER_PERMISSIONS, VIEWER_PERMISSIONS
 
@@ -88,55 +90,90 @@ async def create_project(
 
 
 @router.get("", response_model=List[ProjectResponse])
-async def list_projects(user_id: UUID = Depends(get_current_user)):
+async def list_projects(
+    user_id: UUID = Depends(get_current_user),
+    include_archived: bool = Query(
+        False,
+        description="Include archived projects. Off by default so the project "
+                    "selector and every project dropdown stay clean.",
+    ),
+):
     """
     List all projects for the current user.
 
     Returns projects sorted by creation date (newest first).
     Includes counts of forms and documents in each project.
+
+    Archived projects are excluded unless include_archived=true.
     """
     try:
         global_role = user_role_var.get()
 
+        def _visible(query):
+            """Hide archived projects unless the caller asked for them."""
+            return query if include_archived else query.is_("archived_at", "null")
+
         if global_role == "admin":
             # Admin sees ALL projects across the platform
-            all_result = supabase.table("projects")\
-                .select("*")\
+            all_result = _visible(
+                supabase.table("projects")
+                .select("*")
+            )\
                 .order("created_at", desc=True)\
                 .execute()
             projects = all_result.data or []
+            for project in projects:
+                project["my_role"] = "admin"
         else:
             # Get owned projects
-            owned_result = supabase.table("projects")\
-                .select("*")\
-                .eq("user_id", str(user_id))\
+            owned_result = _visible(
+                supabase.table("projects")
+                .select("*")
+                .eq("user_id", str(user_id))
+            )\
                 .order("created_at", desc=True)\
                 .execute()
             owned_projects = owned_result.data or []
 
-            # Get member projects
+            # Get member projects + this user's role on each
             member_result = supabase.table("project_members")\
-                .select("project_id")\
+                .select("project_id, role")\
                 .eq("user_id", str(user_id))\
                 .execute()
-            member_project_ids = [r["project_id"] for r in (member_result.data or [])]
+            member_rows = member_result.data or []
+            member_role_map = {r["project_id"]: r["role"] for r in member_rows}
+            member_project_ids = list(member_role_map.keys())
 
             member_projects = []
             if member_project_ids:
-                mp_result = supabase.table("projects")\
-                    .select("*")\
-                    .in_("id", member_project_ids)\
+                mp_result = _visible(
+                    supabase.table("projects")
+                    .select("*")
+                    .in_("id", member_project_ids)
+                )\
                     .order("created_at", desc=True)\
                     .execute()
                 member_projects = mp_result.data or []
 
-            # Merge, deduplicate by id
+            # Merge, deduplicate by id, and attach the caller's role.
+            # Legacy creator (projects.user_id == caller) is treated as owner
+            # even without a project_members row.
             seen = set()
             projects = []
             for p in owned_projects + member_projects:
                 if p["id"] not in seen:
                     seen.add(p["id"])
+                    if p["id"] in member_role_map:
+                        p["my_role"] = member_role_map[p["id"]]
+                    elif p.get("user_id") == str(user_id):
+                        p["my_role"] = "owner"
                     projects.append(p)
+
+            # Re-sort: the two source queries are each ordered, but concatenating
+            # them puts every owned project ahead of every member-of project
+            # regardless of date. Sort the merged list so it is globally
+            # newest-first, matching the admin path above.
+            projects.sort(key=lambda p: p.get("created_at") or "", reverse=True)
 
         # Batch-fetch counts for all projects in 2 queries (not 2N)
         project_ids = [p["id"] for p in projects]
@@ -224,27 +261,14 @@ async def update_project(
     Update a project.
 
     Can update name and/or description.
-    Only the project owner or an admin can update it.
+    Requires can_manage_project — owner, global admin, or manager.
+
+    Routed through check_project_access (rather than matching projects.user_id
+    directly) so that co-owners and managers who aren't the original creator
+    can rename, and so an archived project rejects the write with 409.
     """
     try:
-        global_role = user_role_var.get()
-        if global_role == "admin":
-            existing = supabase.table("projects")\
-                .select("id")\
-                .eq("id", str(project_id))\
-                .execute()
-        else:
-            existing = supabase.table("projects")\
-                .select("id")\
-                .eq("id", str(project_id))\
-                .eq("user_id", str(user_id))\
-                .execute()
-
-        if not existing.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+        await check_project_access(project_id, user_id, "can_manage_project")
 
         update_data = {}
         if project_data.name is not None:
@@ -319,7 +343,8 @@ async def delete_project(
                 detail="Seeded demo projects can't be deleted."
             )
 
-        permissions = await check_project_access(project_id, user_id)
+        # mutating=False: an archived project must still be deletable.
+        permissions = await check_project_access(project_id, user_id, mutating=False)
 
         if not permissions.get("is_owner") and not permissions.get("is_admin"):
             raise HTTPException(
@@ -344,6 +369,173 @@ async def delete_project(
         )
 
 
+@router.patch("/{project_id}/review-scope")
+async def update_review_scope(
+    project_id: UUID,
+    body: ReviewScopeUpdate,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Update a project's review scope.
+
+    Free text describing what the review is about. It is injected into every
+    extraction prompt at runtime as CONTEXT — it helps the model pick the right
+    arm, population, timepoint or measure — and never filters rows.
+
+    Requires can_create_forms: this is extraction-design authority, the same
+    power as editing a form's field prompts. That permission is in
+    WRITE_PERMISSIONS, so archived projects are rejected automatically.
+    """
+    try:
+        await check_project_access(project_id, user_id, "can_create_forms")
+
+        # Blank clears the scope rather than storing "" — extraction treats
+        # None and "" alike, but a null keeps the column honest.
+        scope = (body.review_scope or "").strip() or None
+        updated = supabase.table("projects")\
+            .update({"review_scope": scope})\
+            .eq("id", str(project_id))\
+            .execute()
+
+        if not updated.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+        return {"review_scope": updated.data[0].get("review_scope")}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error updating review scope")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update review scope: {str(e)}"
+        )
+
+
+@router.patch("/{project_id}/review-settings")
+async def update_review_settings(
+    project_id: UUID,
+    body: ReviewSettingsUpdate,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Update a project's manual-review blinding settings.
+
+    Governs whether R1/R2 can see each other's manual extractions across
+    every form in the project. Requires can_manage_assignments — the same
+    permission that gates the Assignments UI this setting lives in.
+    """
+    try:
+        await check_project_access(project_id, user_id, "can_manage_assignments")
+
+        new_settings = {"blinding": body.blinding.value, "hide_ai_results": body.hide_ai_results}
+        updated = supabase.table("projects")\
+            .update({"review_settings": new_settings})\
+            .eq("id", str(project_id))\
+            .execute()
+
+        if not updated.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+        return {"review_settings": updated.data[0]["review_settings"]}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error updating review settings")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred")
+
+
+@router.post("/{project_id}/archive", response_model=ProjectResponse)
+async def archive_project(
+    project_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Archive a project.
+
+    Archived projects are hidden from the default project list — and therefore
+    from the project selector and every project dropdown — and become
+    read-only: write endpoints return 409 until the project is restored.
+    Results, forms, and documents stay fully viewable and exportable.
+
+    Requires can_manage_project (owner, global admin, or manager). Idempotent.
+    """
+    return await _set_archived(project_id, user_id, archived=True)
+
+
+@router.post("/{project_id}/unarchive", response_model=ProjectResponse)
+async def unarchive_project(
+    project_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Restore an archived project, making it writable again.
+
+    Requires can_manage_project (owner, global admin, or manager). Idempotent.
+    """
+    return await _set_archived(project_id, user_id, archived=False)
+
+
+async def _set_archived(project_id: UUID, user_id: UUID, archived: bool) -> ProjectResponse:
+    """Shared archive/restore body: permission check, update, audit log."""
+    try:
+        # mutating=False: the guard must not block the very call that restores
+        # the project, nor a redundant re-archive.
+        permissions = await check_project_access(
+            project_id, user_id, "can_manage_project", mutating=False
+        )
+
+        archived_at = datetime.now(timezone.utc).isoformat() if archived else None
+        result = supabase.table("projects")\
+            .update({
+                "archived_at": archived_at,
+                "archived_by": str(user_id) if archived else None,
+            })\
+            .eq("id", str(project_id))\
+            .execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+
+        project = result.data[0]
+        # Preserve my_role so the frontend keeps its owner/manager gating when
+        # it swaps this row into its cached project list.
+        project["my_role"] = permissions.get("role")
+
+        forms_count = supabase.table("forms")\
+            .select("id", count="exact")\
+            .eq("project_id", str(project_id))\
+            .execute()
+        project["forms_count"] = forms_count.count or 0
+
+        docs_count = supabase.table("documents")\
+            .select("id", count="exact")\
+            .eq("project_id", str(project_id))\
+            .execute()
+        project["documents_count"] = docs_count.count or 0
+
+        try:
+            supabase.table("permission_audit_log").insert({
+                "project_id": str(project_id),
+                "actor_id": str(user_id),
+                "action": "project_archived" if archived else "project_restored",
+                "new_values": {"archived_at": archived_at},
+            }).execute()
+        except Exception as e:
+            logger.error(f"Failed to write archive audit log: {e}")
+
+        return ProjectResponse(**project)
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error changing project archive state")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
 @router.get("/{project_id}/my-permissions", response_model=MyPermissionsResponse)
 async def get_my_permissions(
     project_id: UUID,
@@ -351,7 +543,7 @@ async def get_my_permissions(
 ):
     """Get the current user's effective permissions for a project."""
     try:
-        permissions = await check_project_access(project_id, user_id)
+        permissions = await check_project_access(project_id, user_id, mutating=False)
         return MyPermissionsResponse(**permissions)
     except HTTPException:
         raise
@@ -381,7 +573,9 @@ async def transfer_ownership(
 
         # Verify caller is an owner (or admin)
         if global_role != "admin":
-            caller_perms = await check_project_access(project_id, user_id)
+            # mutating=False: reassigning ownership of an archived project is
+            # legitimate (e.g. the owner leaves the org), so it isn't blocked.
+            caller_perms = await check_project_access(project_id, user_id, mutating=False)
             if not caller_perms.get("is_owner"):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

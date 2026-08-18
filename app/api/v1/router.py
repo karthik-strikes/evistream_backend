@@ -30,6 +30,12 @@ from .audit import router as audit_router
 from .client_logs import router as client_logs_router
 from .pilot import router as pilot_router
 from .usage import router as usage_router
+from .clinical_trials import router as clinical_trials_router
+from .pubmed import router as pubmed_router
+from .literature import router as literature_router
+from .endnote import router as endnote_router
+from .citations import router as citations_router
+from .synthesis import router as synthesis_router
 
 
 api_router = APIRouter()
@@ -68,3 +74,9 @@ api_router.include_router(audit_router, prefix="/audit", tags=["Audit Trail"])
 api_router.include_router(client_logs_router, prefix="/logs", tags=["Client Logs"])
 api_router.include_router(pilot_router, prefix="/forms", tags=["Pilot"])
 api_router.include_router(usage_router, prefix="/usage", tags=["Usage"])
+api_router.include_router(clinical_trials_router, prefix="/trials", tags=["Clinical Trials"])
+api_router.include_router(pubmed_router, prefix="/pubmed", tags=["PubMed"])
+api_router.include_router(literature_router, prefix="/literature", tags=["Literature Search"])
+api_router.include_router(endnote_router, prefix="/endnote", tags=["EndNote Import"])
+api_router.include_router(citations_router, prefix="/citations", tags=["Citation Import"])
+api_router.include_router(synthesis_router, prefix="/synthesis", tags=["Synthesis"])

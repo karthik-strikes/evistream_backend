@@ -6,6 +6,8 @@ extractor classes at runtime from schema_def JSON.
 
 from typing import Dict, Any
 
+from utils import absence
+
 
 class ModuleGenerator:
     """Provides create_fallback_structure for use in _build_schema_def."""
@@ -24,9 +26,9 @@ class ModuleGenerator:
                 if field_type == "array":
                     fallback[field_name] = []
                 else:
-                    fallback[field_name] = {"value": "NR", "source_text": "NR"}
+                    fallback[field_name] = absence.failure_envelope(absence.MISSING)
             return fallback
-        return {"value": "NR", "source_text": "NR"}
+        return absence.failure_envelope(absence.MISSING)
 
 
 __all__ = ["ModuleGenerator"]

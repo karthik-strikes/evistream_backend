@@ -68,6 +68,51 @@ class FormFieldDefinition(BaseModel):
         description="Nested fields for array types"
     )
 
+    # ── Attributes the codegen path must not lose ──────────────────────────
+    # Pydantic ignores undeclared keys, and it is this model's .model_dump()
+    # that becomes form_data for decomposition (code_generation_service.py:83).
+    # Anything not declared here is silently stripped between forms.fields and
+    # _enrich_signatures_with_metadata, so the copy guard at
+    # decomposition.py:255-261 never sees it — which is exactly how a table
+    # field's chosen mode was reset to single_call on every regenerate.
+    # Declare, don't validate: these are opaque pass-through payloads whose
+    # meaning lives in utils.table_schema, and a stricter type here would
+    # reject live rows rather than carry them.
+    extraction_strategy: Optional[str] = Field(
+        None,
+        description="Table extraction pipeline: single_call | row_then_columns | agentic"
+    )
+
+    key_columns: Optional[List[str]] = Field(
+        None,
+        description="Composite key — the columns whose values identify one row"
+    )
+
+    anchor_columns: Optional[List[str]] = Field(
+        None,
+        description="Legacy spelling of key_columns; dual-written and still read as a fallback"
+    )
+
+    extraction_role: Optional[str] = Field(
+        None,
+        description="Per-column role on subform_fields (anchor | value)"
+    )
+
+    hints: Optional[List[str]] = Field(
+        None,
+        description="Structured extraction hints (kept out of the prose description)"
+    )
+
+    rules: Optional[List[str]] = Field(
+        None,
+        description="Structured extraction rules"
+    )
+
+    examples: Optional[List[Any]] = Field(
+        None,
+        description="Structured worked examples"
+    )
+
     @field_validator("options")
     @classmethod
     def validate_select_options(cls, v: Optional[List[str]], info) -> Optional[List[str]]:

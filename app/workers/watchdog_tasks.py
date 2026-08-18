@@ -3,6 +3,7 @@ Watchdog tasks - detect and recover stuck jobs.
 """
 
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
 from supabase import create_client
@@ -16,8 +17,50 @@ logger = logging.getLogger(__name__)
 # Initialize Supabase client
 supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
-# Jobs stuck longer than this are considered timed out
+# A job that has STARTED is stuck once it outlives Celery's own hard time limit
+# (the worker would already have killed the task) plus a buffer.
 STUCK_THRESHOLD_SECONDS = settings.CELERY_TASK_TIME_LIMIT + 300  # task limit + 5 min buffer
+
+# A job that has NOT started yet is only waiting its turn in the queue. Queue
+# waits are legitimate under backlog (extraction runs 4 slots wide), so pending
+# jobs get a much longer fuse than execution overrun. Measuring both from
+# created_at — as this task used to — fails live jobs that are merely queued.
+QUEUE_THRESHOLD_SECONDS = int(
+    os.environ.get("WATCHDOG_QUEUE_THRESHOLD_SECONDS", str(6 * 3600))
+)
+
+
+def _parse_ts(value):
+    """Parse a Supabase timestamp into an aware datetime, or None."""
+    if not value:
+        return None
+    try:
+        ts = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts
+
+
+def _stuck_reason(job: dict, now: datetime):
+    """
+    Decide whether a job is stuck, and why.
+
+    Execution overrun is measured from started_at; queue wait from created_at.
+    Rows written before started_at existed fall back to created_at.
+    """
+    if job.get("status") == JobStatus.PROCESSING.value:
+        ref = _parse_ts(job.get("started_at")) or _parse_ts(job.get("created_at"))
+        limit, label = STUCK_THRESHOLD_SECONDS, "running"
+    else:
+        ref = _parse_ts(job.get("created_at"))
+        limit, label = QUEUE_THRESHOLD_SECONDS, "queued"
+
+    if ref is None:
+        return None
+    age = (now - ref).total_seconds()
+    if age <= limit:
+        return None
+    return f"{label} {age / 3600:.1f}h, limit {limit / 3600:.1f}h"
 
 
 @celery_app.task(name="watchdog_cleanup_stuck_jobs")
@@ -28,47 +71,59 @@ def cleanup_stuck_jobs():
     document/form/extraction records.
     """
     try:
-        cutoff = datetime.now(timezone.utc) - timedelta(seconds=STUCK_THRESHOLD_SECONDS)
-        cutoff_iso = cutoff.isoformat()
+        now = datetime.now(timezone.utc)
 
-        # Find stuck jobs: status is pending/processing AND created before cutoff
-        stuck_jobs_result = supabase.table("jobs")\
+        # Open jobs are bounded (a handful in steady state), so fetch them and
+        # apply the per-status staleness rule in Python — the two rules can't be
+        # expressed as one PostgREST filter.
+        open_jobs_result = supabase.table("jobs")\
             .select("*")\
             .in_("status", [JobStatus.PENDING.value, JobStatus.PROCESSING.value])\
-            .lt("created_at", cutoff_iso)\
             .execute()
 
-        stuck_jobs = stuck_jobs_result.data or []
+        open_jobs = open_jobs_result.data or []
+        stuck_jobs = []
+        for job in open_jobs:
+            reason = _stuck_reason(job, now)
+            if reason:
+                stuck_jobs.append((job, reason))
 
         if not stuck_jobs:
-            return {"cleaned": 0}
+            return {"cleaned": 0, "open": len(open_jobs)}
 
-        logger.warning(f"Watchdog found {len(stuck_jobs)} stuck job(s)")
+        logger.warning(
+            f"Watchdog found {len(stuck_jobs)} stuck job(s) of {len(open_jobs)} open"
+        )
 
         cleaned = 0
-        for job in stuck_jobs:
+        for job, reason in stuck_jobs:
             try:
-                _fail_stuck_job(job)
+                _fail_stuck_job(job, reason)
                 cleaned += 1
             except Exception as e:
                 logger.error(f"Watchdog failed to clean job {job['id']}: {e}")
 
         logger.info(f"Watchdog cleaned {cleaned}/{len(stuck_jobs)} stuck jobs")
-        return {"cleaned": cleaned, "found": len(stuck_jobs)}
+        return {"cleaned": cleaned, "found": len(stuck_jobs), "open": len(open_jobs)}
 
     except Exception as e:
         logger.error(f"Watchdog task failed: {e}")
         return {"error": str(e)}
 
 
-def _fail_stuck_job(job: dict):
+def _fail_stuck_job(job: dict, reason: str = ""):
     """Mark a single stuck job and its associated resource as failed."""
     job_id = job["id"]
     job_type = job.get("job_type")
     input_data = job.get("input_data") or {}
     error_msg = "Timed out: job exceeded maximum processing time"
+    if reason:
+        error_msg = f"{error_msg} ({reason})"
 
-    logger.warning(f"Marking stuck job {job_id} (type={job_type}) as failed")
+    logger.warning(
+        f"Marking stuck job {job_id} (type={job_type}, status={job.get('status')}) "
+        f"as failed: {reason or 'no reason recorded'}"
+    )
 
     # Update the job itself
     supabase.table("jobs").update({

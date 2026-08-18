@@ -92,7 +92,8 @@ async def get_project_assignments(
     user_id: UUID = Depends(get_current_user),
 ):
     """Get all assignments for a project (owner/manager only)."""
-    await check_project_access(project_id, user_id, "can_manage_assignments")
+    # mutating=False: read-only, so it must keep working on archived projects.
+    await check_project_access(project_id, user_id, "can_manage_assignments", mutating=False)
     result = await assignment_service.get_project_assignments(
         project_id=project_id,
         status_filter=status_filter,

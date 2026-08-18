@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 from app.config import settings
 from app.services.audit_service import log_audit
+from app.services.project_access import assert_project_writable
 
 logger = logging.getLogger(__name__)
 
@@ -471,6 +472,12 @@ async def update_assignment_status(
     # Validate user owns this assignment
     if assignment["reviewer_user_id"] != str(user_id):
         raise PermissionError("Not your assignment")
+
+    # This route is authorized by reviewer identity, not by a project
+    # permission flag, so it never reaches check_project_access — guard the
+    # archive state here. Placed after the identity check so a stranger gets
+    # 403 rather than learning the project's archive state.
+    await assert_project_writable(UUID(assignment["project_id"]))
 
     # Validate status transition
     valid_transitions = {

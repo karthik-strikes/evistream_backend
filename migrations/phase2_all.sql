@@ -107,7 +107,7 @@ CREATE INDEX IF NOT EXISTS idx_validation_rules_form ON validation_rules(form_id
 CREATE TABLE IF NOT EXISTS audit_trail (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id),
-  project_id UUID REFERENCES projects(id),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
   entity_type TEXT NOT NULL,
   entity_id UUID NOT NULL,
   action TEXT NOT NULL,

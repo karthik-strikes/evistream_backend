@@ -19,7 +19,10 @@ from app.models.schemas import (
     ProjectInvitationCreate, ProjectInvitationResponse,
     InvitationPreview, AcceptInvitationRequest,
 )
-from app.services.project_access import check_project_access, MANAGER_PERMISSIONS, VIEWER_PERMISSIONS
+from app.services.project_access import (
+    check_project_access, assert_project_writable,
+    MANAGER_PERMISSIONS, VIEWER_PERMISSIONS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -342,6 +345,12 @@ async def accept_invitation(
                 status_code=403,
                 detail="This invitation was sent to a different email address",
             )
+
+        # Cannot use check_project_access here — the caller isn't a member yet,
+        # so there is no role to resolve. Guard the archive state directly:
+        # invite/resend/revoke are already blocked via can_manage_members, and
+        # accept must be blocked too or membership could still change.
+        await assert_project_writable(UUID(inv["project_id"]))
 
         # Idempotent: only insert if not already a member
         existing = supabase.table("project_members") \

@@ -145,9 +145,9 @@ Note: `subform_fields` is only populated for `array`/subform_table fields. Omit 
 Rules for each key:
 - `description`: 1-2 sentence summary only. No headers, no bullets, no embedded sections.
 - `hints`: soft navigation — where/how to find the value. May be empty [].
-- `rules`: hard output constraints — format, normalisation, NR convention, enum enforcement.
+- `rules`: hard output constraints — format, normalisation, NR convention, enum enforcement. For a routed/conditional field, state the NR-vs-NA distinction (see the NR convention section).
 - `options`: allowed values for enum/select fields. Empty [] for free-text fields.
-- `examples`: list of {"value": ..., "source_text": "..."} objects. Include an NR example only when NR is a plausible value for this field.
+- `examples`: list of {"value": ..., "source_text": "..."} objects. Include an NR example only when NR is a plausible value for this field. An NA example is valid only when the field lists an NA option, and its source_text must quote the design fact that makes the field inapplicable.
 
 ⚠️ DO NOT include a "Source Grounding" block anywhere — it is automatically injected
    by the runtime for every Dict[str, Any] field. Putting it in description or rules
@@ -162,7 +162,12 @@ INPUT FIELDS
 Always include a primary input field for the document:
 - field_name: "markdown_content" — EXACTLY this name. The runtime always supplies the document as `markdown_content`; any other name (e.g. "document") will silently receive no content.
 - type: "str"
-- description: "Full markdown content of the document to extract from"
+- description: "Full text of the document to extract from — a research paper, a trial registry record, or a bibliographic record"
+
+Do NOT describe this field as a research paper. The same form runs over PDF-derived
+markdown AND structured records imported from ClinicalTrials.gov, PubMed, EndNote and
+RIS, so a description naming one input type is wrong for the others. At runtime the
+document is prefixed with a note stating which kind it actually is.
 
 **Context Inputs (if depends_on is not empty):**
 
@@ -241,7 +246,7 @@ COMPLETE EXAMPLE
     {
       "field_name": "markdown_content",
       "field_type": "str",
-      "description": "Full markdown content of the medical research paper"
+      "description": "Full text of the document to extract from — a research paper, a trial registry record, or a bibliographic record"
     }
   ],
   
@@ -334,7 +339,7 @@ EXAMPLE WITH CONTEXT FIELDS (DEPENDENT SIGNATURE)
     {
       "field_name": "markdown_content",
       "field_type": "str",
-      "description": "Full markdown content of the medical research paper"
+      "description": "Full text of the document to extract from — a research paper, a trial registry record, or a bibliographic record"
     },
     {
       "field_name": "diagnosis",
@@ -399,13 +404,13 @@ ENUM/SELECT FIELD EXAMPLE
 ```json
 {
   "class_name": "ClassifyStudyType",
-  "class_docstring": "Classify the type of clinical study from the research paper.\n\nForm Questions:\n- Study Type: \"What type of study is this?\"\n  Options: Randomized Controlled Trial, Cohort Study, Case-Control Study, Cross-Sectional Study, Other",
+  "class_docstring": "Classify the type of clinical study from the document.\n\nForm Questions:\n- Study Type: \"What type of study is this?\"\n  Options: Randomized Controlled Trial, Cohort Study, Case-Control Study, Cross-Sectional Study, Other",
   
   "input_fields": [
     {
       "field_name": "markdown_content",
       "field_type": "str",
-      "description": "Full markdown content of the medical research paper"
+      "description": "Full text of the document to extract from — a research paper, a trial registry record, or a bibliographic record"
     }
   ],
   
@@ -481,7 +486,7 @@ SUBFORM FIELD EXAMPLE (ARRAY TYPE)
     {
       "field_name": "markdown_content",
       "field_type": "str",
-      "description": "Full markdown content of the clinical research paper"
+      "description": "Full text of the document to extract from — a research paper, a trial registry record, or a bibliographic record"
     }
   ],
 
@@ -599,6 +604,14 @@ CRITICAL REQUIREMENTS ⚠️
 7. ✅ Use NR convention for fields that can be genuinely missing
    - When such a field's value is not reported in the source: {"value": "NR", "source_text": "NR"}
    - Do NOT add NR rules/examples to fields the document is guaranteed to contain (titles, study type, intervention name).
+   - NR vs NA: "NR" means the paper is SILENT about a field that could apply. "NA"
+     means the field CANNOT apply to this study — a crossover-only question in a
+     parallel-group trial, an arm the study does not have. They are different
+     findings: NR feeds reporting-completeness and risk-of-bias judgements, NA
+     does not. Silence is always NR, never NA.
+   - Offer NA only for genuinely conditional/routed fields, and only by listing it
+     in `options` (e.g. "Not applicable"). Never introduce NA as a bare rule: a
+     field with no NA option can answer only NR.
 
 8. ✅ For enum fields, list ALL options exactly as provided
 

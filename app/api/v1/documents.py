@@ -4,7 +4,7 @@ Document management endpoints - File upload and CRUD operations.
 
 import re
 import logging
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Request, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, status, Request, Query, UploadFile
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from supabase import create_client
@@ -13,7 +13,10 @@ from typing import List, Optional
 
 from app.dependencies import get_current_user
 from app.config import settings
-from app.models.schemas import DocumentUploadResponse, DocumentResponse, PresignedUploadResponse, DocumentLabelsUpdate
+from app.models.schemas import (
+    DocumentUploadResponse, DocumentResponse, PresignedUploadResponse,
+    DocumentLabelsUpdate, ApproveMetadataRequest,
+)
 from app.services.storage_service import storage_service
 from app.services.project_access import check_project_access
 from app.services.activity_service import log_activity
@@ -259,6 +262,529 @@ async def confirm_upload(
         )
 
 
+@router.post("/{document_id}/reprocess")
+async def reprocess_document(
+    document_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Retry processing for a document stuck in 'failed' status."""
+    try:
+        result = supabase.table("documents").select("*").eq("id", str(document_id)).execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+
+        document = result.data[0]
+        await check_project_access(UUID(document["project_id"]), user_id, "can_upload_docs")
+
+        if document["processing_status"] != "failed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only failed documents can be reprocessed"
+            )
+
+        if not document.get("s3_pdf_path"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Document has no stored file to reprocess"
+            )
+
+        supabase.table("documents").update({
+            "processing_status": "pending",
+            "processing_error": None,
+        }).eq("id", str(document_id)).execute()
+
+        from app.models.enums import JobType, JobStatus
+        job_data = {
+            "user_id": str(user_id),
+            "project_id": document["project_id"],
+            "job_type": JobType.PDF_PROCESSING.value,
+            "status": JobStatus.PENDING.value,
+            "progress": 0,
+            "input_data": {
+                "document_id": str(document_id),
+                "filename": document["filename"]
+            }
+        }
+        job_result = supabase.table("jobs").insert(job_data).execute()
+
+        if not job_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create processing job"
+            )
+
+        job_id = job_result.data[0]["id"]
+
+        from app.workers.pdf_tasks import process_pdf_document
+        celery_task = process_pdf_document.delay(
+            document_id=str(document_id),
+            job_id=str(job_id)
+        )
+        supabase.table("jobs").update({
+            "celery_task_id": celery_task.id
+        }).eq("id", job_id).execute()
+
+        return {"status": "processing", "job_id": job_id}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error reprocessing document")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.patch("/approve-metadata")
+async def approve_metadata_extraction(
+    body: ApproveMetadataRequest,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Accept (or un-accept) thin-evidence documents for extraction.
+
+    A `metadata_only` document — an abstract-only PubMed record, a
+    registration-only trial — is held out of extraction until a reviewer
+    accepts it, so a run never silently reads an abstract as if it were a full
+    paper. Whether an abstract suffices depends on the form being run, which is
+    why this is a human decision rather than a rule.
+
+    Approving deliberately does NOT change processing_status: the document stays
+    `metadata_only` so results, exports and eval can still tell the evidence was
+    thin. Bulk by design — nobody will click through 200 rows.
+    """
+    try:
+        ids = [str(d) for d in body.document_ids]
+        result = supabase.table("documents")\
+            .select("id, project_id, processing_status")\
+            .in_("id", ids)\
+            .execute()
+
+        docs = result.data or []
+        if not docs:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No matching documents found"
+            )
+
+        # Documents may span projects; authorize each one that appears.
+        for project_id in {d["project_id"] for d in docs}:
+            await check_project_access(UUID(project_id), user_id, "can_upload_docs")
+
+        eligible = [d["id"] for d in docs if d.get("processing_status") == "metadata_only"]
+        if not eligible:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="None of these documents need accepting — they already have full text."
+            )
+
+        supabase.table("documents")\
+            .update({"metadata_extraction_approved": body.approved})\
+            .in_("id", eligible)\
+            .execute()
+
+        return {
+            "approved": body.approved,
+            "count": len(eligible),
+            "document_ids": eligible,
+            "skipped": len(docs) - len(eligible),
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error approving metadata-only documents")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.post("/{document_id}/attach-pdf")
+async def attach_pdf(
+    document_id: UUID,
+    file: UploadFile = File(...),
+    user_id: UUID = Depends(get_current_user)
+):
+    """
+    Manual full-text fallback: attach a user-supplied PDF to a document that
+    doesn't have one yet — today, exclusively PubMed imports where no free
+    open-access copy was found automatically (see ImportedTrialDrawer's
+    "Attach PDF" prompt). Runs the exact same Datalab/Celery pipeline a fresh
+    upload does; mirrors /reprocess above, just uploading a fresh file
+    instead of retrying an existing s3_pdf_path.
+    """
+    try:
+        result = supabase.table("documents").select("*").eq("id", str(document_id)).execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+
+        document = result.data[0]
+        await check_project_access(UUID(document["project_id"]), user_id, "can_upload_docs")
+
+        validate_pdf_file(file)
+
+        pdf_bytes = await file.read()
+        if len(pdf_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024 * 1024)} MB"
+            )
+        if not pdf_bytes.startswith(PDF_MAGIC_BYTES):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is not a valid PDF."
+            )
+
+        s3_key = storage_service.upload_pdf(pdf_bytes, document["project_id"], document["content_hash"])
+
+        supabase.table("documents").update({
+            "s3_pdf_path": s3_key,
+            "processing_status": "pending",
+            "processing_error": None,
+        }).eq("id", str(document_id)).execute()
+
+        from app.models.enums import JobType, JobStatus
+        job_data = {
+            "user_id": str(user_id),
+            "project_id": document["project_id"],
+            "job_type": JobType.PDF_PROCESSING.value,
+            "status": JobStatus.PENDING.value,
+            "progress": 0,
+            "input_data": {
+                "document_id": str(document_id),
+                "filename": document["filename"]
+            }
+        }
+        job_result = supabase.table("jobs").insert(job_data).execute()
+
+        if not job_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create processing job"
+            )
+
+        job_id = job_result.data[0]["id"]
+
+        from app.workers.pdf_tasks import process_pdf_document
+        celery_task = process_pdf_document.delay(
+            document_id=str(document_id),
+            job_id=str(job_id)
+        )
+        supabase.table("jobs").update({
+            "celery_task_id": celery_task.id
+        }).eq("id", job_id).execute()
+
+        return {"status": "processing", "job_id": job_id}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error attaching PDF")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+def _enqueue_blocks_backfill(document: dict, user_id: UUID) -> str:
+    """Create a pdf_processing job (mode=blocks_backfill) and enqueue the
+    backfill_pdf_blocks Celery task. Returns the job id."""
+    from app.models.enums import JobType, JobStatus
+    job_data = {
+        "user_id": str(user_id),
+        "project_id": document["project_id"],
+        "job_type": JobType.PDF_PROCESSING.value,
+        "status": JobStatus.PENDING.value,
+        "progress": 0,
+        "input_data": {
+            "document_id": str(document["id"]),
+            "filename": document.get("filename"),
+            "mode": "blocks_backfill",
+        },
+    }
+    job_result = supabase.table("jobs").insert(job_data).execute()
+    if not job_result.data:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create backfill job"
+        )
+    job_id = job_result.data[0]["id"]
+
+    from app.workers.pdf_tasks import backfill_pdf_blocks
+    celery_task = backfill_pdf_blocks.delay(
+        document_id=str(document["id"]),
+        job_id=str(job_id),
+    )
+    supabase.table("jobs").update({
+        "celery_task_id": celery_task.id
+    }).eq("id", job_id).execute()
+    return job_id
+
+
+@router.post("/{document_id}/backfill-blocks")
+async def backfill_document_blocks(
+    document_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Re-fetch the Datalab blocks (json/bbox) sidecar for a document whose
+    markdown is already processed but whose blocks call failed or never ran.
+
+    Only the json/bbox call is issued — the markdown conversion is not re-run
+    (and not re-billed).
+    """
+    try:
+        result = supabase.table("documents").select("*").eq("id", str(document_id)).execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+
+        document = result.data[0]
+        await check_project_access(UUID(document["project_id"]), user_id, "can_upload_docs")
+
+        if document.get("processing_status") != "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Blocks can only be backfilled once markdown processing is complete"
+            )
+        if document.get("blocks_status") == "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Document already has its blocks sidecar"
+            )
+        if not document.get("s3_pdf_path"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Document has no stored file to backfill from"
+            )
+
+        job_id = _enqueue_blocks_backfill(document, user_id)
+        return {"status": "processing", "job_id": job_id}
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error backfilling document blocks")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+class BatchBackfillRequest(BaseModel):
+    project_id: UUID
+    limit: int = 50
+
+
+@router.post("/backfill-blocks/batch")
+async def backfill_blocks_batch(
+    body: BatchBackfillRequest,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Owner/admin-only: enqueue a blocks backfill for up to `limit` documents in a
+    project whose markdown is complete but whose blocks sidecar is missing/failed.
+    Bounded to keep Datalab spend explicit."""
+    try:
+        perms = await check_project_access(body.project_id, user_id, "can_upload_docs")
+        if not (perms.get("is_owner") or perms.get("is_admin")):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only a project owner or admin can run a batch backfill"
+            )
+
+        limit = max(1, min(body.limit, 500))
+        raw = supabase.table("documents")\
+            .select("*")\
+            .eq("project_id", str(body.project_id))\
+            .eq("processing_status", "completed")\
+            .neq("blocks_status", "completed")\
+            .limit(limit)\
+            .execute()
+        raw_docs = raw.data or []
+        docs = [d for d in raw_docs if d.get("s3_pdf_path")]
+
+        enqueued = []
+        for document in docs:
+            try:
+                job_id = _enqueue_blocks_backfill(document, user_id)
+                enqueued.append({"document_id": document["id"], "job_id": job_id})
+            except Exception as enq_err:
+                logger.warning(f"Failed to enqueue blocks backfill for {document['id']}: {enq_err}")
+
+        truncated = len(raw_docs) == limit
+        if truncated:
+            logger.info(
+                f"Blocks batch backfill for project {body.project_id} hit the cap of "
+                f"{limit}; more candidates may remain — re-run to continue."
+            )
+
+        return {
+            "enqueued_count": len(enqueued),
+            "enqueued": enqueued,
+            "capped_at": limit,
+            "possibly_more_remaining": truncated,
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error running batch blocks backfill")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+def _enqueue_doi_backfill(document: dict, user_id: UUID) -> str:
+    """Create a pdf_processing job (mode=doi_backfill) and enqueue the
+    backfill_pdf_doi Celery task. Returns the job id."""
+    from app.models.enums import JobType, JobStatus
+    job_data = {
+        "user_id": str(user_id),
+        "project_id": document["project_id"],
+        "job_type": JobType.PDF_PROCESSING.value,
+        "status": JobStatus.PENDING.value,
+        "progress": 0,
+        "input_data": {
+            "document_id": str(document["id"]),
+            "filename": document.get("filename"),
+            "mode": "doi_backfill",
+        },
+    }
+    job_result = supabase.table("jobs").insert(job_data).execute()
+    if not job_result.data:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create backfill job"
+        )
+    job_id = job_result.data[0]["id"]
+
+    from app.workers.pdf_tasks import backfill_pdf_doi
+    celery_task = backfill_pdf_doi.delay(
+        document_id=str(document["id"]),
+        job_id=str(job_id),
+    )
+    supabase.table("jobs").update({
+        "celery_task_id": celery_task.id
+    }).eq("id", job_id).execute()
+    return job_id
+
+
+@router.post("/{document_id}/backfill-doi")
+async def backfill_document_doi(
+    document_id: UUID,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Best-effort re-extraction of a document's DOI/title for docs whose
+    DOI was never attempted (doi_source IS NULL — legacy docs that pre-date
+    the DOI pipeline). Issues no Datalab calls; Crossref lookups only."""
+    try:
+        result = supabase.table("documents").select("*").eq("id", str(document_id)).execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+
+        document = result.data[0]
+        await check_project_access(UUID(document["project_id"]), user_id, "can_upload_docs")
+
+        if document.get("processing_status") != "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="DOI can only be backfilled once markdown processing is complete"
+            )
+        if document.get("doi_source") is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="DOI extraction has already been attempted for this document"
+            )
+        if not document.get("s3_pdf_path"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Document has no stored file to backfill from"
+            )
+
+        job_id = _enqueue_doi_backfill(document, user_id)
+        return {"status": "processing", "job_id": job_id}
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error backfilling document DOI")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
+@router.post("/backfill-doi/batch")
+async def backfill_doi_batch(
+    body: BatchBackfillRequest,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Owner/admin-only: enqueue a DOI backfill for up to `limit` documents in
+    a project whose markdown is complete but whose DOI extraction was never
+    attempted. Bounded; issues no Datalab calls (Crossref lookups only)."""
+    try:
+        perms = await check_project_access(body.project_id, user_id, "can_upload_docs")
+        if not (perms.get("is_owner") or perms.get("is_admin")):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only a project owner or admin can run a batch backfill"
+            )
+
+        limit = max(1, min(body.limit, 500))
+        raw = supabase.table("documents")\
+            .select("*")\
+            .eq("project_id", str(body.project_id))\
+            .eq("processing_status", "completed")\
+            .is_("doi_source", "null")\
+            .limit(limit)\
+            .execute()
+        raw_docs = raw.data or []
+        docs = [d for d in raw_docs if d.get("s3_pdf_path")]
+
+        enqueued = []
+        for document in docs:
+            try:
+                job_id = _enqueue_doi_backfill(document, user_id)
+                enqueued.append({"document_id": document["id"], "job_id": job_id})
+            except Exception as enq_err:
+                logger.warning(f"Failed to enqueue DOI backfill for {document['id']}: {enq_err}")
+
+        truncated = len(raw_docs) == limit
+        if truncated:
+            logger.info(
+                f"DOI batch backfill for project {body.project_id} hit the cap of "
+                f"{limit}; more candidates may remain — re-run to continue."
+            )
+
+        return {
+            "enqueued_count": len(enqueued),
+            "enqueued": enqueued,
+            "capped_at": limit,
+            "possibly_more_remaining": truncated,
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error running batch DOI backfill")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
 @router.get("", response_model=List[DocumentResponse])
 async def list_documents(
     project_id: Optional[UUID] = None,
@@ -271,6 +797,13 @@ async def list_documents(
     List documents.
 
     - **project_id** (optional): Filter by project
+    - **search** (optional): Matches filename OR any label (case-insensitive
+      substring). Applied in Python, not as a DB-level filter — Supabase's
+      query builder has no cheap substring-match over a JSON array column
+      (labels), so pushing an `.ilike("filename", ...)` filter to the DB
+      would exclude a label-only match before the label check ever runs.
+      When searching, pagination is applied AFTER filtering (not before),
+      so a match past the unfiltered set's first `limit` rows isn't missed.
     """
     try:
         if project_id:
@@ -281,9 +814,9 @@ async def list_documents(
                 .select("*")\
                 .eq("project_id", str(project_id))\
                 .order("created_at", desc=True)
-            if search:
-                query = query.ilike("filename", f"%{search}%")
-            result = query.range(offset, offset + limit - 1).execute()
+            if not search:
+                query = query.range(offset, offset + limit - 1)
+            result = query.execute()
         else:
             # Get all documents from user's owned + member projects
             owned_result = supabase.table("projects")\
@@ -306,13 +839,13 @@ async def list_documents(
                 .select("*")\
                 .in_("project_id", project_ids)\
                 .order("created_at", desc=True)
-            if search:
-                query = query.ilike("filename", f"%{search}%")
-            result = query.range(offset, offset + limit - 1).execute()
+            if not search:
+                query = query.range(offset, offset + limit - 1)
+            result = query.execute()
 
         documents = result.data or []
 
-        # Apply search filter (filename or labels)
+        # Search filter (filename or labels), then paginate the FILTERED set.
         if search:
             search_lower = search.lower()
             documents = [
@@ -320,6 +853,7 @@ async def list_documents(
                 if search_lower in (d.get("filename") or "").lower()
                 or any(search_lower in label.lower() for label in (d.get("labels") or []))
             ]
+            documents = documents[offset:offset + limit]
 
         return [DocumentResponse(**doc) for doc in documents]
 

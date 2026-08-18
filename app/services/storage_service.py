@@ -141,6 +141,36 @@ class S3StorageService:
             logger.error(f"Failed to upload markdown: {e}")
             raise
 
+    def upload_pdf(self, pdf_bytes: bytes, project_id: str, content_hash: str) -> str:
+        """
+        Upload raw PDF bytes directly to the SAME key a browser presigned-POST
+        upload lands on (pdfs/{project_id}/{content_hash}.pdf — see
+        generate_presigned_upload_url above). Used for server-side PDF
+        acquisition where we already have the bytes in memory and skip the
+        presigned-POST dance entirely: PubMed imports that found a free copy
+        via Unpaywall, and the manual "attach PDF" fallback. Once this is
+        called, process_pdf_document can run on the document exactly as it
+        would for a normal upload.
+        """
+        s3_key = f"pdfs/{project_id}/{content_hash}.pdf"
+        try:
+            self.s3_client.put_object(
+                Bucket=self.bucket,
+                Key=s3_key,
+                Body=pdf_bytes,
+                ContentType="application/pdf",
+                Metadata={
+                    "project-id": project_id,
+                    "content-hash": content_hash,
+                    "variant": "original",
+                },
+            )
+            logger.info(f"Uploaded PDF to s3://{self.bucket}/{s3_key}")
+            return s3_key
+        except ClientError as e:
+            logger.error(f"Failed to upload PDF: {e}")
+            raise
+
     def upload_clean_pdf(self, pdf_bytes: bytes, project_id: str, content_hash: str) -> str:
         """
         Upload the annotation-stripped PDF (output of pdf_cleaner.clean_pdf_bytes)
@@ -188,6 +218,25 @@ class S3StorageService:
             return s3_key
         except ClientError as e:
             logger.error(f"Failed to upload blocks JSON: {e}")
+            raise
+
+    def upload_import_file(self, file_bytes: bytes, project_id: str, token: str, ext: str = "enlx") -> str:
+        """Stash a raw uploaded import archive (e.g. an EndNote .enlx) in S3 so a
+        Celery worker on another host can pull it down and parse it. The object
+        is temporary — the import task deletes it once parsing is done."""
+        s3_key = f"imports/{project_id}/{token}.{ext}"
+        try:
+            self.s3_client.put_object(
+                Bucket=self.bucket,
+                Key=s3_key,
+                Body=file_bytes,
+                ContentType="application/zip",
+                Metadata={"project-id": project_id},
+            )
+            logger.info(f"Uploaded import file to s3://{self.bucket}/{s3_key}")
+            return s3_key
+        except ClientError as e:
+            logger.error(f"Failed to upload import file: {e}")
             raise
 
     def download_to_temp(self, s3_key: str, local_path: str) -> str:

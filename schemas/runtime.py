@@ -25,7 +25,9 @@ class SchemaRuntime:
         pass
 
 
-def build_runtime(config: DynamicSchemaConfig, pilot_feedback=None) -> SchemaRuntime:
+def build_runtime(
+    config: DynamicSchemaConfig, pilot_feedback=None, review_scope=None
+) -> SchemaRuntime:
     """
     Build runtime from DynamicSchemaConfig.
 
@@ -35,11 +37,15 @@ def build_runtime(config: DynamicSchemaConfig, pilot_feedback=None) -> SchemaRun
     Args:
         config: DynamicSchemaConfig with pipeline structure
         pilot_feedback: Optional dict with 'field_examples' and 'field_instructions'
+        review_scope: Optional project-level scope text, injected into every
+            signature as extraction context. Never filters rows.
 
     Returns:
         SchemaRuntime with configured pipeline
     """
-    pipeline = config.build_pipeline(pilot_feedback=pilot_feedback)
+    pipeline = config.build_pipeline(
+        pilot_feedback=pilot_feedback, review_scope=review_scope
+    )
     return SchemaRuntime(
         config=config,
         pipeline=pipeline

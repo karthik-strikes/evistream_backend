@@ -1,0 +1,52 @@
+1. Postgrad Med. 2022 Jun;134(5):463-470. doi: 10.1080/00325481.2021.2008180.
+Epub  2021 Dec 8.
+
+Analgesic efficacy of naproxen sodium versus hydrocodone/acetaminophen in acute 
+postsurgical dental pain: a randomized, double-blind, placebo-controlled trial.
+
+Cooper SA(1), Desjardins PJ(2), Bertoch T(3), Paredes-Diaz A(4), Troullos E(5), 
+Tajaddini A(4), Centofanti R(6), An R(6), Morella D(6).
+
+Author information:
+(1)Stephen A. Cooper, LLC, Palm Beach Gardens, FL, USA.
+(2)Desjardins Associates, LLC, Maplewood, NJ, USA.
+(3)CenExcel, JBR Clinical Research, Salt Lake City, UT, USA.
+(4)Bayer Healthcare, LLC, Consumer Health, Whippany, NJ, USA.
+(5)Belcan, LLC, Medical Affairs, Whippany, NJ, USA.
+(6)Bayer Healthcare, Consumer Health, Clinical Development, Morristown, NJ, USA.
+
+OBJECTIVES: Opioid/acetaminophen combinations may be overly prescribed in many 
+post-surgical situations where a non-steroidal anti-inflammatory drug with equal 
+or greater efficacy, fewer central nervous system side effects, and no risk for 
+opioid abuse could be substituted. We compared a single, non-prescription dose 
+of naproxen sodium 440 mg (NapS) against hydrocodone plus acetaminophen 10/650 
+mg (HYD+APAP) in post-impaction surgery pain.
+METHODS: Single-center, randomized, double-blind, placebo-controlled study in 
+moderate-severe pain after surgical removal of impacted third molars 
+(ClinicalTrials.gov: NCT04307940). Patients (n = 212) received NapS, HYD+APAP, 
+or placebo and were assessed over 12 hours. Primary endpoint: summed pain 
+intensity difference from 0 to 12 hours (SPID0-12). Secondary endpoints: pain 
+intensity, pain relief, time to rescue medication, duration of pain at least 
+half gone. Others: onset of pain relief, global assessment of treatment, adverse 
+events.
+RESULTS: All 221 randomized patients formed the safety population and were 
+included in the intention-to-treat sensitivity analysis. Nine patients 
+discontinued treatment or had protocol violations, and 212 patients were 
+included in the per-protocol, primary efficacy population. Both active 
+treatments were significantly more effective than placebo. NapS was 
+significantly more effective than HYD+APAP regarding SPID0-12 (p = 0.01; primary 
+endpoint), total pain relief (0-6 and 0-12 hours; p < 0.05), time to rescue 
+medication (p < 0.001), and duration of pain at least half gone (p < 0.001). 
+HYD+APAP was not statistically superior to NapS for any endpoint. More adverse 
+events were reported with HYD+APAP (n = 63) than NapS (n = 2) and placebo 
+(n = 20), including nausea, vomiting, and dizziness.
+CONCLUSION: In moderate-to-severe postsurgical dental pain, a single dose of 
+NapS was at least as effective as HYD+APAP in the early hours, significantly 
+more effective at reducing pain intensity and providing greater pain relief over 
+12 hours, and was better tolerated. When not contraindicated, NapS should be 
+considered a preferred alternative to opioid combinations for acute pain. 
+(ClinicalTrials.gov, Identifier: NCT04307940; 
+https://clinicaltrials.gov/ct2/show/NCT04307940).
+
+DOI: 10.1080/00325481.2021.2008180
+PMID: 34878953 [Indexed for MEDLINE]

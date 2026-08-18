@@ -32,12 +32,17 @@ CREATE TABLE IF NOT EXISTS projects (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  -- Soft archive: archived_at IS NULL means active. Archived projects are
+  -- hidden from the default list and are read-only until restored.
+  archived_at TIMESTAMPTZ NULL,
+  archived_by UUID NULL REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_projects_active ON projects(created_at DESC) WHERE archived_at IS NULL;
 
 -- ============================================================================
 -- DOCUMENTS TABLE

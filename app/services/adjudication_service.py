@@ -1,6 +1,5 @@
 """Service for adjudication of reviewer disagreements."""
 
-import json
 import logging
 from supabase import create_client, Client
 from typing import Optional, Dict, Any, List
@@ -17,79 +16,25 @@ def get_supabase() -> Client:
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
 
 
-_METADATA_KEYS = frozenset({
-    "source_text", "source_location", "page", "section", "confidence", "reasoning",
-    "status", "error",
-})
+from utils import value_compare
 
-
-def _unwrap_for_compare(v: Any) -> Any:
-    """Recursively strip {value, source_text} envelopes and grounding metadata so
-    two reviewers with identical column values but different cited quotes are
-    treated as agreement, not conflict. Mirrors the rule that source_text is
-    metadata about a value — never the value itself."""
-    if isinstance(v, dict):
-        if "value" in v:
-            return _unwrap_for_compare(v["value"])
-        # Row dict inside a table: drop metadata keys, recurse on the rest.
-        return {k: _unwrap_for_compare(val) for k, val in v.items() if k not in _METADATA_KEYS}
-    if isinstance(v, list):
-        return [_unwrap_for_compare(x) for x in v]
-    return v
-
-
-def _canon(v: Any) -> Any:
-    """Canonicalize an unwrapped value for agreement checks: case/whitespace-
-    insensitive strings, numeric strings equal to numbers ("3" == 3), and table
-    row lists compared as order-insensitive multisets — the same leniency
-    scalar fields already get, so row order never counts as a conflict."""
-    if isinstance(v, bool):
-        # Compare as the lowercase string so True == "true" (manual reviewers
-        # save strings; AI may save real booleans).
-        return "true" if v else "false"
-    if isinstance(v, str):
-        s = v.strip().lower()
-        # Boolean synonyms — mirror the consensus UI's displayBoolean, which
-        # renders yes/true/y as "Yes": values that display identically must
-        # never count as a conflict.
-        if s in ("true", "yes", "y"):
-            return "true"
-        if s in ("false", "no"):
-            return "false"
-        try:
-            f = float(s)
-            if f == f and f not in (float("inf"), float("-inf")):
-                return f
-        except ValueError:
-            pass
-        return s
-    if isinstance(v, (int, float)):
-        return float(v)
-    if isinstance(v, dict):
-        return {k: _canon(val) for k, val in v.items()}
-    if isinstance(v, list):
-        items = [_canon(x) for x in v]
-        try:
-            return sorted(items, key=lambda x: json.dumps(x, sort_keys=True, default=str))
-        except TypeError:
-            return items
-    return v
-
-
-def _align_multiselect(a: Any, b: Any):
-    """When one side saved a multi-select as a list and the other as a
-    comma-joined string, split the string so both compare as multisets."""
-    def _split(s: str) -> list:
-        return [p.strip() for p in s.split(",") if p.strip()]
-
-    def _scalar_list(x) -> bool:
-        return isinstance(x, list) and all(not isinstance(i, (dict, list)) for i in x)
-
-    if _scalar_list(a) and isinstance(b, str):
-        return a, _split(b)
-    if _scalar_list(b) and isinstance(a, str):
-        return _split(a), b
-    return a, b
+# The comparison rules used to live here, as the most complete of the codebase's
+# four independent agreement implementations. They now live in
+# `utils/value_compare.py` and serve all four surfaces, so "did these agree?" has
+# one answer.
+#
+# These five names are re-exported because
+# `tests/test_services/test_adjudication_absence.py` imports them by name and
+# pins their behaviour. New code should call `value_compare.agreement()` — it
+# returns the tri-state verdict, so an incomparable pair (a failed extraction, or
+# nothing recorded) can be told apart from a genuine conflict instead of being
+# folded into one by a boolean.
+_METADATA_KEYS = value_compare._METADATA_KEYS
+_Failed = value_compare._Failed
+_FAILED_SENTINEL = value_compare.FAILED_SENTINEL
+_unwrap_for_compare = value_compare.unwrap_for_compare
+_canon = value_compare.canon
+_align_multiselect = value_compare.align_multiselect
 
 
 async def compare_reviewers(
@@ -139,13 +84,9 @@ async def compare_reviewers(
         .execute()
     ai_data = ai_result.data[0].get("extracted_data", {}) if ai_result.data else {}
 
-    # Normalize AI keys (strip .value suffix)
-    ai_normalized = {}
-    for k, v in ai_data.items():
-        if k.endswith(".value"):
-            ai_normalized[k[:-6]] = v
-    if not ai_normalized:
-        ai_normalized = ai_data
+    # Normalize AI keys (strip .value suffix). Shared with the consensus summary
+    # and the review screen so all three count the same set of fields.
+    ai_normalized = value_compare.normalize_ai_keys(ai_data)
 
     # Get reviewer names
     user_ids = [uid for uid in [r1_user_id, r2_user_id] if uid]
@@ -157,8 +98,10 @@ async def compare_reviewers(
             .execute()
         user_map = {u["id"]: u.get("full_name") or u["email"] for u in (users.data or [])}
 
-    # Build field comparison
-    all_fields = sorted(set(list(r1_data.keys()) + list(r2_data.keys())))
+    # Build field comparison. `comparable_fields` is what keeps the `_partial`
+    # control flag — stored inside extracted_data by api/v1/results.py — out of
+    # the field list, where it inflated the total and always read as a conflict.
+    all_fields = sorted(value_compare.comparable_fields(r1_data, r2_data))
     fields = []
     agreed = 0
     disagreed = 0
@@ -166,15 +109,13 @@ async def compare_reviewers(
     for field in all_fields:
         r1_val = r1_data.get(field)
         r2_val = r2_data.get(field)
-        # Compare on unwrapped values so per-cell / per-field source_text
-        # differences never count as conflicts — only divergent values do.
-        r1_norm = _unwrap_for_compare(r1_val)
-        r2_norm = _unwrap_for_compare(r2_val)
-        # Same leniency at every depth: case/whitespace-insensitive, "3" == 3,
-        # boolean synonyms, list-vs-comma-string multi-selects, and table rows
-        # in a different order still count as agreement.
-        r1_norm, r2_norm = _align_multiselect(r1_norm, r2_norm)
-        is_agreed = _canon(r1_norm) == _canon(r2_norm)
+        # One shared comparator: source_text differences never count as
+        # conflicts, and the same leniency applies at every depth —
+        # case/whitespace-insensitive, "3" == 3, boolean synonyms,
+        # list-vs-comma-string multi-selects, and table rows in a different
+        # order still count as agreement.
+        verdict = value_compare.agreement(r1_val, r2_val)
+        is_agreed = verdict == value_compare.AGREE
 
         if is_agreed:
             agreed += 1
@@ -186,6 +127,10 @@ async def compare_reviewers(
             "reviewer_1_value": r1_val,
             "reviewer_2_value": r2_val,
             "agreed": is_agreed,
+            # An incomparable pair still needs a human, so it counts as
+            # disagreed above — but say WHY, so the UI can distinguish "the two
+            # reviewers differ" from "one side has no answer to compare".
+            "comparable": verdict != value_compare.INCOMPARABLE,
             "ai_value": ai_normalized.get(field),
         })
 
@@ -271,6 +216,21 @@ async def save_adjudication(
             .execute()
 
     saved = result.data[0] if result.data else {}
+
+    # Invalidate the consensus dashboard's 60s cache, the same way
+    # api/v1/results.py does on save_consensus and save_manual_extraction. Only
+    # this path was missing it, so an adjudication saved on its own left the
+    # dashboard showing stale has_adjudication / done counts for up to a minute.
+    # Imported here, not at module scope: cache_service builds a Redis client on
+    # import, and this module is imported by the test suite.
+    try:
+        from app.services.cache_service import cache_service
+        cache_service.delete(f"consensus_summary:{project_id}:{form_id}")
+    except Exception:
+        logger.warning(
+            "Failed to invalidate consensus summary cache for project=%s form=%s",
+            project_id, form_id, exc_info=True,
+        )
 
     # Log audit for each field resolution
     if saved:

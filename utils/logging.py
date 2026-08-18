@@ -57,7 +57,7 @@ def set_log_file(csv_path: str, include_full_prompts: bool = False):
             print("  ⚠️  Full prompts will be logged (large file size)")
 
 
-def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source_file: str = None, schema_name: str = None):
+def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source_file: str = None, schema_name: str = None, run_papers=None):
     """Log current DSPy history to CSV and optionally to Supabase.
 
     Args:
@@ -65,6 +65,11 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
         save_to_supabase: If True, also saves to Supabase (in addition to CSV).
         source_file: Optional source file path for context linking.
         schema_name: Optional schema name for context linking.
+        run_papers: Optional list of the run's papers (`run_batch`'s own
+            argument: `{"doc_id", "markdown_content", "path"}`). Passing it lets
+            each row record which paper it was about — the only moment that is
+            knowable, since the markdown lives in S3 and this list is gone
+            afterwards. See utils/llm_call_labels.py.
     """
     global _processed_hashes, _csv_path
 
@@ -170,9 +175,27 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
                 # Stamp every row with the current run so per-run cost/token
                 # attribution is exact (see utils/run_context.py). None outside
                 # a stamped worker context (e.g. eval scripts) — that's fine.
-                from utils.run_context import get_current_job_id
+                from utils.run_context import (
+                    get_current_extraction_id,
+                    get_current_job_id,
+                )
                 _run_job_id = get_current_job_id()
-                for call_data in new_call_data:
+                _run_extraction_id = get_current_extraction_id()
+
+                # Derive what each call was FOR — paper, pipeline step, retry,
+                # duration — and store it alongside what it cost. Three of those
+                # labels need the whole run at once (see llm_call_labels), which
+                # is why this happens here rather than per row. Never fatal: an
+                # unlabeled cost row is still a cost row.
+                try:
+                    from utils.llm_call_labels import label_run_calls
+                    _labels = label_run_calls(new_call_data, run_papers)
+                except Exception:
+                    _logger.warning(
+                        "Could not label LLM calls for this run", exc_info=True)
+                    _labels = []
+
+                for _idx, call_data in enumerate(new_call_data):
                     try:
                         # Use synchronous save method
 
@@ -241,7 +264,17 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
                             "source_file": source_file,
                             "schema_name": schema_name,
                             "job_id": _run_job_id,
-                            "metadata": {}
+                            # NOT extraction_id: that column's FK points at
+                            # `extraction_results(id)`, not `extractions(id)`, so
+                            # writing the run's id raises 23503 and loses the whole
+                            # row. That mismatch is why it is NULL in all 24,682
+                            # rows. `job_id` is the exact run key; /usage maps it to
+                            # an extraction via `jobs.input_data->>extraction_id`.
+                            "metadata": (
+                                {**_labels[_idx], "extraction_id": _run_extraction_id}
+                                if _idx < len(_labels) and _run_extraction_id
+                                else (_labels[_idx] if _idx < len(_labels) else {})
+                            ),
                         }
 
                         # Insert into 'llm_history' table (use upsert to handle duplicates)
@@ -265,7 +298,7 @@ def log_history(clear_memory: bool = True, save_to_supabase: bool = True, source
     return len(new_records)
 
 
-def log_all_lm_histories(source_file: str = None, schema_name: str = None) -> int:
+def log_all_lm_histories(source_file: str = None, schema_name: str = None, run_papers=None) -> int:
     """Flush LM history from every model in the ModelRouter cache.
 
     evistream uses `dspy.context(lm=...)` per coroutine instead of
@@ -279,7 +312,7 @@ def log_all_lm_histories(source_file: str = None, schema_name: str = None) -> in
         lms = list(router._lm_cache.values())
     except Exception:
         _logger.warning("ModelRouter unavailable; falling back to dspy.settings.lm", exc_info=True)
-        return log_history(source_file=source_file, schema_name=schema_name)
+        return log_history(source_file=source_file, schema_name=schema_name, run_papers=run_papers)
 
     total = 0
     for lm in lms:
@@ -292,6 +325,7 @@ def log_all_lm_histories(source_file: str = None, schema_name: str = None) -> in
                     save_to_supabase=True,
                     source_file=source_file,
                     schema_name=schema_name,
+                    run_papers=run_papers,
                 )
         except Exception:
             _logger.warning(f"Failed to flush history for LM {getattr(lm, 'model', '?')}", exc_info=True)

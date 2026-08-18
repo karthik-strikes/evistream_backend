@@ -2,6 +2,7 @@
 Extraction job endpoints - Create and manage extraction jobs.
 """
 
+import json
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, status, Query, Request
@@ -9,6 +10,7 @@ from supabase import create_client
 from uuid import UUID
 from typing import List, Optional
 
+from utils.table_schema import AGENTIC, field_strategy, resolve_strategy
 from app.dependencies import get_current_user
 from app.config import settings
 from app.models.schemas import ExtractionCreate, ExtractionResponse
@@ -23,35 +25,21 @@ from config.models import AVAILABLE_MODEL_IDS, DEFAULT_MODEL
 
 logger = logging.getLogger(__name__)
 
+from utils import absence
+
 router = APIRouter()
 
 
-_NR_LIKE = {"", "NR", "NA", "N/A", "NONE", "NOT REPORTED", "NOT_REPORTED", "—", "-"}
+# Sourced from utils/absence.py so this can no longer drift from the
+# extraction path's own recognizer (it is a superset of the old literal set).
+_NR_LIKE = absence.EMPTY_DISPLAY_TOKENS
 
 
-def _field_is_empty(v) -> bool:
-    """A field counts as empty when it has no substantive value — null/blank,
-    an NR-like token, or a cell whose status is not_reported/missing/error."""
-    if v is None:
-        return True
-    if isinstance(v, str):
-        return v.strip() == "" or v.strip().upper() in _NR_LIKE
-    if isinstance(v, bool):
-        return False
-    if isinstance(v, (int, float)):
-        return False
-    if isinstance(v, list):
-        return len(v) == 0 or all(_field_is_empty(item) for item in v)
-    if isinstance(v, dict):
-        st = v.get("status")
-        if st in ("missing", "error", "not_reported"):
-            return True
-        if st == "reported":
-            return False
-        if "value" in v:
-            return _field_is_empty(v.get("value"))
-        return len(v) == 0 or all(_field_is_empty(val) for val in v.values())
-    return False
+# Shared with the dashboard endpoint and mirrored in frontend/lib/absence.ts.
+_field_is_empty = absence.field_is_empty
+
+
+_field_is_not_applicable = absence.field_is_not_applicable
 
 
 def _flagged_more_than_half_empty(extracted_data) -> bool:
@@ -60,11 +48,14 @@ def _flagged_more_than_half_empty(extracted_data) -> bool:
     if not isinstance(extracted_data, dict):
         return False
     field_keys = [k for k in extracted_data.keys() if not k.startswith("_")]
-    total = len(field_keys)
-    if total == 0:
+    if not field_keys:
         return True
-    empty = sum(1 for k in field_keys if _field_is_empty(extracted_data[k]))
-    return empty * 2 > total
+    considered = [k for k in field_keys if not _field_is_not_applicable(extracted_data[k])]
+    if not considered:
+        # Every field is inapplicable to this design — nothing was missed.
+        return False
+    empty = sum(1 for k in considered if _field_is_empty(extracted_data[k]))
+    return empty * 2 > len(considered)
 
 
 def _update_queue_position(job_id: str):
@@ -223,6 +214,46 @@ async def create_extraction_job(
         if chosen_model not in AVAILABLE_MODEL_IDS:
             chosen_model = DEFAULT_MODEL
 
+        # Agentic table extraction runs on the Claude Agent SDK, so it is
+        # Claude-only. If any table field on this form is in agentic mode
+        # (per-field extraction_strategy == "agentic", or the legacy form-level
+        # table_extraction_mode == "agentic") and the user's preferred model is
+        # not Claude, override for THIS RUN ONLY — user_settings is never
+        # touched. The form builder warns before the run; the job records why,
+        # so the switch is auditable rather than silent.
+        model_override_reason = None
+        _sd = form.get("schema_def") or {}
+        if isinstance(_sd, str):
+            try:
+                _sd = json.loads(_sd)
+            except (json.JSONDecodeError, TypeError):
+                _sd = {}
+        _form_agentic = resolve_strategy(_sd.get("table_extraction_mode")) == AGENTIC
+        _has_agentic_field = _form_agentic or any(
+            field_strategy(of) == AGENTIC
+            for sig in (_sd.get("signatures") or [])
+            for of in (sig.get("output_fields") or [])
+        )
+        if _has_agentic_field and not chosen_model.startswith("anthropic/"):
+            claude_model = DEFAULT_MODEL if DEFAULT_MODEL.startswith("anthropic/") else next(
+                (m for m in AVAILABLE_MODEL_IDS if m.startswith("anthropic/")), None
+            )
+            if claude_model:
+                logger.info(
+                    "[extractions] agentic form %s: model %s -> %s",
+                    extraction_data.form_id, chosen_model, claude_model,
+                )
+                model_override_reason = (
+                    f"agentic_mode_requires_claude (was {chosen_model})"
+                )
+                chosen_model = claude_model
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="This form uses agentic table extraction, which requires a "
+                           "Claude model, but no Claude model is available.",
+                )
+
         # Create background job
         job_data = {
             "user_id": str(user_id),
@@ -236,6 +267,8 @@ async def create_extraction_job(
                 "document_ids": [str(d) for d in extraction_data.document_ids] if extraction_data.document_ids else None,
                 "max_documents": extraction_data.max_documents,
                 "model": chosen_model,
+                **({"model_override_reason": model_override_reason}
+                   if model_override_reason else {}),
             }
         }
 
@@ -448,24 +481,65 @@ async def get_extraction_coverage(
         # 4) Count distinct successfully extracted document_ids per form, and
         #    flag documents whose latest result has field-level extraction
         #    failures (cells with status missing/error masquerading as NR).
-        results_result = supabase.table("extraction_results")\
-            .select("form_id, document_id, extracted_data, created_at")\
-            .eq("project_id", pid)\
-            .order("created_at", desc=True)\
-            .execute()
-        results_data = results_result.data or []
+        #
+        # extracted_data (the full {value, source_text, status} envelope per
+        # field, including grounding quotes) is only ever needed for the
+        # LATEST result per (form_id, document_id) — fetching it for every
+        # historical row here was the dominant cost on projects with a long
+        # extraction history, since this endpoint is polled every 5-15s while
+        # a job is active. Fetch row identity first (cheap), then fetch
+        # extracted_data only for the rows that turn out to be latest.
+        #
+        # PostgREST caps an unranged select at 1000 rows — paginate with
+        # .range() so a project with a long history (this query has no other
+        # filter) doesn't silently drop its oldest extraction_results rows,
+        # which would undercount coverage for documents whose only
+        # successful run happened outside the first 1000 rows returned.
+        results_data = []
+        page_size = 1000
+        offset = 0
+        while True:
+            page = supabase.table("extraction_results")\
+                .select("id, form_id, document_id")\
+                .eq("project_id", pid)\
+                .order("created_at", desc=True)\
+                .range(offset, offset + page_size - 1)\
+                .execute()
+            page_data = page.data or []
+            results_data.extend(page_data)
+            if len(page_data) < page_size:
+                break
+            offset += page_size
 
-        # Build set of extracted doc_ids per form; evaluate only the latest
-        # result per (form, document) for flagged (>half-empty) detection.
+        # Build set of extracted doc_ids per form, and remember which row id
+        # is the latest per (form, document) — results are already ordered
+        # created_at desc, so the first row seen per pair is the latest one.
         form_extracted_docs: dict = defaultdict(set)
-        form_flagged_docs: dict = defaultdict(set)
         seen_form_doc: dict = defaultdict(set)
+        latest_ids_by_form_doc: dict = {}
         for r in results_data:
             fid, did = r["form_id"], r["document_id"]
             form_extracted_docs[fid].add(did)
             if did not in seen_form_doc[fid]:
                 seen_form_doc[fid].add(did)
-                if _flagged_more_than_half_empty(r.get("extracted_data")):
+                latest_ids_by_form_doc[r["id"]] = (fid, did)
+
+        form_flagged_docs: dict = defaultdict(set)
+        latest_ids = list(latest_ids_by_form_doc.keys())
+        # One request per ~1000 ids: chunking exists only as a safety valve for
+        # pathologically large id lists, not as the common path — each extra
+        # round trip has fixed overhead that dominates for typical list sizes,
+        # so a small chunk_size here was making this slower, not faster.
+        chunk_size = 1000
+        for i in range(0, len(latest_ids), chunk_size):
+            chunk = latest_ids[i:i + chunk_size]
+            latest_rows = supabase.table("extraction_results")\
+                .select("id, extracted_data")\
+                .in_("id", chunk)\
+                .execute()
+            for row in (latest_rows.data or []):
+                fid, did = latest_ids_by_form_doc[row["id"]]
+                if _flagged_more_than_half_empty(row.get("extracted_data")):
                     form_flagged_docs[fid].add(did)
 
         # 5) Get all extraction jobs for this project to find failed doc_ids and active jobs
@@ -478,16 +552,17 @@ async def get_extraction_coverage(
             .execute()
         jobs_data = jobs_result.data or []
 
-        # Map jobs by extraction_id
+        # Map jobs by extraction_id → form_id in one pass. This used to be an
+        # O(jobs × extractions) linear scan (re-scanning all of
+        # extractions_data for every job) — extraction_id → form_id is a
+        # simple dict lookup since extraction ids are unique.
+        extraction_id_to_form_id = {ext["id"]: ext["form_id"] for ext in extractions_data}
         form_jobs: dict = defaultdict(list)
         for job in jobs_data:
             eid = (job.get("input_data") or {}).get("extraction_id")
-            if eid:
-                # Find the form_id for this extraction
-                for ext in extractions_data:
-                    if ext["id"] == eid:
-                        form_jobs[ext["form_id"]].append(job)
-                        break
+            form_id = extraction_id_to_form_id.get(eid) if eid else None
+            if form_id:
+                form_jobs[form_id].append(job)
 
         # 6) Build coverage response per form
         coverage = []
@@ -744,8 +819,12 @@ async def cancel_extraction(
 
         extraction = result.data[0]
 
-        # Verify project access and extraction permission
-        await check_project_access(UUID(extraction["project_id"]), user_id, "can_run_extractions")
+        # Verify project access and extraction permission.
+        # mutating=False: cancelling in-flight work must stay possible after
+        # the project is archived.
+        await check_project_access(
+            UUID(extraction["project_id"]), user_id, "can_run_extractions", mutating=False
+        )
 
         # Check if extraction is already completed or failed
         if extraction["status"] in ["completed", "failed", "cancelled"]:

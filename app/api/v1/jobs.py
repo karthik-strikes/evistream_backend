@@ -138,9 +138,13 @@ async def cancel_job(
 
         job = result.data[0]
 
-        # Verify user has permission to cancel (requires can_run_extractions)
+        # Verify user has permission to cancel (requires can_run_extractions).
+        # mutating=False: archiving a project should let you stop work already
+        # in flight, not trap it.
         if job.get("project_id"):
-            await check_project_access(UUID(job["project_id"]), user_id, "can_run_extractions")
+            await check_project_access(
+                UUID(job["project_id"]), user_id, "can_run_extractions", mutating=False
+            )
 
         # Check if already terminal
         if job["status"] in [JobStatus.COMPLETED.value, JobStatus.FAILED.value, JobStatus.CANCELLED.value]:

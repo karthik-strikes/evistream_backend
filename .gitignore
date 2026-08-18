@@ -87,3 +87,7 @@ eval/outputs/
 eval/sheets/
 eval/*.png
 eval/**/*.png
+eval/**/outputs/
+
+# Third-party article full text — not redistributed (CC BY-NC-ND)
+tests/fixtures/pmc13383132_full.xml

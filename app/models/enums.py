@@ -22,6 +22,7 @@ class JobType(str, Enum):
     PDF_PROCESSING = "pdf_processing"
     FORM_GENERATION = "form_generation"
     EXTRACTION = "extraction"
+    IMPORT = "import"
 
 
 class JobStatus(str, Enum):
@@ -49,6 +50,34 @@ class DocumentStatus(str, Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    # Imported reference (e.g. from EndNote) that has metadata but no attached
+    # PDF yet — a reviewer can attach one via POST /documents/{id}/attach-pdf.
+    NEEDS_PDF = "needs_pdf"
+    # Readable, but the evidence is THIN: an abstract-only PubMed record, or a
+    # registration-only trial with no posted results. Held out of extraction
+    # until a reviewer accepts it (metadata_extraction_approved), because a run
+    # otherwise reads 250 words of abstract as if it were a full paper and every
+    # full-text-only field comes back NR indistinguishably from a real miss.
+    METADATA_ONLY = "metadata_only"
+
+
+class BlocksStatus(str, Enum):
+    """Datalab blocks (json/bbox) sidecar call status, tracked independently
+    of the overall document processing status."""
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class DoiSource(str, Enum):
+    """How (if at all) a document's DOI was resolved — see doi_service.py.
+    Also doubles as the "already attempted" marker so the backfill batch
+    endpoint doesn't keep retrying documents that genuinely have no
+    discoverable DOI."""
+    METADATA = "metadata"
+    TEXT = "text"
+    CROSSREF = "crossref"
+    NONE = "none"
 
 
 class IssueCategory(str, Enum):

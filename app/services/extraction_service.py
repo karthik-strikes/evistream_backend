@@ -12,6 +12,7 @@ _BATCH_CONCURRENCY = _app_settings.EXTRACTION_BATCH_CONCURRENCY
 from schemas import get_schema
 from schemas.registry import auto_discover_schemas
 from utils.lm_config import get_dspy_model
+from utils import record_context
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class ExtractionService:
         pilot_feedback=None,
         path_to_blocks_path: dict = None,
         model_name: str = None,
+        review_scope: str = None,
     ) -> list:
         """
         Stage-level fan-out extraction.
@@ -70,6 +72,15 @@ class ExtractionService:
             try:
                 with open(markdown_path, "r", encoding="utf-8") as f:
                     content = f.read()
+                # Imported documents (CT.gov, PubMed, EndNote, RIS) store their
+                # record as JSON, not markdown, and the signature tells the
+                # model it's reading a paper. Prepend a short note saying what
+                # the record actually is, to quote values rather than JSON
+                # syntax, and that a thin record's missing fields are genuinely
+                # absent. Prepend only — the body stays byte-identical, so
+                # quotes remain literal substrings of the stored file. Returns
+                # "" for PDF markdown. See utils/record_context.
+                content = record_context.preamble_for(content) + content
                 paper = {"doc_id": doc_id, "markdown_content": content, "path": markdown_path}
                 # Best-effort load of the blocks sidecar — bbox features
                 # degrade gracefully if missing or malformed.
@@ -91,7 +102,9 @@ class ExtractionService:
         if not papers:
             return []
 
-        pipeline = schema_config.build_pipeline(pilot_feedback=pilot_feedback)
+        pipeline = schema_config.build_pipeline(
+            pilot_feedback=pilot_feedback, review_scope=review_scope
+        )
         # Per-job model override (Beta — user's Settings → AI Model selection).
         # Read inside StagedPipeline._run_extractor_with_retry, passed to
         # ModelRouter so this becomes the primary candidate for every call in
@@ -156,6 +169,7 @@ class ExtractionService:
         pilot_feedback=None,
         path_to_blocks_path: dict = None,
         model_name: str = None,
+        review_scope: str = None,
     ) -> Dict[str, Any]:
         """
         Sync entry point for Celery: run parallel extraction on a
@@ -182,6 +196,7 @@ class ExtractionService:
                     pilot_feedback=pilot_feedback,
                     path_to_blocks_path=path_to_blocks_path,
                     model_name=model_name,
+                    review_scope=review_scope,
                 )
             )
 

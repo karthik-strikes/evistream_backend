@@ -247,8 +247,16 @@ def _enrich_signatures_with_metadata(
 
             # Optional attributes (copied only if present).
             # `multiple` matters: without it the spec LLM prompts multi-selects
-            # as single-select ("exactly one of the options").
-            for attr in ["options", "example", "extraction_hints", "subform_fields", "hints", "rules", "examples", "multiple"]:
+            # as single-select ("exactly one of the options"). extraction_strategy/
+            # anchor_columns matter for the same reason: without them, every
+            # regenerate would silently reset a table field's chosen mode
+            # (single_call/row_then_columns/agentic) back to the default, because
+            # _enrich_subform_columns_independently reads them off this dict.
+            for attr in [
+                "options", "example", "extraction_hints", "subform_fields",
+                "hints", "rules", "examples", "multiple",
+                "extraction_strategy", "anchor_columns", "key_columns",
+            ]:
                 if attr in original_field:
                     enriched_field[attr] = original_field[attr]
 

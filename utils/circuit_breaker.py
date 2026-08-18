@@ -285,13 +285,26 @@ class ModelRouter:
         # Pre-created DSPy LM instances (one per model).
         # num_retries=0: LiteLLM will NOT internally retry on 429.
         # Without this, each 429 wastes ~30 seconds before our CB sees the error.
+        # max_tokens is clamped per model: EXTRACTION_MAX_TOKENS is sized for the
+        # primary (Claude) model, and passing that value to a model with a lower
+        # output cap is a hard 400, not a soft degrade. gpt-4o (16384) and
+        # gemini-2.0-flash-exp (8192) are both well below the primary's ceiling.
+        # Thinking/effort are gated per model inside reasoning_kwargs — the
+        # fallbacks reject them, and this cache holds all three models.
+        from config.models import (
+            EXTRACTION_LLM_TIMEOUT_SECONDS,
+            reasoning_kwargs,
+            resolve_max_output_tokens,
+        )
         self._lm_cache: Dict[str, dspy.LM] = {
             model: dspy.LM(
                 model,
-                max_tokens=max_tokens,
+                max_tokens=resolve_max_output_tokens(model, max_tokens),
                 temperature=temperature,
                 num_retries=0,
                 cache=False,
+                timeout=EXTRACTION_LLM_TIMEOUT_SECONDS,
+                **reasoning_kwargs(model),
             )
             for model in self.all_models
         }
@@ -369,14 +382,30 @@ class ModelRouter:
             recovery_timeout=CB_RECOVERY_TIMEOUT,
             half_open_successes=CB_HALF_OPEN_SUCCESSES,
         )
+        # Clamped for the same reason as the constructor's cache — and it matters
+        # more here: this path takes an arbitrary user-picked model from the
+        # Settings picker, several of which (gemini-2.0-flash-exp, bedrock/*)
+        # cap output well below EXTRACTION_MAX_TOKENS.
+        from config.models import (
+            EXTRACTION_LLM_TIMEOUT_SECONDS,
+            reasoning_kwargs,
+            resolve_max_output_tokens,
+        )
+        _capped = resolve_max_output_tokens(model, self.max_tokens)
+        _reasoning = reasoning_kwargs(model)
         self._lm_cache[model] = dspy.LM(
             model,
-            max_tokens=self.max_tokens,
+            max_tokens=_capped,
             temperature=self.temperature,
             num_retries=0,
             cache=False,
+            timeout=EXTRACTION_LLM_TIMEOUT_SECONDS,
+            **_reasoning,
         )
-        logger.info(f"[ModelRouter] Lazily registered model: {model}")
+        logger.info(
+            "[ModelRouter] Lazily registered model: %s (max_tokens=%d, reasoning=%s)",
+            model, _capped, _reasoning or "n/a (non-Anthropic)",
+        )
 
     async def run_with_routing(
         self,

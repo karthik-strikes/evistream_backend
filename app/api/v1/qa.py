@@ -41,7 +41,8 @@ async def get_qa_queue(
     user_id: UUID = Depends(get_current_user),
 ):
     """Get QA review queue."""
-    await check_project_access(project_id, user_id, "can_qa_review")
+    # mutating=False: read-only, so it must keep working on archived projects.
+    await check_project_access(project_id, user_id, "can_qa_review", mutating=False)
     return await qa_service.get_qa_queue(project_id, form_id, qa_reviewer_id=user_id)
 
 
@@ -86,7 +87,8 @@ async def get_qa_review(
     user_id: UUID = Depends(get_current_user),
 ):
     """Get QA review for a document."""
-    await check_project_access(project_id, user_id, "can_qa_review")
+    # mutating=False: read-only, so it must keep working on archived projects.
+    await check_project_access(project_id, user_id, "can_qa_review", mutating=False)
     result = await qa_service.get_qa_review(project_id, form_id, document_id)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No QA review found")

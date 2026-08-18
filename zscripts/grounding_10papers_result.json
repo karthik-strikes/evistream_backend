@@ -1,0 +1,99 @@
+{
+  "per_paper": [
+    {
+      "paper": "Abdelbaser 2022a",
+      "rows": 6,
+      "back": 6,
+      "cells": 24,
+      "quoted": 24,
+      "in_quote": 24,
+      "nr": 12
+    },
+    {
+      "paper": "Abdelbaser 2022b",
+      "rows": 5,
+      "back": 5,
+      "cells": 30,
+      "quoted": 30,
+      "in_quote": 24,
+      "derived_ok": 6
+    },
+    {
+      "paper": "Abou 2019",
+      "rows": 2,
+      "back": 2,
+      "nr": 8,
+      "cells": 4,
+      "quoted": 4,
+      "in_quote": 4
+    },
+    {
+      "paper": "Alshami 2021",
+      "rows": 2,
+      "back": 2,
+      "cells": 12,
+      "quoted": 12,
+      "in_quote": 6,
+      "derived_ok": 4,
+      "value_missing": 2
+    },
+    {
+      "paper": "Bahrololoomi 2019",
+      "rows": 2,
+      "back": 2,
+      "cells": 12,
+      "quoted": 12,
+      "in_quote": 12
+    },
+    {
+      "paper": "Bennie 1997",
+      "rows": 2,
+      "back": 2,
+      "cells": 12,
+      "quoted": 12,
+      "in_quote": 12
+    },
+    {
+      "paper": "Bernhardt 2001",
+      "rows": 8,
+      "back": 8,
+      "cells": 40,
+      "quoted": 40,
+      "in_quote": 36,
+      "derived_ok": 4,
+      "nr": 8
+    },
+    {
+      "paper": "Bird 2007",
+      "rows": 3,
+      "back": 3,
+      "cells": 6,
+      "quoted": 6,
+      "in_quote": 6,
+      "nr": 12
+    },
+    {
+      "paper": "Bogaert 2004",
+      "rows": 7,
+      "back": 7,
+      "nr": 42
+    },
+    {
+      "paper": "Bradley 2007",
+      "rows": 2,
+      "back": 2,
+      "cells": 12,
+      "quoted": 12,
+      "in_quote": 8,
+      "derived_ok": 4
+    }
+  ],
+  "total": {
+    "cells": 152,
+    "quoted": 152,
+    "in_quote": 132,
+    "nr": 82,
+    "derived_ok": 18,
+    "value_missing": 2
+  }
+}

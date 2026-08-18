@@ -102,10 +102,22 @@ class PDFProcessingService:
                 checkpoint_id = marker_json.get("checkpoint_id") or marker_md.get("checkpoint_id")
                 request_id = marker_json.get("request_id") or marker_md.get("request_id")
 
+                # Per-step outcome of the json/bbox call (call 2), independent of
+                # the overall markdown success above. Prefer the explicit status
+                # the processor recorded; fall back to inferring from blocks_json.
+                marker_json_status = result.get("marker_json_status")
+                if marker_json_status:
+                    blocks_status = marker_json_status
+                else:
+                    blocks_status = "completed" if blocks_json else "failed"
+                blocks_error = result.get("marker_json_error")
+
                 return {
                     "success": True,
                     "markdown_content": markdown_content,
                     "blocks_json": blocks_json,
+                    "blocks_status": blocks_status,
+                    "blocks_error": blocks_error,
                     "parse_quality_score": parse_quality_score,
                     "checkpoint_id": checkpoint_id,
                     "request_id": request_id,
@@ -134,6 +146,36 @@ class PDFProcessingService:
                 "markdown_content": None,
                 "metadata": {}
             }
+
+    def fetch_blocks_only(self, pdf_path: str) -> Dict[str, Any]:
+        """Re-fetch only the Datalab json/bbox sidecar (call 2) for a PDF whose
+        markdown was already processed. Does NOT invoke the markdown call, so the
+        markdown conversion is not re-billed. Returns the same field shape the
+        backfill task consumes.
+        """
+        if not self.processor:
+            return {"success": False, "error": "PDF processor not initialized", "blocks_json": None}
+        try:
+            if not Path(pdf_path).exists():
+                return {"success": False, "error": f"PDF file not found: {pdf_path}", "blocks_json": None}
+
+            marker_json = self.processor.parse_blocks_only(str(pdf_path)) or {}
+            blocks_json = marker_json.get("json")
+            if not blocks_json:
+                return {"success": False, "error": "No block-level JSON returned by Datalab", "blocks_json": None}
+
+            return {
+                "success": True,
+                "blocks_json": blocks_json,
+                "parse_quality_score": marker_json.get("parse_quality_score"),
+                "checkpoint_id": marker_json.get("checkpoint_id"),
+                "request_id": marker_json.get("request_id"),
+                "page_count": marker_json.get("page_count") or 0,
+                "error": None,
+            }
+        except Exception as e:
+            logger.error(f"Error fetching blocks for {pdf_path}: {str(e)}")
+            return {"success": False, "error": str(e), "blocks_json": None}
 
     def check_processor_status(self) -> Dict[str, Any]:
         """Check if PDF processor is available and healthy."""

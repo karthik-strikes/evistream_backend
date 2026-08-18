@@ -92,7 +92,7 @@ class DynamicSchemaConfig:
                         )
                     seen_fields[fname] = sig_name
 
-    def build_pipeline(self, pilot_feedback=None) -> Any:
+    def build_pipeline(self, pilot_feedback=None, review_scope=None) -> Any:
         """
         Build extraction pipeline following pipeline_stages structure.
 
@@ -103,26 +103,38 @@ class DynamicSchemaConfig:
         Args:
             pilot_feedback: Optional dict with 'field_examples' and 'field_instructions'
                 from pilot calibration.
+            review_scope: Optional project-level scope text, injected into every
+                signature as extraction context. Never filters rows.
         """
-        return self._build_staged_pipeline(pilot_feedback=pilot_feedback)
+        return self._build_staged_pipeline(
+            pilot_feedback=pilot_feedback, review_scope=review_scope
+        )
 
-    def _build_staged_pipeline(self, pilot_feedback=None) -> Any:
+    def _build_staged_pipeline(self, pilot_feedback=None, review_scope=None) -> Any:
         """Build pipeline that follows pipeline_stages execution order."""
         use_runtime = os.getenv("USE_RUNTIME_BUILDERS", "true").lower() == "true"
 
         if use_runtime and self.schema_def:
             # Phase B: build extractor classes at runtime from JSON schema_def.
             # No disk imports, no sys.modules staleness, no Celery worker restarts needed.
-            from dspy_components.runtime_builders import build_schema_classes, build_signature_class
+            from dspy_components.runtime_builders import (
+                apply_review_scope, build_schema_classes, build_signature_class,
+            )
 
-            extractor_factories = build_schema_classes(self.schema_def, self.task_name)
-            pipeline_stages = self.schema_def.get("pipeline_stages", self.pipeline_stages)
+            # Scope is folded into each sig_def BEFORE any class is built, so the
+            # signature cache (keyed on the content hash of sig_def) can never serve
+            # one project's compiled signature to another project with a different
+            # scope. Returns self.schema_def unchanged when no scope is set.
+            schema_def = apply_review_scope(self.schema_def, review_scope)
+
+            extractor_factories = build_schema_classes(schema_def, self.task_name)
+            pipeline_stages = schema_def.get("pipeline_stages", self.pipeline_stages)
 
             # Pilot augmentation: build sig class from schema_def, then subclass via type()
             def _sig_provider(sig_name: str):
                 sig_defs_map = {
                     s["class_name"]: s
-                    for s in self.schema_def.get("signatures", [])
+                    for s in schema_def.get("signatures", [])
                 }
                 sig_def = sig_defs_map.get(sig_name)
                 return build_signature_class(sig_def, self.task_name) if sig_def else None
@@ -192,7 +204,7 @@ class DynamicSchemaConfig:
                             )
                             # Universal cache-usage log: fires the `prompt_cache
                             # write=X read=Y` summary line for both single-call
-                            # and two-stage extraction paths. Surface exceptions
+                            # and keyed extraction paths. Surface exceptions
                             # (we don't want them silenced) but otherwise quiet.
                             try:
                                 from utils.dspy_async import _log_cache_usage
@@ -260,49 +272,49 @@ class DynamicSchemaConfig:
                 extractor = ExtractorCls()
 
                 # Two-stage composite extractors: apply pilot calibration to the
-                # inner Stage 1 / Stage 2 signatures directly (the outer module
+                # inner record-discovery / slot-fill signatures directly (the outer module
                 # has no single `.extract` predictor).
-                if getattr(ExtractorCls, "_is_two_stage", False):
+                if getattr(ExtractorCls, "_is_keyed_pipeline", False):
                     if self.pilot_feedback:
                         field_examples = self.pilot_feedback.get("field_examples", {})
                         field_instructions = self.pilot_feedback.get("field_instructions", {})
                         if field_examples or field_instructions:
                             from utils.pilot_feedback import augment_signature_with_feedback
                             parent = getattr(ExtractorCls, "_field_name", "")
-                            anchor_cols = set(getattr(ExtractorCls, "_anchor_cols", None) or [])
+                            key_cols = set(getattr(ExtractorCls, "_key_cols", None) or [])
 
                             def _parts(key: str):
                                 return key.split(".", 1) if "." in key else (key, None)
 
-                            # Stage 1 outputs the parent field: top-level feedback
+                            # Record discovery outputs the parent field: top-level feedback
                             # plus anchor-column feedback belongs there.
                             fe1 = {
                                 k: v for k, v in field_examples.items()
                                 if _parts(k)[1] is None
-                                or (_parts(k)[0] == parent and _parts(k)[1] in anchor_cols)
+                                or (_parts(k)[0] == parent and _parts(k)[1] in key_cols)
                             }
                             fi1 = {
                                 k: v for k, v in field_instructions.items()
                                 if _parts(k)[1] is None
-                                or (_parts(k)[0] == parent and _parts(k)[1] in anchor_cols)
+                                or (_parts(k)[0] == parent and _parts(k)[1] in key_cols)
                             }
-                            # Stage 2's output fields ARE the value columns —
+                            # The slot-fill signature's output fields ARE the attributes —
                             # re-key "parent.col" → "col" so feedback lands on them.
                             fe2 = {
                                 _parts(k)[1]: v for k, v in field_examples.items()
                                 if _parts(k)[0] == parent and _parts(k)[1]
-                                and _parts(k)[1] not in anchor_cols
+                                and _parts(k)[1] not in key_cols
                             }
                             fi2 = {
                                 _parts(k)[1]: v for k, v in field_instructions.items()
                                 if _parts(k)[0] == parent and _parts(k)[1]
-                                and _parts(k)[1] not in anchor_cols
+                                and _parts(k)[1] not in key_cols
                             }
                             for predictor, base_sig, fe, fi in (
-                                (getattr(extractor, "stage1", None),
-                                 getattr(ExtractorCls, "_stage1_class", None), fe1, fi1),
-                                (getattr(extractor, "stage2_row", None),
-                                 getattr(ExtractorCls, "_stage2_row_class", None), fe2, fi2),
+                                (getattr(extractor, "record_discovery", None),
+                                 getattr(ExtractorCls, "_record_discovery_class", None), fe1, fi1),
+                                (getattr(extractor, "row_slot_filler", None),
+                                 getattr(ExtractorCls, "_row_slot_fill_class", None), fe2, fi2),
                             ):
                                 if predictor is None or base_sig is None or not (fe or fi):
                                     continue
@@ -674,6 +686,11 @@ class DynamicSchemaConfig:
                     n_logged = log_all_lm_histories(
                         source_file=f"extraction:{_task_name_for_logging}",
                         schema_name=_task_name_for_logging,
+                        # The papers are still in memory here, which is the only
+                        # place a call can be tied back to the paper it was
+                        # about — the markdown lives in S3 and this list is gone
+                        # by the time anyone opens the usage page.
+                        run_papers=papers,
                     )
                     logger.info(f"[run_batch] llm_history flush: {n_logged} calls recorded")
                 except Exception as e:

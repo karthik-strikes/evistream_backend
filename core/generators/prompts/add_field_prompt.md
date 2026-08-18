@@ -75,7 +75,7 @@ Return EXACTLY these keys:
 Rules for each key:
 - `description`: 1-2 sentences only. No headers, no bullets, no embedded sections.
 - `hints`: soft navigation — where/how to find the value. May be empty `[]`.
-- `rules`: hard output constraints — format, normalisation, enum enforcement. Add an NR rule **only** when the field can be genuinely missing in the source (e.g., demographics, outcome counts, confidence intervals). Skip it for fields the document is guaranteed to contain (titles, study type, intervention name).
+- `rules`: hard output constraints — format, normalisation, enum enforcement. Add an NR rule **only** when the field can be genuinely missing in the source (e.g., demographics, outcome counts, confidence intervals). Skip it for fields the document is guaranteed to contain (titles, study type, intervention name). "NR" means the paper is silent about a field that could apply; "NA" means the field cannot apply to this study at all. Silence is always NR. Offer NA only for a genuinely routed/conditional field, and only by listing it in `options`.
 - `options`: allowed values for enum/select fields. Empty `[]` for free-text fields.
 - `examples`: list of `{"value": ..., "source_text": "..."}` objects. Include an NR example only when NR is a plausible value for this field (same criterion as the NR rule above).
 - `subform_fields`: enrichment for subform columns — see below.

@@ -406,7 +406,7 @@ class PDFProcessor(BaseProcessor):
 
         Makes two calls:
           1. output_format=markdown — primary rendered text (unchanged behavior)
-          2. output_format=json + extras=table_row_bboxes,extract_links + save_checkpoint=true —
+          2. output_format=json + extras=table_cell_bboxes,extract_links + save_checkpoint=true —
              block-level structure with bboxes/page_ids for source highlighting
 
         Both responses are cached separately. If the JSON call fails, we still return
@@ -416,15 +416,19 @@ class PDFProcessor(BaseProcessor):
             marker_results = self.api_client.call_api("marker", pdf_path, output_format="markdown")
 
             marker_json_results: Dict[str, Any] = {}
+            marker_json_status = "completed"
+            marker_json_error: Optional[str] = None
             try:
                 marker_json_results = self.api_client.call_api(
                     "marker",
                     pdf_path,
                     output_format="json",
-                    extras="table_row_bboxes,extract_links",
+                    extras="table_cell_bboxes,extract_links",
                     save_checkpoint=True,
                 )
             except Exception as e:
+                marker_json_status = "failed"
+                marker_json_error = str(e)
                 logger.warning(
                     f"JSON-format marker call failed for {pdf_path}; "
                     f"continuing with markdown only: {e}"
@@ -436,6 +440,8 @@ class PDFProcessor(BaseProcessor):
                 "unique_filename": unique_filename,
                 "marker": marker_results,
                 "marker_json": marker_json_results,
+                "marker_json_status": marker_json_status,
+                "marker_json_error": marker_json_error,
                 "status": "success",
                 "processing_timestamp": datetime.now().isoformat()
             }
@@ -458,6 +464,26 @@ class PDFProcessor(BaseProcessor):
                 "status": f"error: {str(e)}",
                 "processing_timestamp": datetime.now().isoformat()
             }
+
+    def parse_blocks_only(self, pdf_path: str) -> Dict[str, Any]:
+        """Fetch ONLY the Datalab json/bbox sidecar (call 2), skipping the
+        markdown call entirely so it is never re-billed. Used by the blocks
+        backfill path for documents whose original json call failed.
+
+        Returns the raw marker_json dict (as call_api yields). Raises on API
+        failure so callers can record blocks_status='failed'. Note: call_api's
+        diskcache means an earlier successful json parse (with only the S3
+        upload having failed) is served from cache at no additional cost.
+        """
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+        return self.api_client.call_api(
+            "marker",
+            pdf_path,
+            output_format="json",
+            extras="table_cell_bboxes,extract_links",
+            save_checkpoint=True,
+        )
 
     def _save_result_with_unique_name(self, result: Dict[str, Any], unique_filename: str):
         """Save result as filename_md.json."""

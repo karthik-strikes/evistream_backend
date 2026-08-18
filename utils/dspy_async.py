@@ -94,6 +94,46 @@ def _log_cache_usage(cot_instance=None, lm=None, tag: str = "") -> None:
             )
 
 
+def was_truncated(cot_instance=None, lm=None) -> bool:
+    """True when the last LM call stopped because it hit max_tokens.
+
+    A truncated completion is the most dangerous failure mode for a table
+    field: the JSON is cut mid-structure, the parser salvages whatever whole
+    rows it can, and the result is a SHORT table that looks complete. Nothing
+    upstream distinguishes "the paper has 6 rows" from "we ran out of output
+    budget after 6 rows", so callers must be able to ask.
+
+    Returns False when the finish reason can't be determined — never guess a
+    truncation that didn't happen.
+    """
+    if lm is None:
+        lm = getattr(cot_instance, "lm", None) or dspy.settings.lm
+    try:
+        hist = getattr(lm, "history", None)
+    except Exception:
+        return False
+    if not isinstance(hist, list) or not hist:
+        return False
+
+    resp = hist[-1].get("response") if isinstance(hist[-1], dict) else None
+    if resp is None:
+        return False
+    try:
+        choices = resp.get("choices") if hasattr(resp, "get") else getattr(resp, "choices", None)
+    except Exception:
+        choices = getattr(resp, "choices", None)
+    if not choices:
+        return False
+    first = choices[0]
+    try:
+        reason = first.get("finish_reason") if hasattr(first, "get") else getattr(first, "finish_reason", None)
+    except Exception:
+        reason = getattr(first, "finish_reason", None)
+    # litellm normalizes Anthropic's "max_tokens" and OpenAI's "length" to the
+    # OpenAI vocabulary, but accept both rather than depend on that mapping.
+    return str(reason or "").lower() in ("length", "max_tokens")
+
+
 async def async_dspy_forward(cot_instance, **inputs) -> dict:
     """
     Replace run_in_executor(None, dspy_call) with truly async cot_instance.acall().
@@ -111,7 +151,16 @@ async def async_dspy_forward(cot_instance, **inputs) -> dict:
     result = await cot_instance.acall(**inputs)
     if EXTRACTION_PROMPT_CACHE:
         _log_cache_usage(cot_instance)
+    if was_truncated(cot_instance):
+        # Loud, because the salvaged result is silently incomplete rather than
+        # wrong-looking. The per-field `truncated` flag is stamped by the
+        # extractor (runtime_builders); this is the operator-visible signal.
+        logger.error(
+            "LM output hit max_tokens — the result is TRUNCATED and any table it "
+            "contains is missing rows. Raise EXTRACTION_MAX_TOKENS, or move the "
+            "field to row_then_columns/agentic (both emit one row per call)."
+        )
     return result
 
 
-__all__ = ["async_dspy_forward", "_log_cache_usage"]
+__all__ = ["async_dspy_forward", "_log_cache_usage", "was_truncated"]

@@ -1,0 +1,92 @@
+[
+  {
+    "paper": "Abdelbaser 2022a",
+    "s1_rows": 6,
+    "answer": "yes",
+    "rows": 6,
+    "truncated": false,
+    "chars": 41873,
+    "reasoning_len": 1308
+  },
+  {
+    "paper": "Abdelbaser 2022b",
+    "s1_rows": 5,
+    "answer": "yes",
+    "rows": 5,
+    "truncated": false,
+    "chars": 34872,
+    "reasoning_len": 1135
+  },
+  {
+    "paper": "Abou 2019",
+    "s1_rows": 2,
+    "answer": "yes",
+    "rows": 2,
+    "truncated": false,
+    "chars": 41424,
+    "reasoning_len": 876
+  },
+  {
+    "paper": "Alshami 2021",
+    "s1_rows": 2,
+    "answer": "yes",
+    "rows": 2,
+    "truncated": false,
+    "chars": 29673,
+    "reasoning_len": 999
+  },
+  {
+    "paper": "Bahrololoomi 2019",
+    "s1_rows": 2,
+    "answer": "yes",
+    "rows": 2,
+    "truncated": false,
+    "chars": 33410,
+    "reasoning_len": 429
+  },
+  {
+    "paper": "Bennie 1997",
+    "s1_rows": 2,
+    "answer": "yes",
+    "rows": 2,
+    "truncated": false,
+    "chars": 23262,
+    "reasoning_len": 1156
+  },
+  {
+    "paper": "Bernhardt 2001",
+    "s1_rows": 8,
+    "answer": "yes",
+    "rows": 8,
+    "truncated": false,
+    "chars": 41979,
+    "reasoning_len": 719
+  },
+  {
+    "paper": "Bird 2007",
+    "s1_rows": 9,
+    "answer": "yes",
+    "rows": 9,
+    "truncated": false,
+    "chars": 36083,
+    "reasoning_len": 1293
+  },
+  {
+    "paper": "Bogaert 2004",
+    "s1_rows": 9,
+    "answer": "yes",
+    "rows": 9,
+    "truncated": false,
+    "chars": 27446,
+    "reasoning_len": 1013
+  },
+  {
+    "paper": "Bradley 2007",
+    "s1_rows": 2,
+    "answer": "yes",
+    "rows": 2,
+    "truncated": false,
+    "chars": 37185,
+    "reasoning_len": 877
+  }
+]

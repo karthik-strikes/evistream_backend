@@ -116,6 +116,10 @@ class PDFProcessingService:
                     "success": True,
                     "markdown_content": markdown_content,
                     "blocks_json": blocks_json,
+                    # Figures Datalab pulled out of the PDF, {filename: base64}.
+                    # The markdown above references these by bare filename, so
+                    # they are carried through to be stored alongside it.
+                    "images": marker_md.get("images") or {},
                     "blocks_status": blocks_status,
                     "blocks_error": blocks_error,
                     "parse_quality_score": parse_quality_score,
@@ -167,6 +171,10 @@ class PDFProcessingService:
             return {
                 "success": True,
                 "blocks_json": blocks_json,
+                # The json-format call carries the same extracted figures as the
+                # markdown call, so a blocks backfill can store images too
+                # without re-billing a markdown conversion.
+                "images": marker_json.get("images") or {},
                 "parse_quality_score": marker_json.get("parse_quality_score"),
                 "checkpoint_id": marker_json.get("checkpoint_id"),
                 "request_id": marker_json.get("request_id"),

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from supabase import create_client
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from app.dependencies import get_current_user
 from app.config import settings
@@ -16,7 +16,7 @@ from app.context import user_role_var
 from app.models.schemas import (
     ProjectCreate, ProjectUpdate, ProjectResponse,
     MyPermissionsResponse, OwnershipTransferRequest, ReviewSettingsUpdate,
-    ReviewScopeUpdate,
+    ReviewScopeUpdate, ReviewScopeStructured,
 )
 from app.services.project_access import check_project_access, OWNER_PERMISSIONS, MANAGER_PERMISSIONS, VIEWER_PERMISSIONS
 
@@ -369,6 +369,43 @@ async def delete_project(
         )
 
 
+def _normalize_review_scope(
+    review_scope: Optional[str],
+    structured: Optional[ReviewScopeStructured],
+) -> tuple[Optional[str], Optional[dict]]:
+    """Decide what goes into (review_scope, review_scope_structured).
+
+    The two columns are always written together so they can never disagree:
+    `review_scope` is the prose extraction actually reads, `review_scope_structured`
+    is only the guided builder's chips for re-rendering it.
+
+      - blank text                  -> (None, None)   clearing the scope clears the chips
+      - text, no chips              -> (text, None)   a free-text save wipes stale chips
+      - text + chips, all lists []  -> (text, None)   an empty builder stores nothing
+      - text + chips                -> (text, dict)
+      - chips but no text           -> ValueError     never chips without the prose
+
+    Raises ValueError for the last case; the caller turns it into a 400.
+    """
+    # Blank clears the scope rather than storing "" — extraction treats
+    # None and "" alike, but a null keeps the column honest.
+    scope = (review_scope or "").strip() or None
+
+    if scope is None:
+        if structured is not None and not structured.is_empty():
+            raise ValueError(
+                "review_scope_structured was sent without review_scope — the "
+                "composed scope text is what extraction reads and cannot be blank"
+            )
+        return None, None
+
+    if structured is None or structured.is_empty():
+        return scope, None
+
+    # Entries are already trimmed, de-blanked and deduped by the model validator.
+    return scope, structured.model_dump()
+
+
 @router.patch("/{project_id}/review-scope")
 async def update_review_scope(
     project_id: UUID,
@@ -381,6 +418,11 @@ async def update_review_scope(
     extraction prompt at runtime as CONTEXT — it helps the model pick the right
     arm, population, timepoint or measure — and never filters rows.
 
+    `review_scope_structured` is the guided builder's chips. It is stored so the
+    builder can re-render them (composition to prose is one-way) and is never
+    read by extraction. Both columns are written on every save — see
+    `_normalize_review_scope` for the table.
+
     Requires can_create_forms: this is extraction-design authority, the same
     power as editing a form's field prompts. That permission is in
     WRITE_PERMISSIONS, so archived projects are rejected automatically.
@@ -388,18 +430,28 @@ async def update_review_scope(
     try:
         await check_project_access(project_id, user_id, "can_create_forms")
 
-        # Blank clears the scope rather than storing "" — extraction treats
-        # None and "" alike, but a null keeps the column honest.
-        scope = (body.review_scope or "").strip() or None
+        try:
+            scope, structured = _normalize_review_scope(
+                body.review_scope, body.review_scope_structured
+            )
+        except ValueError as ve:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
         updated = supabase.table("projects")\
-            .update({"review_scope": scope})\
+            .update({
+                "review_scope": scope,
+                "review_scope_structured": structured,
+            })\
             .eq("id", str(project_id))\
             .execute()
 
         if not updated.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
-        return {"review_scope": updated.data[0].get("review_scope")}
+        return {
+            "review_scope": updated.data[0].get("review_scope"),
+            "review_scope_structured": updated.data[0].get("review_scope_structured"),
+        }
 
     except HTTPException:
         raise

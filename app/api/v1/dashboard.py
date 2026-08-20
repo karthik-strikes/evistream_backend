@@ -19,6 +19,7 @@ from utils import absence
 
 logger = logging.getLogger(__name__)
 from app.config import settings
+from app.services.document_labels import labels_for_documents
 
 
 router = APIRouter()
@@ -187,8 +188,13 @@ async def get_dashboard_stats(
                 .in_("id", single_doc_ids)
                 .execute()
             )
+            # The dashboard's recent-activity rows name a study, so they show
+            # the study ID ("Raslan 2021") and fall back to the filename only
+            # when a document has no derivable identity at all.
+            label_map = labels_for_documents(supabase, single_doc_ids)
             doc_name_map = {
-                d["id"]: d.get("filename", "") for d in (docs_resp.data or [])
+                d["id"]: label_map.get(d["id"]) or d.get("filename", "")
+                for d in (docs_resp.data or [])
             }
 
         # 5. Form names map (already have forms_data)

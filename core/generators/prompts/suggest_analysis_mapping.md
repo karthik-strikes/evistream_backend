@@ -16,6 +16,17 @@ Pick exactly one:
   many were assessed. Look for an event/responder/success count alongside a total or denominator.
 - **`continuous`** — the table reports, for each group, a mean (or other central tendency) with a
   measure of spread and a sample size.
+- **`effect`** — the table reports an **already-computed effect** rather than the arms behind it: an
+  adjusted odds ratio, a hazard ratio, a rate ratio, a regression coefficient, a mean difference —
+  together with its confidence interval or standard error. This is poolable, and it is the only shape
+  where no arm-level counts are needed. Prefer `dichotomous` or `continuous` whenever arm-level data
+  IS present: raw arms can produce any measure, whereas a reported effect is locked to the one the
+  authors chose. `effect` is always `wide`.
+- **`proportion`** — each row is **one group's** count out of a denominator, with no comparator: a
+  prevalence, an event rate, a complication rate. Poolable on a variance-stabilising scale. If there
+  are TWO groups' counts on the row it is `dichotomous`, not this.
+- **`correlation`** — each row is one correlation coefficient together with the sample size it was
+  computed from. Poolable on Fisher's z. Requires both: a correlation with no n cannot be weighted.
 - **`diagnostic_accuracy`** — the table reports test performance as true/false positives and
   negatives (`tp`, `fp`, `fn`, `tn`), or sensitivity and specificity. This is a real meta-analysis but
   a different statistical family; say so and stop — do not force it into the other two.
@@ -57,12 +68,30 @@ when a column genuinely fits — an omitted role is honest, a wrong one is not.
 **`long` + `continuous`** — `value` (the central tendency on each row), `variability`, `denominator`,
 `arm`, `outcome`, `timepoint`
 
+**`wide` + `effect`** — `effect_value`, then precision from **either** `effect_se` **or** both
+`effect_ci_lower` and `effect_ci_upper` (map both routes when both exist), plus `outcome`, `timepoint`
+
+**`wide` + `proportion`** — `prop_events` (the count), `prop_total` (the denominator), `outcome`,
+`timepoint`
+
+**`wide` + `correlation`** — `corr_r`, `corr_n`, `outcome`, `timepoint`
+
 Slot meanings:
 
 - **`arm`** — the column naming which intervention or group a row describes. Only meaningful in `long`.
 - **`outcome`** — which clinical outcome the row reports.
 - **`timepoint`** — when it was measured. If the form encodes the timepoint inside the outcome column
   rather than separately, leave `timepoint` out and say so in `reasoning`.
+- **`effect_value`** — the effect estimate as the paper printed it (an OR of `1.42`, not `ln(1.42)`).
+  Do not map a p-value, a percentage change, or an arm-level number here.
+- **`effect_se` / `effect_ci_lower` / `effect_ci_upper`** — that estimate's precision. Map the CI
+  bounds when the table has them: an interval needs no assumption about which scale the standard error
+  was quoted on. An effect with neither an SE nor both bounds cannot be weighted, so if the table has
+  no precision column at all the verdict is `not_poolable`, not `effect`.
+- **`prop_events` / `prop_total`** — a count and the denominator it came out of, for ONE group. A
+  column holding a percentage is not `prop_events`; the count is what the pooling needs.
+- **`corr_r` / `corr_n`** — the correlation and its sample size. `corr_r` must be the coefficient
+  itself, not an R² or a p-value.
 - **`variability`** — the spread that goes with the central tendency. This is frequently a **text**
   column, because it may hold a range or an interval like `"1.2 to 3.4"`. Do not reject a column for
   being text. If a separate column declares *which* measure the spread is (SD, SE, IQR, 95% CI), name

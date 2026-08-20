@@ -15,11 +15,12 @@ from app.dependencies import get_current_user
 from app.config import settings
 from app.models.schemas import (
     DocumentUploadResponse, DocumentResponse, PresignedUploadResponse,
-    DocumentLabelsUpdate, ApproveMetadataRequest,
+    DocumentLabelsUpdate, DocumentStudyLabelUpdate, ApproveMetadataRequest,
 )
 from app.services.storage_service import storage_service
 from app.services.project_access import check_project_access
 from app.services.activity_service import log_activity
+from utils import study_label
 
 logger = logging.getLogger(__name__)
 
@@ -851,6 +852,11 @@ async def list_documents(
             documents = [
                 d for d in documents
                 if search_lower in (d.get("filename") or "").lower()
+                # The screen shows the study ID, so that is what a reviewer
+                # types. Matching only the filename made "Raslan" find nothing
+                # on a document whose filename is the full article title.
+                or search_lower in study_label.label_for(d).lower()
+                or search_lower in (d.get("title") or "").lower()
                 or any(search_lower in label.lower() for label in (d.get("labels") or []))
             ]
             documents = documents[offset:offset + limit]
@@ -947,6 +953,57 @@ async def update_document_labels(
         )
 
 
+@router.patch("/{document_id}/study-label", response_model=DocumentResponse)
+async def update_document_study_label(
+    document_id: UUID,
+    body: DocumentStudyLabelUpdate,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Set or clear a document's manual study ID ("Jefferson 2026b").
+
+    Whatever is stored here wins over every derived label and is never given an
+    automatic a/b/c suffix — disambiguating two same-author-same-year studies by
+    hand is precisely what this column is for. Sending an empty string clears
+    the override rather than storing a blank ID."""
+    try:
+        result = supabase.table("documents")\
+            .select("*")\
+            .eq("id", str(document_id))\
+            .execute()
+
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+
+        document = result.data[0]
+        await check_project_access(UUID(document["project_id"]), user_id, "can_upload_docs")
+
+        cleaned = (body.study_label or "").strip() or None
+        update_result = supabase.table("documents")\
+            .update({"study_label": cleaned})\
+            .eq("id", str(document_id))\
+            .execute()
+
+        if not update_result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update study label"
+            )
+
+        return DocumentResponse(**update_result.data[0])
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Error updating document study label")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred"
+        )
+
+
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
     document_id: UUID,
@@ -977,6 +1034,14 @@ async def delete_document(
 
         if document.get("s3_markdown_path"):
             storage_service.delete_object(document["s3_markdown_path"])
+
+        # Images live under a per-document prefix rather than a single column,
+        # so they are cleaned up by prefix. (Note: s3_blocks_path and
+        # s3_clean_pdf_path are still not deleted here — pre-existing.)
+        if document.get("content_hash"):
+            storage_service.delete_images(
+                document["project_id"], document["content_hash"]
+            )
 
         supabase.table("documents")\
             .delete()\

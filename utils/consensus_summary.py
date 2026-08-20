@@ -35,6 +35,7 @@ Four things this fixes relative to the inline version it replaces:
 from typing import Any, Dict, Iterable, List, Optional
 
 from utils import value_compare
+from utils.study_label import build_label_map
 
 # Roles that count as a reviewer having done the work.
 _REVIEWER_ROLES = ("reviewer_1", "reviewer_2")
@@ -154,6 +155,10 @@ def build_consensus_summary(
     r1_doc_ids, r2_doc_ids = _resolve_reviewer_roles(role_rows, assignment_rows)
     doc_data = _group_extractions(extraction_rows)
 
+    # One label map for the whole project — see app/services/document_labels.py
+    # for why this is never computed over a subset.
+    labels = build_label_map(documents)
+
     documents_out = []
     for doc in documents:
         doc_id = doc["id"]
@@ -200,6 +205,11 @@ def build_consensus_summary(
         documents_out.append({
             "document_id": doc_id,
             "filename": doc["filename"],
+            # What the screen actually prints: "Raslan 2021", not the 200-char
+            # article title an EndNote import leaves in `filename`. Computed
+            # here rather than in the caller because the a/b/c suffix needs the
+            # whole project's documents, which is exactly what `documents` is.
+            "study_label": labels.get(doc_id, doc["filename"]),
             "ref_id": doc.get("ref_id"),
             "has_ai": has_ai,
             "has_manual": has_manual,

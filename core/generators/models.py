@@ -16,6 +16,12 @@ ANALYSIS_ROLES = Literal[
     "mean_treatment", "sd_treatment", "n_treatment",
     "mean_comparator", "sd_comparator", "n_comparator",
     "value", "variability", "denominator", "arm", "outcome", "timepoint",
+    # A table that reports the effect itself rather than the arms behind it.
+    # These are only fillable under verdict "effect"; `app/api/v1/synthesis.py`
+    # keeps the same names, and the frontend's mapping.ts mirrors them again.
+    "effect_value", "effect_se", "effect_ci_lower", "effect_ci_upper",
+    # Single-group shapes: a prevalence, or a correlation with its sample size.
+    "prop_events", "prop_total", "corr_r", "corr_n",
 ]
 
 
@@ -45,10 +51,21 @@ class AnalysisMappingSuggestion(BaseModel):
     reviewer then confirms each slot individually, so a wrong suggestion costs a
     click rather than a wrong pooled estimate.
     """
-    verdict: Literal["dichotomous", "continuous", "diagnostic_accuracy", "not_poolable"] = Field(
-        description="What kind of outcome data this table holds. diagnostic_accuracy (tp/fp/fn/tn) "
-        "and not_poolable (risk of bias, study characteristics, arm descriptions) both mean no "
-        "mapping is offered — explain why in `reasoning`."
+    verdict: Literal[
+        "dichotomous", "continuous", "effect", "proportion", "correlation",
+        "diagnostic_accuracy", "not_poolable",
+    ] = Field(
+        description="What kind of outcome data this table holds. `effect` means the table reports an "
+        "ALREADY-COMPUTED effect (an adjusted odds ratio, a hazard ratio, a mean difference) together "
+        "with its confidence interval or standard error, and no arm-level counts — map effect_value "
+        "plus either effect_se or both effect_ci_lower and effect_ci_upper, with layout 'wide'. "
+        "Prefer dichotomous or continuous whenever arm-level data IS present, since raw arms can "
+        "produce any measure. `proportion` means each row is ONE group's count out of a denominator "
+        "with no comparator (a prevalence or event rate); `correlation` means each row is one "
+        "correlation coefficient with the sample size it came from. Both are single-group shapes and "
+        "are always layout 'wide'. diagnostic_accuracy (tp/fp/fn/tn) and not_poolable (risk of bias, "
+        "study characteristics, arm descriptions) both mean no mapping is offered — explain why in "
+        "`reasoning`."
     )
     layout: Optional[Literal["wide", "long"]] = Field(
         default=None,
@@ -93,6 +110,69 @@ class AnchorClassification(BaseModel):
         "already-identified row (e.g. mean_arm1, sd_arm2, n_arm1, percentage, p-value)."
     )
     reasoning: str = Field(description="One sentence explaining the split.")
+
+
+SCOPE_FAMILY = Literal["population", "intervention", "comparator", "outcome", "timepoint"]
+
+
+class ScopeChip(BaseModel):
+    """One entry for the guided review-scope builder, read out of a document.
+
+    A LIST of these rather than a family -> entries dict, for exactly the reason
+    ``MappedSlot`` is a list: a free-form ``Dict[str, List[str]]`` compiles to
+    ``additionalProperties`` and structured output returns it empty while the
+    model names the right things in its prose. A closed enum is fillable.
+
+    ``evidence`` is the load-bearing field. ``utils/scope_suggestion.py`` checks
+    it against the document and flags any chip it cannot find, which is what
+    keeps an invented population from arriving looking like a read one.
+    """
+    family: SCOPE_FAMILY = Field(description="Which part of the review question this entry is.")
+    value: str = Field(
+        description="The entry as it should appear in the builder: a short noun phrase in the "
+        "document's own wording, under 80 characters, no bullet, no trailing period."
+    )
+    evidence: str = Field(
+        description="A quote copied VERBATIM from the document that states this entry. Not a "
+        "paraphrase and not a section title — the sentence or table cell itself."
+    )
+    confidence: Literal["high", "medium", "low"] = Field(
+        default="medium",
+        description="high = stated outright; medium = clear from context; low = inferred.",
+    )
+
+
+class ScopeSuggestion(BaseModel):
+    """LLM proposal for a project's review scope, read from its planning documents.
+
+    Consumed by ``app/api/v1/review_scope.py``, which validates every chip before
+    the frontend sees it and never saves anything: the reviewer keeps, edits or
+    discards each entry in the guided builder, and the existing review-scope
+    PATCH is still the only writer. A wrong chip therefore costs a click rather
+    than silently degrading every extraction in the project.
+    """
+    chips: List[ScopeChip] = Field(
+        default_factory=list,
+        description="Every scope entry you can support with a quote. Omit a family entirely "
+        "rather than guessing at it.",
+    )
+    not_used: List[str] = Field(
+        default_factory=list,
+        description="Scope-relevant text you read and deliberately left out — exclusion "
+        "criteria, study-design limits, methods artefacts. One short line each, so the "
+        "reviewer can see nothing was quietly discarded.",
+    )
+    needs_review: List[str] = Field(
+        default_factory=list,
+        description="Genuine ambiguities a human has to settle: a term that could be an "
+        "intervention or a comparator, a population that might be one group or two, or "
+        "documents that appear to describe different reviews.",
+    )
+    notes: str = Field(
+        default="",
+        description="At most two sentences for the reviewer, naming which section of which "
+        "file the scope came from. Say so plainly here if the documents hold no scope.",
+    )
 
 
 # ============================================================================

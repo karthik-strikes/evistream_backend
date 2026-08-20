@@ -71,6 +71,10 @@ surya-ocr>=0.13.0
 PyMuPDF>=1.26.0
 pdf2image>=1.17.0
 pdfplumber>=0.11.0
+# Reading .docx review protocols (utils/scope_document.py). Present as a
+# marker-pdf transitive today — declared here so a marker bump cannot
+# silently remove it and break scope suggestion in production only.
+python-docx>=1.1.0
 
 # Utilities
 tiktoken>=0.5.2

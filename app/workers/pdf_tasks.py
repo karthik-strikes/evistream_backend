@@ -114,6 +114,22 @@ def process_pdf_document(self, document_id: str, job_id: str):
                 BlocksStatus.COMPLETED.value if blocks_s3_key else BlocksStatus.FAILED.value
             )
 
+            # Store the figures Datalab extracted from the PDF. The markdown we
+            # just uploaded references them by bare filename, so without this
+            # every `![](<hash>_img.jpg)` in it is a dangling link. Best-effort:
+            # extraction is text-only and never reads these, so a failure here
+            # must not fail an otherwise good parse.
+            image_keys = []
+            try:
+                image_keys = storage_service.upload_images(
+                    result.get("images") or {}, project_id, content_hash
+                )
+            except Exception as img_err:
+                logger.warning(
+                    f"Failed to store images for {document_id}; "
+                    f"continuing without them: {img_err}"
+                )
+
             # Check document still exists (may have been deleted while task was running)
             still_exists = supabase.table("documents")\
                 .select("id")\
@@ -125,6 +141,8 @@ def process_pdf_document(self, document_id: str, job_id: str):
                 storage_service.delete_object(markdown_s3_key)
                 if blocks_s3_key:
                     storage_service.delete_object(blocks_s3_key)
+                if image_keys:
+                    storage_service.delete_images(project_id, content_hash)
                 return {"status": "aborted", "document_id": document_id, "reason": "document deleted"}
 
             # Update document with markdown path + new Datalab positional fields
@@ -139,6 +157,7 @@ def process_pdf_document(self, document_id: str, job_id: str):
                 "processing_error": None,
                 "blocks_status": blocks_status,
                 "blocks_error": None if blocks_s3_key else blocks_error,
+                "image_count": len(image_keys),
             }
 
             # Best-effort DOI/title extraction (doi_service.extract_doi) — uses
@@ -170,7 +189,15 @@ def process_pdf_document(self, document_id: str, job_id: str):
                     update_data["doi_source"] = doi_result.source
                     if doi_result.title:
                         update_data["title"] = doi_result.title
-                elif not document.get("doi") and doi_result.doi:
+                # Study identity ("Raslan 2021") is filled for EVERY source,
+                # import or not — unlike doi/title there is nothing to clobber:
+                # only write what we found, and only into an empty column, so an
+                # importer's own author/year always wins over a scrape.
+                if doi_result.first_author and not document.get("first_author"):
+                    update_data["first_author"] = doi_result.first_author
+                if doi_result.year and not document.get("pub_year"):
+                    update_data["pub_year"] = doi_result.year
+                if is_pubmed_import and not document.get("doi") and doi_result.doi:
                     # PubMed had no DOI on record (shouldn't happen via the
                     # Unpaywall-PDF path, but keep this safe) — a scraped one
                     # beats none. Never touch title for a PubMed import.
@@ -180,6 +207,27 @@ def process_pdf_document(self, document_id: str, job_id: str):
                 logger.warning(
                     f"DOI extraction failed for {document_id}; continuing without it: {doi_err}"
                 )
+
+            # Last resort, and ONLY when the free paths came up empty: read the
+            # paper's own first page for author + year. Older trials and scanned
+            # reprints carry no DOI anywhere, and without this they show a
+            # filename forever. One small model call, on the miss path only.
+            if not (update_data.get("first_author") or document.get("first_author")):
+                try:
+                    from app.services.study_identity_service import identify_study
+
+                    llm_author, llm_year = identify_study(result["markdown_content"])
+                    if llm_author:
+                        update_data["first_author"] = llm_author
+                        if llm_year and not document.get("pub_year"):
+                            update_data["pub_year"] = llm_year
+                        logger.info(
+                            f"[study-identity] {document_id}: {llm_author} {llm_year or ''}".strip()
+                        )
+                except Exception as ident_err:
+                    logger.warning(
+                        f"Study identity read failed for {document_id}; continuing: {ident_err}"
+                    )
 
             supabase.table("documents").update(update_data).eq("id", document_id).execute()
 
@@ -472,6 +520,19 @@ def backfill_pdf_blocks(self, document_id: str, job_id: str):
             result["blocks_json"], project_id, content_hash
         )
 
+        # The json call carries the extracted figures too, so a blocks backfill
+        # doubles as an image backfill at no extra Datalab cost. Best-effort for
+        # the same reason as in process_pdf_document.
+        image_keys = []
+        try:
+            image_keys = storage_service.upload_images(
+                result.get("images") or {}, project_id, content_hash
+            )
+        except Exception as img_err:
+            logger.warning(
+                f"Failed to store images during blocks backfill for {document_id}: {img_err}"
+            )
+
         # Guard: document may have been deleted while the task ran.
         still_exists = supabase.table("documents").select("id").eq("id", document_id).execute()
         if not still_exists.data:
@@ -486,6 +547,8 @@ def backfill_pdf_blocks(self, document_id: str, job_id: str):
             "blocks_status": BlocksStatus.COMPLETED.value,
             "blocks_error": None,
         }
+        if image_keys:
+            update_data["image_count"] = len(image_keys)
         if document.get("datalab_checkpoint_id") is None and result.get("checkpoint_id") is not None:
             update_data["datalab_checkpoint_id"] = result.get("checkpoint_id")
         if document.get("datalab_request_id") is None and result.get("request_id") is not None:
@@ -600,6 +663,13 @@ def backfill_pdf_doi(self, document_id: str, job_id: str):
         update_data = {"doi": doi_result.doi, "doi_source": doi_result.source}
         if doi_result.title:
             update_data["title"] = doi_result.title
+        # Same rule as the main parse path: study identity is additive, and a
+        # value already on the row (an importer's, or a human's) is never
+        # overwritten by a scrape.
+        if doi_result.first_author:
+            update_data["first_author"] = doi_result.first_author
+        if doi_result.year:
+            update_data["pub_year"] = doi_result.year
         supabase.table("documents").update(update_data).eq("id", document_id).execute()
 
         supabase.table("jobs").update({

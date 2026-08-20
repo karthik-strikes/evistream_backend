@@ -792,7 +792,7 @@ async def get_consensus_summary(
 
         # Get all documents in project
         docs_result = supabase.table("documents")\
-            .select("id, filename, ref_id")\
+            .select("id, filename, ref_id, first_author, pub_year, study_label, pmid, nct_id")\
             .eq("project_id", str(project_id))\
             .order("created_at")\
             .execute()

@@ -29,6 +29,24 @@ DATALAB_API_KEY = os.getenv("DATALAB_API_KEY")
 DATALAB_API_BASE_URL = os.getenv(
     "DATALAB_API_BASE_URL", "https://www.datalab.to/api/v1")
 
+#: Datalab's document-conversion endpoint. `/marker` is the old monolithic one,
+#: which the docs mark "[DEPRECATED] … will be removed in a future version";
+#: `/convert` replaces it. Verified equivalent for our usage before switching:
+#: same multipart parameters, same poll flow (`status == "complete"`), and the
+#: same response fields we read — markdown, json, images, page_count,
+#: cost_breakdown, and checkpoint_id (confirmed still returned when
+#: save_checkpoint=true). `request_id` is absent from /convert's *poll* payload,
+#: but _make_api_request derives it from the check URL's last path segment
+#: (verified to equal the submit response's request_id), so that keeps working.
+#:
+#: Only /extract, /segment and /track-changes carry real breaking changes
+#: (page_schema, segmentation_schema, extras=track_changes) and we use none.
+CONVERT_ENDPOINT = "convert"
+
+#: Kept solely so the on-disk response cache written under the old endpoint name
+#: still hits. Dropping it would re-bill every document on its next reparse.
+LEGACY_CONVERT_ENDPOINT = "marker"
+
 # Directory Configuration
 CACHE_DIR = Path(os.getenv("CACHE_DIR", PROJECT_ROOT / "cache"))
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", PROJECT_ROOT /
@@ -234,7 +252,7 @@ class DataLabAPIClient:
         with open(file_path, "rb") as file:
             form_data = {"file": (os.path.basename(
                 file_path), file, "application/pdf")}
-            if endpoint == "marker":
+            if endpoint in (CONVERT_ENDPOINT, LEGACY_CONVERT_ENDPOINT):
                 form_data["output_format"] = (None, output_format)
                 form_data["paginate"] = (None, "true")  # Add page separators
                 if extras:
@@ -304,6 +322,17 @@ class DataLabAPIClient:
         cached_result = self.cache_manager.get(cache_key)
         if cached_result:
             return cached_result
+        # Responses cached before the /marker -> /convert switch live under the
+        # old endpoint name. The payload is identical, so serve it rather than
+        # paying Datalab again for a parse we already have.
+        if endpoint == CONVERT_ENDPOINT:
+            legacy_key = self.cache_manager.make_key(
+                LEGACY_CONVERT_ENDPOINT, file_path, output_format
+            )
+            legacy_result = self.cache_manager.get(legacy_key)
+            if legacy_result:
+                self.cache_manager.set(cache_key, legacy_result)
+                return legacy_result
         check_url, headers, request_id = self._make_api_request(
             endpoint, file_path,
             output_format=output_format, extras=extras, save_checkpoint=save_checkpoint,
@@ -413,14 +442,16 @@ class PDFProcessor(BaseProcessor):
         a successful result with the markdown — bbox features will simply degrade gracefully.
         """
         try:
-            marker_results = self.api_client.call_api("marker", pdf_path, output_format="markdown")
+            marker_results = self.api_client.call_api(
+                CONVERT_ENDPOINT, pdf_path, output_format="markdown"
+            )
 
             marker_json_results: Dict[str, Any] = {}
             marker_json_status = "completed"
             marker_json_error: Optional[str] = None
             try:
                 marker_json_results = self.api_client.call_api(
-                    "marker",
+                    CONVERT_ENDPOINT,
                     pdf_path,
                     output_format="json",
                     extras="table_cell_bboxes,extract_links",
@@ -478,7 +509,7 @@ class PDFProcessor(BaseProcessor):
         if not os.path.exists(pdf_path):
             raise FileNotFoundError(f"PDF file not found: {pdf_path}")
         return self.api_client.call_api(
-            "marker",
+            CONVERT_ENDPOINT,
             pdf_path,
             output_format="json",
             extras="table_cell_bboxes,extract_links",

@@ -1323,7 +1323,7 @@ def _canonical_record_key(row: dict, key_cols: List[str]) -> str:
 # treating that as failure would fire repairs on most real papers and burn calls
 # chasing values that do not exist. Only absence-of-an-answer is repaired.
 #
-# Repair is batched: up to _REPAIR_MAX_ROWS_PER_CALL identities per call, so a
+# Repair is batched: _records_per_call sizes each refill call, so a
 # 10-row shortfall costs one call rather than ten.
 _REPAIR_MAX_ROUNDS = 2
 
@@ -1339,13 +1339,17 @@ _REPAIR_MAX_ROUNDS = 2
 _SET_AT_A_TIME = os.getenv("EXTRACTION_BATCH_VALUES", "1") == "1"
 
 # Batch sizing. Output cost per cell ≈ value + a ≤30-word quote + JSON keys.
-_TOKENS_PER_CELL = 60
+#
+# 70 is measured, not guessed: the Aug 18 2026 profiling run (form d9f6e1d9, 80
+# rows, 5 value columns) emitted 35,443 output tokens = 443 tokens/row, of which
+# ~114 was the row-identity echo that `row_id` replaced — leaving ~329/row, i.e.
+# ~66 per cell. The old 60 undercounted real output by 48%, which was harmless
+# only because _MAX_RECORDS_PER_CALL clipped the batch first. With that cap gone
+# this number is load-bearing: it is the ONLY thing standing between a wide table
+# and a truncated generation. Re-measure it before lowering it.
+_TOKENS_PER_CELL = 70
 # Reserve headroom for ChainOfThought's reasoning field and JSON scaffolding.
 _OUTPUT_BUDGET_FRACTION = 0.7
-# A generous upper bound, not a caution: 40 rows × 13 value cols ≈ 31k output
-# tokens, comfortable on Claude. It exists only so a 200-row table becomes a few
-# calls instead of one enormous generation.
-_MAX_RECORDS_PER_CALL = 40
 # Used only when the served model can't be determined — the floor every fallback
 # model imposes (MODEL_MAX_OUTPUT_DEFAULT / bedrock third-party).
 _FALLBACK_OUTPUT_CEILING = 8192
@@ -1375,15 +1379,42 @@ def _active_output_ceiling(cot_instance=None) -> int:
 def _records_per_call(n_attr_cols: int, cot_instance=None) -> int:
     """How many rows one value-extraction call can carry.
 
-    Derived from the served model's real ceiling: ~57 rows at 13 value columns on
-    Claude's 64k, ~14 on gpt-4o's 16k, ~7 on an 8k fallback — capped at
-    _MAX_RECORDS_PER_CALL. Truncation is not a data-loss risk here because the
-    plan-vs-output check repairs any rows a cut-off batch drops; an over-large
-    batch costs extra refill calls, never rows.
+    Derived from the served model's real ceiling and nothing else: ~49 rows at 13
+    value columns on Claude's 64k, ~12 on gpt-4o's 16k, ~6 on an 8k fallback.
+
+    The flat _MAX_RECORDS_PER_CALL = 40 was removed Aug 18 2026. It clipped a
+    budget that allowed 233 rows, so an 80-row table paid two calls where one
+    would do — and the two ran serially, because the warm-then-fan-out dispatch
+    degenerates to a fan-out of one at exactly two batches.
+
+    The budget term stays, and must: it is what keeps a large table from
+    truncating by construction. Truncation is not a data-loss risk — the
+    plan-vs-output check repairs any rows a cut-off batch drops — but an
+    over-large batch costs extra refill calls, which is the thing being reduced.
     """
     budget = int(_active_output_ceiling(cot_instance) * _OUTPUT_BUDGET_FRACTION)
     per_row = max(1, n_attr_cols) * _TOKENS_PER_CELL
-    return max(1, min(_MAX_RECORDS_PER_CALL, budget // per_row))
+    return max(1, budget // per_row)
+
+
+# The handle slot filling uses to say WHICH row an answer belongs to, in place of
+# re-typing the whole composite key. Two tokens instead of ~114 per row.
+_ROW_ID_KEY = "row_id"
+
+
+def _row_id_key(key_cols, attr_cols) -> str:
+    """`row_id`, unless a column of this table is already called that.
+
+    A collision would be silent data corruption — the id would overwrite that
+    column in the payload and the model would faithfully hand the id back as its
+    value. Derived from the column names alone, so every site that computes it
+    independently (prompt, payload, matcher) always agrees.
+    """
+    taken = set(key_cols or ()) | set(attr_cols or ())
+    for cand in (_ROW_ID_KEY, "_row_id", "evistream_row_id"):
+        if cand not in taken:
+            return cand
+    return "__evistream_row_id__"
 
 
 def _coerce_value_cell(val: Any, col: str, field_name: str, col_options) -> Dict[str, Any]:
@@ -1436,6 +1467,7 @@ def _build_set_slot_fill_sig_def(
     field_name = output_field_def["name"]
     key_cols = field_key_columns(output_field_def)
     value_names = [c["field_name"] for c in attr_col_defs]
+    _rid = _row_id_key(key_cols, value_names)
 
     refill_field = {
         "name": "filled_rows",
@@ -1447,9 +1479,12 @@ def _build_set_slot_fill_sig_def(
             "`rows_to_fill` lists row identities already established for this "
             "table. Fill in the value columns for each of them — nothing else.\n\n"
             "OUTPUT SHAPE: a JSON **array** with ONE object per row in "
-            "`rows_to_fill`, in the same order. Each object repeats that row's "
-            f"identity keys ({', '.join(key_cols)}) so it can be matched back, "
+            "`rows_to_fill`, in the same order. Each object carries that row's "
+            f"`{_rid}` copied back exactly as given, so it can be matched back, "
             f"plus the value columns ({', '.join(value_names)}).\n\n"
+            f"Do NOT repeat the identity columns ({', '.join(key_cols)}) in your "
+            f"answer — the `{_rid}` alone says which row it is, and re-typing them "
+            "wastes the output budget you need for the values.\n\n"
             "RULES:\n"
             "- Return EVERY row you were given, even if you can find none of its "
             "values — use NR for the cells you cannot find.\n"
@@ -1469,8 +1504,9 @@ def _build_set_slot_fill_sig_def(
             "that cell's `source_text` (e.g. \"Chewing, 2 h: 3.7 ± 2.75\"). An "
             "answered row with a stated assumption is useful; an unanswered row is "
             "not.\n"
-            "- Do NOT add rows. Do NOT drop rows. Do NOT change an identity value; "
-            "copy it back exactly as given.\n"
+            f"- Do NOT add rows. Do NOT drop rows. Copy each row's `{_rid}` back "
+            "exactly as given — it is how your answer is matched to its row, and a "
+            "changed or invented id discards that row's values.\n"
             "- Each value cell is `{\"value\": <cell_value>, \"source_text\": "
             "<quote>}`, where the quote is copied VERBATIM from the document "
             "(≤30 words) — the table row as printed, or the sentence stating the "
@@ -1495,8 +1531,11 @@ def _build_set_slot_fill_sig_def(
     _scope = (parent_sig_def.get("review_scope") or "").strip()
     _legend = _key_column_legend(output_field_def)
     rows_desc = (
-        "JSON array of row identities to fill. These rows are FIXED: return "
-        "values for exactly these, in this order, without adding or removing any."
+        f"JSON array of row identities to fill. Each row carries a `{_rid}` — an "
+        "opaque handle you copy back in your answer so it can be matched to this "
+        "row; it is not data about the row and never appears in the paper. These "
+        "rows are FIXED: return values for exactly these, in this order, without "
+        "adding or removing any."
     )
     if _legend:
         # Without this the identity is uninterpretable — see _key_column_legend.
@@ -1890,7 +1929,15 @@ def build_keyed_extractor_class(
             fname = self.__class__._field_name
             acs = self.__class__._key_cols
             vcs = self.__class__._attr_cols
-            payload = [records[i] for i in idxs]
+            _rid = _row_id_key(acs, vcs)
+            # The identity goes IN but no longer comes back OUT: the model copies
+            # this 2-token handle instead of re-typing the whole composite key per
+            # row (~114 output tokens/row on form d9f6e1d9, Aug 18 2026).
+            #
+            # The id is the GLOBAL record index, never a per-batch counter — the
+            # refill loop fires several batches and matches all their responses
+            # against one dict, so per-batch ids would collide across batches.
+            payload = [{_rid: f"r{i}", **records[i]} for i in idxs]
             try:
                 out = await async_dspy_forward(
                     self.set_slot_filler,
@@ -1971,13 +2018,20 @@ def build_keyed_extractor_class(
                         fname, len(filled), len(idxs),
                     )
 
+                by_id = {f"r{i}": i for i in idxs}
                 by_key = {_canonical_record_key(records[i], acs): i for i in idxs}
                 results: Dict[int, Dict[str, Any]] = {}
                 unexpected = 0
                 for item in filled:
                     if not isinstance(item, dict):
                         continue
-                    idx = by_key.get(_canonical_record_key(item, acs))
+                    # Still identity, never position — the id IS the identity, just
+                    # two tokens of it. The full-key fallback keeps a model that
+                    # ignores the instruction and echoes the identity anyway
+                    # working, so the cheaper handle can never cost a row.
+                    idx = by_id.get(str(item.get(_rid, "")).strip())
+                    if idx is None:
+                        idx = by_key.get(_canonical_record_key(item, acs))
                     if idx is None:
                         unexpected += 1
                         continue
@@ -2019,6 +2073,7 @@ def build_keyed_extractor_class(
                 return merged_rows, 0
 
             batch_size = _records_per_call(len(vcs), self.set_slot_filler)
+            _rid = _row_id_key(acs, vcs)
             rounds = 0
             while rounds < _REPAIR_MAX_ROUNDS:
                 todo = [i for i, r in enumerate(merged_rows) if _record_needs_refill(r, vcs)]
@@ -2034,7 +2089,8 @@ def build_keyed_extractor_class(
 
                 async def _run_group(idxs):
                     payload = [
-                        {a: self._unwrap_key_value(merged_rows[i].get(a)) for a in acs}
+                        {_rid: f"r{i}",
+                         **{a: self._unwrap_key_value(merged_rows[i].get(a)) for a in acs}}
                         for i in idxs
                     ]
                     try:
@@ -2062,13 +2118,17 @@ def build_keyed_extractor_class(
                 # onto the wrong identity.
                 applied = 0
                 unexpected = 0
+                by_id = {f"r{i}": i for i in todo}
                 by_key = {_canonical_record_key(merged_rows[i], acs): i for i in todo}
                 for filled in results:
                     for item in filled:
                         if not isinstance(item, dict):
                             continue
-                        key = _canonical_record_key(item, acs)
-                        idx = by_key.get(key)
+                        # Same contract as the main pass: id first, full identity as
+                        # the backward-compatible fallback.
+                        idx = by_id.get(str(item.get(_rid, "")).strip())
+                        if idx is None:
+                            idx = by_key.get(_canonical_record_key(item, acs))
                         if idx is None:
                             unexpected += 1
                             continue

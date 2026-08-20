@@ -164,6 +164,10 @@ class ProjectResponse(BaseModel):
     updated_at: datetime
     review_settings: Optional[Dict[str, Any]] = None
     review_scope: Optional[str] = None
+    # Guided-builder chips behind review_scope. UI state only — declared here
+    # because both list and detail endpoints build ProjectResponse(**row), so
+    # an undeclared column is silently dropped before it reaches the frontend.
+    review_scope_structured: Optional[Dict[str, Any]] = None
 
     # Soft archive: archived_at is None for active projects. Archived projects
     # are hidden from the default list and are read-only until restored.
@@ -188,9 +192,58 @@ class ReviewSettingsUpdate(BaseModel):
     hide_ai_results: bool = False
 
 
+class ReviewScopeStructured(BaseModel):
+    """The guided scope builder's chips — UI state, never read by extraction.
+
+    `review_scope` (the composed prose) is what reaches the prompt. Composition
+    is one-way: unticked pairs vanish from the text and "A versus B" hides which
+    side was the comparator, so the chips are stored rather than re-parsed.
+
+    `pairs_off` holds "{intervention}\u2694{comparator}" keys for the comparison
+    pairs the user unticked — same separator the frontend composer uses.
+    """
+    populations: List[str] = Field(default_factory=list, max_length=40)
+    interventions: List[str] = Field(default_factory=list, max_length=40)
+    comparators: List[str] = Field(default_factory=list, max_length=40)
+    outcomes: List[str] = Field(default_factory=list, max_length=40)
+    timepoints: List[str] = Field(default_factory=list, max_length=40)
+    pairs_off: List[str] = Field(default_factory=list, max_length=400)
+
+    # Unknown keys are a client bug, not something to persist silently into a
+    # JSONB column the builder will later try to render.
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator(
+        "populations", "interventions", "comparators", "outcomes",
+        "timepoints", "pairs_off",
+    )
+    @classmethod
+    def _clean(cls, v: List[str]) -> List[str]:
+        """Trim, drop blanks, dedupe preserving order, cap entry length."""
+        out: List[str] = []
+        for item in v:
+            t = (item or "").strip()
+            if not t:
+                continue
+            if len(t) > 300:
+                raise ValueError("scope entries are limited to 300 characters")
+            if t not in out:
+                out.append(t)
+        return out
+
+    def is_empty(self) -> bool:
+        return not any((
+            self.populations, self.interventions, self.comparators,
+            self.outcomes, self.timepoints,
+        ))
+
+
 class ReviewScopeUpdate(BaseModel):
     """Update a project's review scope — extraction context, not a row filter."""
     review_scope: Optional[str] = Field(None, max_length=4000)
+    # The chips that composed `review_scope`, when it came from the guided
+    # builder. Omitted (or null) by a free-text save, which clears the column.
+    review_scope_structured: Optional[ReviewScopeStructured] = None
 
 
 # ============================================================================
@@ -235,6 +288,14 @@ class DocumentResponse(BaseModel):
     doi: Optional[str] = None
     doi_source: Optional[str] = None
     title: Optional[str] = None
+    # Study identity — the "Raslan 2021" a reviewer actually cites. first_author
+    # is a surname only; study_label is the manual override and beats both.
+    # The displayed label (including a/b/c disambiguation, which is a per-project
+    # decision and so cannot live on a single row) is composed by
+    # utils/study_label.py and its frontend mirror lib/documentLabel.ts.
+    first_author: Optional[str] = None
+    pub_year: Optional[str] = None
+    study_label: Optional[str] = None
     labels: List[str] = []
     created_at: datetime
     source_type: Optional[str] = None
@@ -259,6 +320,14 @@ class ApproveMetadataRequest(BaseModel):
 class DocumentLabelsUpdate(BaseModel):
     """Request to update document labels."""
     labels: List[str]
+
+
+class DocumentStudyLabelUpdate(BaseModel):
+    """Set (or clear) a document's manual study ID, e.g. "Jefferson 2026b".
+
+    An empty string clears the override and hands the label back to the derived
+    author+year, which is why this is Optional rather than a required str."""
+    study_label: Optional[str] = Field(None, max_length=120)
 
 
 # ============================================================================

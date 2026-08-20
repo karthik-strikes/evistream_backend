@@ -703,9 +703,25 @@ class TestBatchSizing:
         from dspy_components.runtime_builders import _records_per_call
         assert _records_per_call(5000, _FakeCoT(8192)) == 1
 
-    def test_capped_so_one_call_never_carries_a_whole_huge_table(self):
-        from dspy_components.runtime_builders import _MAX_RECORDS_PER_CALL, _records_per_call
-        assert _records_per_call(1, _FakeCoT(128000)) == _MAX_RECORDS_PER_CALL
+    def test_the_model_budget_is_what_bounds_the_batch(self):
+        """The flat _MAX_RECORDS_PER_CALL = 40 was removed Aug 18 2026.
+
+        It clipped a budget that allowed 233 rows, so an 80-row table paid two
+        calls where one would do — and those two ran serially. The budget term is
+        now the only bound, and has to stay one: without it a large table would
+        truncate by construction.
+        """
+        from dspy_components.runtime_builders import (
+            _OUTPUT_BUDGET_FRACTION, _TOKENS_PER_CELL, _records_per_call,
+        )
+        assert (_records_per_call(1, _FakeCoT(128000))
+                == int(128000 * _OUTPUT_BUDGET_FRACTION) // _TOKENS_PER_CELL)
+
+    def test_a_real_table_fits_one_call(self):
+        # The profiled case: 5 value columns, 80 rows, Claude's 100k ceiling.
+        # This used to cost 2 calls purely because of the cap.
+        from dspy_components.runtime_builders import _records_per_call
+        assert _records_per_call(5, _FakeCoT(100000)) >= 80
 
     def test_unknown_model_falls_back_to_the_conservative_floor(self):
         from dspy_components.runtime_builders import _active_output_ceiling, _FALLBACK_OUTPUT_CEILING
@@ -840,6 +856,131 @@ class TestBatchedMainPass:
         assert seen["per_row"] >= 2, "every unfilled row gets a per-row attempt"
         assert env["status"] == "partial", "still unfilled → not a complete answer"
         assert env["unfilled_rows"] == 2
+
+
+class TestRowIdMatching:
+    """Slot filling addresses a row by an opaque `row_id`, not by re-typing the key.
+
+    The id replaces ~114 output tokens of identity echo per row (form d9f6e1d9,
+    Aug 18 2026). Two properties have to survive that: matching stays by IDENTITY
+    rather than position, and a model that ignores the instruction and echoes the
+    whole key anyway still works.
+    """
+
+    def _make_extractor(self, anchor_cols=("outcome_name", "followup_point")):
+        from dspy_components.runtime_builders import build_keyed_extractor_class
+        subs = [
+            {"field_name": c, "field_type": "text", "field_description": c}
+            for c in anchor_cols
+        ] + [{"field_name": "v0", "field_type": "text", "field_description": "Value 0"}]
+        sig_def = _make_sig_def(
+            extraction_strategy="row_then_columns",
+            anchor_columns=list(anchor_cols),
+            subform_fields=subs,
+        )
+        ExtractorCls = build_keyed_extractor_class(
+            sig_def, sig_def["output_fields"][0], "test"
+        )
+        assert ExtractorCls._set_slot_fill_class is not None, "batched signature was not built"
+        return ExtractorCls
+
+    def _run(self, n_rows, respond, anchor_cols=("outcome_name", "followup_point")):
+        ExtractorCls = self._make_extractor(anchor_cols)
+        first, second = anchor_cols
+        s1_rows = [
+            {first: {"value": f"O{i}", "source_text": f"O{i}"},
+             second: {"value": "7d", "source_text": "7d"}}
+            for i in range(n_rows)
+        ]
+        seen = {"payloads": []}
+
+        async def mock_forward(predictor, **kwargs):
+            if "rows_to_fill" in kwargs:
+                payload = json.loads(kwargs["rows_to_fill"])
+                seen["payloads"].append(payload)
+                return _pred(filled_rows=respond(payload))
+            if "candidate_row_plan" in kwargs:
+                return _pred(missing_rows=[])
+            if "row_anchor" in kwargs:
+                return {}
+            return _pred(results=s1_rows)
+
+        async def go():
+            with patch(
+                "dspy_components.runtime_builders.async_dspy_forward",
+                side_effect=mock_forward,
+            ), patch(
+                "dspy_components.runtime_builders._SET_AT_A_TIME", True,
+            ):
+                return await ExtractorCls()("paper text here")
+
+        return asyncio.run(go())["results"], seen
+
+    def test_payload_carries_a_row_id(self):
+        _, seen = self._run(3, lambda p: [
+            {"row_id": r["row_id"], "v0": {"value": "1", "source_text": "q"}} for r in p
+        ])
+        # ids are the GLOBAL record index — the refill loop matches several
+        # batches against one dict, so a per-batch counter would collide.
+        assert [r["row_id"] for r in seen["payloads"][0]] == ["r0", "r1", "r2"]
+
+    def test_id_only_answer_reordered_lands_on_the_right_rows(self):
+        # The whole point: no identity columns in the answer at all, and shuffled.
+        def respond(payload):
+            rows = [{"row_id": r["row_id"],
+                     "v0": {"value": r["outcome_name"], "source_text": "q"}}
+                    for r in payload]
+            return list(reversed(rows))
+
+        env, _ = self._run(4, respond)
+        assert len(env["value"]) == 4
+        for r in env["value"]:
+            assert r["v0"]["value"] == r["outcome_name"]["value"], "values landed on the wrong row"
+
+    def test_missing_row_id_falls_back_to_identity(self):
+        # A model that ignores the instruction and echoes the key must keep
+        # working — otherwise the cheaper handle could cost rows.
+        def respond(payload):
+            return [{"outcome_name": r["outcome_name"], "followup_point": r["followup_point"],
+                     "v0": {"value": r["outcome_name"], "source_text": "q"}}
+                    for r in reversed(payload)]
+
+        env, _ = self._run(3, respond)
+        for r in env["value"]:
+            assert r["v0"]["value"] == r["outcome_name"]["value"]
+
+    def test_unknown_row_id_is_dropped_not_applied_elsewhere(self):
+        def respond(payload):
+            out = [{"row_id": "r99", "v0": {"value": "GHOST", "source_text": "q"}}]
+            out += [{"row_id": r["row_id"],
+                     "v0": {"value": r["outcome_name"], "source_text": "q"}}
+                    for r in payload]
+            return out
+
+        env, _ = self._run(2, respond)
+        assert not any(r["v0"]["value"] == "GHOST" for r in env["value"])
+        for r in env["value"]:
+            assert r["v0"]["value"] == r["outcome_name"]["value"]
+
+    def test_a_key_column_named_row_id_is_not_clobbered(self):
+        """The collision that would be silent data corruption.
+
+        `{_rid: "r0", **record}` would overwrite a key column of that name, and
+        the model would hand the id straight back as its value.
+        """
+        captured = {}
+
+        def respond(payload):
+            captured["payload"] = payload
+            return [{"_row_id": r["_row_id"], "v0": {"value": "1", "source_text": "q"}}
+                    for r in payload]
+
+        env, _ = self._run(2, respond, anchor_cols=("row_id", "followup_point"))
+        first = captured["payload"][0]
+        assert first["_row_id"] == "r0", "the handle must move aside"
+        assert first["row_id"] == "O0", "the real column must survive"
+        assert len(env["value"]) == 2
+        assert all(r["v0"]["value"] == "1" for r in env["value"])
 
 
 class TestPerRowMainPassIsDefault:

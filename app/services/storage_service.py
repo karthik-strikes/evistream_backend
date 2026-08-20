@@ -286,5 +286,131 @@ class S3StorageService:
             raise
 
 
+    # ------------------------------------------------------------------ images
+    # Datalab returns the figures it extracted from the PDF as a
+    # {filename: base64} map alongside the markdown, and the markdown itself
+    # references them by bare filename (`![](<hash>_img.jpg)`). Store one
+    # object per image under a per-document prefix so those bare names resolve
+    # 1:1 against the prefix and the bytes are addressable on their own.
+    # Before this, the bytes survived only as base64 buried inside the blocks
+    # sidecar, which nothing could render and every markdown image link dangled.
+    _IMAGE_CONTENT_TYPES = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }
+
+    def image_prefix(self, project_id: str, content_hash: str) -> str:
+        """S3 prefix holding every extracted image for one document."""
+        return f"images/{project_id}/{content_hash}/"
+
+    def upload_images(
+        self,
+        images: dict,
+        project_id: str,
+        content_hash: str,
+        overwrite: bool = False,
+    ) -> list:
+        """Upload Datalab-extracted images to S3, one object per image.
+
+        `images` is Datalab's {filename: base64-encoded-bytes} map, taken
+        straight off the /convert response. Each entry lands at
+        images/{project_id}/{content_hash}/{filename}.
+
+        Best-effort per image: a malformed, unsafe or undecodable entry is
+        logged and skipped rather than failing the document, because extraction
+        is text-only — a missing figure must never invalidate a parse whose
+        markdown is already good.
+
+        Idempotent: an image already present is counted, not re-uploaded,
+        unless `overwrite=True`.
+
+        Returns the list of S3 keys now holding this document's images.
+        """
+        import base64
+        import os as _os
+
+        if not images:
+            return []
+
+        prefix = self.image_prefix(project_id, content_hash)
+        written = []
+        skipped = 0
+        for filename, b64 in images.items():
+            name = str(filename)
+            # Datalab names images by content hash, but the value ends up in an
+            # S3 key — refuse anything with a path component rather than let it
+            # write outside this document's prefix.
+            safe_name = _os.path.basename(name)
+            if not safe_name or safe_name != name or safe_name.startswith("."):
+                logger.warning(f"Skipping image with unsafe name {name!r} for {content_hash}")
+                skipped += 1
+                continue
+            if not isinstance(b64, str):
+                logger.warning(f"Skipping non-string image payload {safe_name} for {content_hash}")
+                skipped += 1
+                continue
+            try:
+                raw = base64.b64decode(b64, validate=True)
+            except Exception as decode_err:
+                logger.warning(
+                    f"Skipping undecodable image {safe_name} for {content_hash}: {decode_err}"
+                )
+                skipped += 1
+                continue
+            if not raw:
+                skipped += 1
+                continue
+
+            s3_key = f"{prefix}{safe_name}"
+            ext = _os.path.splitext(safe_name)[1].lower()
+            try:
+                if not overwrite and self.object_exists(s3_key):
+                    written.append(s3_key)
+                    continue
+                self.s3_client.put_object(
+                    Bucket=self.bucket,
+                    Key=s3_key,
+                    Body=raw,
+                    ContentType=self._IMAGE_CONTENT_TYPES.get(ext, "application/octet-stream"),
+                    Metadata={
+                        "project-id": project_id,
+                        "content-hash": content_hash,
+                    },
+                )
+                written.append(s3_key)
+            except ClientError as e:
+                logger.error(f"Failed to upload image {s3_key}: {e}")
+                skipped += 1
+
+        logger.info(
+            f"Stored {len(written)} image(s) under s3://{self.bucket}/{prefix}"
+            + (f" ({skipped} skipped)" if skipped else "")
+        )
+        return written
+
+    def list_images(self, project_id: str, content_hash: str) -> list:
+        """List the S3 keys of every stored image for one document."""
+        prefix = self.image_prefix(project_id, content_hash)
+        keys = []
+        try:
+            paginator = self.s3_client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix):
+                keys.extend(obj["Key"] for obj in page.get("Contents", []))
+        except ClientError as e:
+            logger.error(f"Failed to list images under {prefix}: {e}")
+        return keys
+
+    def delete_images(self, project_id: str, content_hash: str) -> int:
+        """Delete every stored image for one document. Returns the count deleted."""
+        deleted = 0
+        for key in self.list_images(project_id, content_hash):
+            if self.delete_object(key):
+                deleted += 1
+        return deleted
+
+
 # Global storage service instance
 storage_service = S3StorageService()

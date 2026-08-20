@@ -19,6 +19,11 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, Tuple
 
 from rapidfuzz import fuzz
+from utils.synthetic_captions import (
+    caption_image_for,
+    find_caption_spans_with_source,
+    overlaps_caption,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -415,6 +420,13 @@ def enrich_extraction_results(
         logger.warning("Source index has no chunks — skipping source linking")
         return extracted_data
 
+    # Datalab writes a machine-generated description of every figure into the
+    # markdown (see utils/synthetic_captions for the measured scale). A quote
+    # that lands inside one is not the authors' text, so mark it instead of
+    # presenting it as a citation. Computed once per document; the markdown is
+    # never modified, so every offset above stays valid.
+    caption_spans = find_caption_spans_with_source(markdown_content)
+
     # Import here to avoid a top-level circular import (bbox_map has no deps
     # on source_linker; keeping the lookup local keeps the dependency one-way).
     _find_bboxes = None
@@ -424,7 +436,26 @@ def enrich_extraction_results(
         except Exception:
             _find_bboxes = None
 
-    def _attach_bboxes(loc: Dict[str, Any]) -> Dict[str, Any]:
+    def _finalize_location(loc: Dict[str, Any]) -> Dict[str, Any]:
+        """Attach deterministic bboxes and the synthetic-caption flag.
+
+        Both live on `source_location` rather than on the cell: grounding
+        metadata is already excluded from reviewer comparison
+        (value_compare._METADATA_KEYS), so a flag placed here can never turn
+        into a phantom R1-vs-R2 disagreement.
+        """
+        start, end = loc.get("start_char"), loc.get("end_char")
+        if overlaps_caption(
+            [(s, e) for s, e, _ in caption_spans], start, end
+        ):
+            loc = {**loc, "synthetic_caption": True}
+            # The figure is the actual source of a synthetic caption, so carry
+            # the image filename through. The viewer joins it against the
+            # blocks sidecar to highlight the picture itself — see
+            # frontend/lib/blockIndex.ts:findBlockByImageFile.
+            image = caption_image_for(caption_spans, start, end)
+            if image:
+                loc["caption_image"] = image
         if _find_bboxes is None or not bbox_anchors:
             return loc
         bboxes = _find_bboxes(bbox_anchors, loc["start_char"], loc["end_char"])
@@ -454,7 +485,7 @@ def enrich_extraction_results(
             return cell
         loc = _resolve_location(cell.get("source_text", ""), cell.get("value"))
         if loc:
-            return {**cell, "source_location": _attach_bboxes(loc.to_dict())}
+            return {**cell, "source_location": _finalize_location(loc.to_dict())}
         return cell
 
     def _enrich_rows(rows: list) -> list:
@@ -482,7 +513,7 @@ def enrich_extraction_results(
                 continue
             location = _resolve_location(value.get("source_text", ""), value.get("value"))
             if location:
-                enriched[key] = {**value, "source_location": _attach_bboxes(location.to_dict())}
+                enriched[key] = {**value, "source_location": _finalize_location(location.to_dict())}
             else:
                 enriched[key] = value
             continue
@@ -496,7 +527,7 @@ def enrich_extraction_results(
                 location = locate_source(value, source_index)
                 enriched[key] = value
                 if location:
-                    enriched[f"{field_base}.source_location"] = _attach_bboxes(location.to_dict())
+                    enriched[f"{field_base}.source_location"] = _finalize_location(location.to_dict())
             else:
                 enriched[key] = value
         else:

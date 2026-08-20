@@ -44,6 +44,8 @@ from typing import Optional
 import fitz  # PyMuPDF
 import requests
 
+from utils.study_label import first_surname, year_of
+
 logger = logging.getLogger(__name__)
 
 CROSSREF_API_BASE = "https://api.crossref.org"
@@ -65,6 +67,12 @@ class DoiResult:
     doi: Optional[str] = None
     source: str = "none"  # metadata | text | crossref | none
     title: Optional[str] = None
+    # Study identity — first author's SURNAME and the publication year, the two
+    # halves of the "Raslan 2021" label every screen shows. Crossref already
+    # hands these back in the same response the title comes from; they were
+    # simply being discarded before (see utils/study_label.py).
+    first_author: Optional[str] = None
+    year: Optional[str] = None
 
 
 def _clean_doi(candidate: str) -> str:
@@ -203,6 +211,19 @@ def _crossref_title_lookup(title: str) -> Optional[dict]:
         return None
 
 
+def _crossref_year(work: Optional[dict]) -> Optional[str]:
+    """Publication year from a Crossref work. `issued` is the date of record;
+    `published-print`/`published-online` are the fallbacks for the records
+    where `issued` is absent or carries only a partial date."""
+    if not work:
+        return None
+    for key in ("issued", "published-print", "published-online", "created"):
+        year = year_of(work.get(key))
+        if year:
+            return year
+    return None
+
+
 def _validate_doi(doi: str) -> Optional[dict]:
     """Step 4 — resolve the winning candidate to confirm it's real and pull
     its canonical title."""
@@ -241,6 +262,8 @@ def extract_doi(
             source = "text"
 
     candidate_title: Optional[str] = None
+    candidate_author: Optional[str] = None
+    candidate_year: Optional[str] = None
     if not doi:
         heading = _first_markdown_heading(markdown)
         if heading:
@@ -251,19 +274,31 @@ def extract_doi(
                     doi = hit_doi
                     source = "crossref"
                     candidate_title = (crossref_hit.get("title") or [None])[0]
+                    candidate_author = first_surname(crossref_hit.get("author"))
+                    candidate_year = _crossref_year(crossref_hit)
 
     if not doi:
         return DoiResult(doi=None, source="none", title=None)
 
-    # Validate + fetch canonical title (skip the round-trip if the Crossref
-    # search already gave us both).
+    # Validate + fetch canonical title/author/year (skip the round-trip if the
+    # Crossref search already gave us all of them).
     title = candidate_title
+    first_author = candidate_author
+    year = candidate_year
     if not title:
         validated = _validate_doi(doi)
         if validated:
             title = (validated.get("title") or [None])[0]
+            first_author = first_surname(validated.get("author"))
+            year = _crossref_year(validated)
         # An embedded/printed DOI that doesn't resolve is still kept — it may
         # be a typo or a non-Crossref registrant (e.g. DataCite) — just
         # without a canonical title.
 
-    return DoiResult(doi=doi.lower(), source=source, title=title)
+    return DoiResult(
+        doi=doi.lower(),
+        source=source,
+        title=title,
+        first_author=first_author,
+        year=year,
+    )

@@ -64,9 +64,24 @@ REQUIRED_SLOTS: Dict[tuple, List[str]] = {
     ],
     ("dichotomous", "long"): ["value", "denominator", "arm", "outcome"],
     ("continuous", "long"): ["value", "variability", "denominator", "arm", "outcome"],
+    # A table holding an already-computed effect (adjusted OR, hazard ratio) with
+    # its own precision. Always wide — an effect is already a contrast, so there
+    # is no second row to pair it against. Precision is required too, but it can
+    # come from `effect_se` OR both CI bounds, which a flat required-list cannot
+    # express; the frontend's `missingSlots` owns that choice.
+    ("effect", "wide"): ["effect_value", "outcome"],
+    # Single-group shapes: one row is one study's own prevalence, or its own
+    # correlation, with nothing to compare against. Always wide.
+    ("proportion", "wide"): ["prop_events", "prop_total", "outcome"],
+    ("correlation", "wide"): ["corr_r", "corr_n", "outcome"],
 }
 
-ALL_SLOTS = sorted({s for slots in REQUIRED_SLOTS.values() for s in slots} | {"timepoint"})
+# Optional roles never named in REQUIRED_SLOTS still have to be in the accepted
+# vocabulary, or `_validate` drops them as invented — which is how a mapped CI
+# would silently vanish between the model and the browser.
+OPTIONAL_SLOTS = {"timepoint", "effect_se", "effect_ci_lower", "effect_ci_upper"}
+
+ALL_SLOTS = sorted({s for slots in REQUIRED_SLOTS.values() for s in slots} | OPTIONAL_SLOTS)
 
 # Roles that hold a measurement rather than a label. `variability` is pointedly
 # NOT here — it legitimately holds text like "1.2 to 3.4" on real forms.
@@ -84,6 +99,8 @@ NUMERIC_SLOTS = {
     "mean_treatment", "sd_treatment", "n_treatment",
     "mean_comparator", "sd_comparator", "n_comparator",
     "value", "denominator",
+    "effect_value", "effect_se", "effect_ci_lower", "effect_ci_upper",
+    "prop_events", "prop_total", "corr_r", "corr_n",
 }
 
 # ...but a text column whose NAME reads as an annotation is still refused for a
@@ -183,6 +200,22 @@ _TIME = re.compile(r"timepoint|time_point|followup|follow_up|(^|_)time($|_)", re
 
 _DIAGNOSTIC_CELLS = {"tp", "fp", "fn", "tn"}
 
+# A published effect and its precision. Deliberately narrow: this branch only
+# runs after every arm-based shape has failed, and a false positive here would
+# hand the reviewer a mapping onto columns that are not effects at all.
+_EFFECT = re.compile(
+    r"(^|_)(effect|estimate|adjusted_(or|rr|hr)|(or|rr|hr|irr)_adjusted|hazard_ratio|"
+    r"odds_ratio|risk_ratio|rate_ratio|mean_difference|smd|beta|coefficient)(_|$)", re.I)
+_EFFECT_SE = re.compile(r"(^|_)(se|std_?err\w*|standard_error)(_|$)", re.I)
+# Single-group shapes. `_PREVALENCE` is deliberately narrow — a bare event count
+# is far more likely to be one arm of a comparison, which the branches above
+# handle, so this only fires on wording that names a single-group quantity.
+_PREVALENCE = re.compile(r"prevalen|affected|positive_n|proportion_n|(^|_)rate_n(_|$)", re.I)
+_CORRELATION = re.compile(r"correlat|(^|_)r_value(_|$)|pearson|spearman|(^|_)rho(_|$)|(^|_)r(_|$)", re.I)
+_SAMPLE_N = re.compile(r"(^|_)n(_|$)|sample_size|total|analyz|assessed|participants", re.I)
+_CI_LOWER = re.compile(r"(ci_?low|low\w*_?ci|lower_?(bound|limit|ci)|_lcl$|^lcl$)", re.I)
+_CI_UPPER = re.compile(r"(ci_?up|up\w*_?ci|upper_?(bound|limit|ci)|_ucl$|^ucl$)", re.I)
+
 # Names checked before any pattern, most specific first. Real forms cluster on a
 # small vocabulary, and an exact hit beats a regex that also catches a
 # neighbouring column (`intervention` vs `intervention_detail`,
@@ -277,6 +310,53 @@ def _heuristic_mapping(columns: List[Dict[str, Any]]) -> Dict[str, Any]:
             if nn2:
                 slots["n_comparator"] = nn2
         else:
+            # Single-group shapes come first, but only when the table has NO arm
+            # column at all and the count column actually names a single-group
+            # quantity. A generic `events_n` with no arm column deliberately stays
+            # dichotomous/long — its arms may live in a separate form, which is how
+            # the dental-implant forms in zforms/ are built.
+            has_arm_column = any(_ARMCOL.search(n) for n in names)
+            if not has_arm_column:
+                    # A correlation with its sample size: one row, one r.
+                    corr = pick(None, _CORRELATION)
+                    if corr:
+                        corr_n = pick(None, _SAMPLE_N)
+                        if corr_n:
+                            corr_slots = {"corr_r": corr, "corr_n": corr_n}
+                            outcome_col = pick("outcome", _OUTCOME, numeric=False,
+                                               extra=lambda n: "other" not in n.lower())
+                            if outcome_col:
+                                corr_slots["outcome"] = outcome_col
+                            time_col = pick("timepoint", _TIME, numeric=False)
+                            if time_col:
+                                corr_slots["timepoint"] = time_col
+                            return {
+                                "verdict": "correlation", "layout": "wide", "slots": corr_slots,
+                                "reasoning": "This table reports a correlation and the sample it came "
+                                             "from, one row per study, so it is mapped as a "
+                                             "single-group correlation pooled on Fisher's z.",
+                            }
+
+                    # A prevalence: a single group's count out of a denominator.
+                    prev = pick(None, _PREVALENCE)
+                    if prev:
+                        prev_n = pick(None, _SAMPLE_N)
+                        if prev_n:
+                            prop_slots = {"prop_events": prev, "prop_total": prev_n}
+                            outcome_col = pick("outcome", _OUTCOME, numeric=False,
+                                               extra=lambda n: "other" not in n.lower())
+                            if outcome_col:
+                                prop_slots["outcome"] = outcome_col
+                            time_col = pick("timepoint", _TIME, numeric=False)
+                            if time_col:
+                                prop_slots["timepoint"] = time_col
+                            return {
+                                "verdict": "proportion", "layout": "wide", "slots": prop_slots,
+                                "reasoning": "This table reports one group's count out of a "
+                                             "denominator with no comparator, so it is mapped as a "
+                                             "single-group proportion.",
+                            }
+
             # Long layout — one set of outcome columns plus a column naming the arm.
             ev = pick("value_dich", _EVENT, extra=lambda n: "pct" not in n.lower()
                       and "percent" not in n.lower())
@@ -286,6 +366,35 @@ def _heuristic_mapping(columns: List[Dict[str, Any]]) -> Dict[str, Any]:
             else:
                 mean = pick("value_cont", _MEAN, extra=lambda n: not _SD.search(n))
                 if not mean:
+                    # Last resort before refusing: the table may report the effect
+                    # itself rather than the arms behind it. Requires a precision
+                    # column as well — an effect with no CI or SE cannot be
+                    # weighted, so proposing it would only waste the reviewer's time.
+                    eff = pick(None, _EFFECT)
+                    eff_se = pick(None, _EFFECT_SE) if eff else None
+                    eff_lo = pick(None, _CI_LOWER) if eff else None
+                    eff_hi = pick(None, _CI_UPPER) if eff else None
+                    if eff and (eff_se or (eff_lo and eff_hi)):
+                        effect_slots = {"effect_value": eff}
+                        if eff_se:
+                            effect_slots["effect_se"] = eff_se
+                        if eff_lo and eff_hi:
+                            effect_slots["effect_ci_lower"] = eff_lo
+                            effect_slots["effect_ci_upper"] = eff_hi
+                        outcome_col = pick("outcome", _OUTCOME, numeric=False,
+                                           extra=lambda n: "other" not in n.lower())
+                        if outcome_col:
+                            effect_slots["outcome"] = outcome_col
+                        time_col = pick("timepoint", _TIME, numeric=False)
+                        if time_col:
+                            effect_slots["timepoint"] = time_col
+                        return {
+                            "verdict": "effect", "layout": "wide", "slots": effect_slots,
+                            "reasoning": "This table reports an already-computed effect with its own "
+                                         "precision rather than arm-level counts, so it is mapped as "
+                                         "a reported effect. Confirm which scale the effect column is "
+                                         "printed on before running.",
+                        }
                     return {
                         "verdict": "not_poolable", "layout": None, "slots": {},
                         "reasoning": "No column in this table holds an event count or a mean, so "

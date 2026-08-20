@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from app.config import settings
 from app.services.audit_service import log_audit
+from app.services.document_labels import labels_for_documents
 
 logger = logging.getLogger(__name__)
 
@@ -98,8 +99,10 @@ async def get_qa_queue(
             .in_("id", doc_ids)\
             .execute()
         doc_map = {d["id"]: d["filename"] for d in (docs.data or [])}
+        label_map = labels_for_documents(supabase, doc_ids)
         for r in reviews:
             r["document_filename"] = doc_map.get(r["document_id"])
+            r["document_label"] = label_map.get(r["document_id"]) or doc_map.get(r["document_id"])
 
     return reviews
 

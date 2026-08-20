@@ -36,6 +36,7 @@ from .literature import router as literature_router
 from .endnote import router as endnote_router
 from .citations import router as citations_router
 from .synthesis import router as synthesis_router
+from .review_scope import router as review_scope_router
 
 
 api_router = APIRouter()
@@ -80,3 +81,4 @@ api_router.include_router(literature_router, prefix="/literature", tags=["Litera
 api_router.include_router(endnote_router, prefix="/endnote", tags=["EndNote Import"])
 api_router.include_router(citations_router, prefix="/citations", tags=["Citation Import"])
 api_router.include_router(synthesis_router, prefix="/synthesis", tags=["Synthesis"])
+api_router.include_router(review_scope_router, prefix="/review-scope", tags=["Review Scope"])

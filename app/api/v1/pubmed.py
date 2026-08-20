@@ -24,6 +24,7 @@ from app.dependencies import get_current_user
 from app.services import fulltext_service, pubmed_service
 from app.services.project_access import check_project_access
 from app.services.storage_service import storage_service
+from utils.study_label import first_surname, year_of
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -163,6 +164,10 @@ async def import_article(pmid: str, body: _ImportBody, user_id: UUID = Depends(g
                 "source_type": "pubmed",
                 "pmid": pmid,
                 "doi": doi,
+                # esummary already returned the author list ("Raslan N") and
+                # pubdate — the two halves of the "Raslan 2021" study label.
+                "first_author": first_surname(normalized.get("authors")),
+                "pub_year": year_of(normalized.get("year") or normalized.get("pubDate")),
             }
             result = supabase.table("documents").insert(document_data).execute()
             if not result.data:
@@ -234,6 +239,10 @@ async def import_article(pmid: str, body: _ImportBody, user_id: UUID = Depends(g
                 "source_type": "pubmed",
                 "pmid": pmid,
                 "doi": doi,
+                # esummary already returned the author list ("Raslan N") and
+                # pubdate — the two halves of the "Raslan 2021" study label.
+                "first_author": first_surname(normalized.get("authors")),
+                "pub_year": year_of(normalized.get("year") or normalized.get("pubDate")),
             }
             result = supabase.table("documents").insert(document_data).execute()
             if not result.data:

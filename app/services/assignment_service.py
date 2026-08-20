@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from app.config import settings
 from app.services.audit_service import log_audit
 from app.services.project_access import assert_project_writable
+from app.services.document_labels import labels_for_documents
 
 logger = logging.getLogger(__name__)
 
@@ -403,8 +404,12 @@ async def get_my_assignments(
             .in_("id", doc_ids)\
             .execute()
         doc_map = {d["id"]: d["filename"] for d in (docs.data or [])}
+        # `document_label` is what every queue and allocation screen prints
+        # ("Raslan 2021"); `document_filename` stays as the true filename.
+        label_map = labels_for_documents(supabase, doc_ids)
         for a in assignments:
             a["document_filename"] = doc_map.get(a["document_id"])
+            a["document_label"] = label_map.get(a["document_id"]) or doc_map.get(a["document_id"])
 
     return _enrich_with_form_status(supabase, assignments)
 
@@ -435,6 +440,7 @@ async def get_project_assignments(
             .in_("id", doc_ids)\
             .execute()
         doc_map = {d["id"]: d["filename"] for d in (docs.data or [])}
+        label_map = labels_for_documents(supabase, doc_ids)
 
         users = supabase.table("users")\
             .select("id, full_name, email")\
@@ -444,6 +450,7 @@ async def get_project_assignments(
 
         for a in assignments:
             a["document_filename"] = doc_map.get(a["document_id"])
+            a["document_label"] = label_map.get(a["document_id"]) or doc_map.get(a["document_id"])
             a["reviewer_name"] = user_map.get(a["reviewer_user_id"])
 
     return _enrich_with_form_status(supabase, assignments)

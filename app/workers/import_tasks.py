@@ -37,6 +37,7 @@ from app.services import endnote_service, fulltext_service, ris_service
 from app.services.storage_service import storage_service
 from app.workers.celery_app import celery_app
 from app.workers.log_broadcaster import CeleryLogBroadcaster
+from utils.study_label import first_surname, year_of
 
 logger = logging.getLogger(__name__)
 
@@ -248,6 +249,11 @@ def _import_one_record(zf, rec, project_id: str, user_id: str, counters: dict) -
             "source_type": "endnote",
             "doi": rec.doi,
             "pmid": rec.pmid,
+            # Study identity, straight from the library record — the EndNote
+            # reference already carries the author list and year we were
+            # previously dropping on the floor (utils/study_label.py).
+            "first_author": first_surname(rec.authors),
+            "pub_year": year_of(rec.year),
         }).execute()
         if not result.data:
             raise RuntimeError("Failed to insert document row.")
@@ -282,6 +288,8 @@ def _import_one_record(zf, rec, project_id: str, user_id: str, counters: dict) -
         "source_type": "endnote",
         "doi": rec.doi,
         "pmid": rec.pmid,
+        "first_author": first_surname(rec.authors),
+        "pub_year": year_of(rec.year),
     }).execute()
     if not result.data:
         raise RuntimeError("Failed to insert metadata-only document row.")
@@ -375,6 +383,8 @@ def _import_one_citation(rec: dict, project_id: str, user_id: str, counters: dic
             "source_type": "ris",
             "doi": doi,
             "pmid": pmid,
+            "first_author": first_surname(rec.get("authors")),
+            "pub_year": year_of(rec.get("year")),
         }).execute()
         if not result.data:
             raise RuntimeError("Failed to insert document row.")
@@ -408,6 +418,8 @@ def _import_one_citation(rec: dict, project_id: str, user_id: str, counters: dic
         "labels": [],
         "source_type": "ris",
         "doi": doi,
+        "first_author": first_surname(rec.get("authors")),
+        "pub_year": year_of(rec.get("year")),
         "pmid": pmid,
     }).execute()
     if not result.data:

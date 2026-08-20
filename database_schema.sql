@@ -36,7 +36,15 @@ CREATE TABLE IF NOT EXISTS projects (
   -- Soft archive: archived_at IS NULL means active. Archived projects are
   -- hidden from the default list and are read-only until restored.
   archived_at TIMESTAMPTZ NULL,
-  archived_by UUID NULL REFERENCES users(id) ON DELETE SET NULL
+  archived_by UUID NULL REFERENCES users(id) ON DELETE SET NULL,
+  -- Review scope: free text describing what the systematic review is about.
+  -- Injected into every extraction prompt at runtime as CONTEXT ONLY -- it
+  -- resolves which arm/population/timepoint a field refers to and never
+  -- filters rows. See migrations/phase4_005_project_review_scope.sql.
+  review_scope TEXT,
+  -- The guided scope builder's chips. UI state only -- extraction reads
+  -- review_scope, never this. See phase4_006_project_review_scope_structured.sql.
+  review_scope_structured JSONB
 );
 
 -- Indexes for performance

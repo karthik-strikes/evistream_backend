@@ -11,6 +11,8 @@ from app.config import settings
 from app.services.audit_service import log_audit
 
 from utils import absence
+from utils.study_label import build_label_map
+from app.services.document_labels import LABEL_COLUMNS
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,7 @@ async def get_grid_data(
 
     # Get all documents
     docs = supabase.table("documents")\
-        .select("id, filename")\
+        .select(LABEL_COLUMNS)\
         .eq("project_id", str(project_id))\
         .eq("processing_status", "completed")\
         .order("created_at")\
@@ -42,6 +44,7 @@ async def get_grid_data(
 
     doc_ids = [d["id"] for d in docs.data]
     doc_map = {d["id"]: d["filename"] for d in docs.data}
+    label_map = build_label_map(docs.data or [])
 
     # Get adjudication results
     adj_results = supabase.table("adjudication_results")\
@@ -104,6 +107,8 @@ async def get_grid_data(
         rows.append({
             "document_id": doc_id,
             "filename": doc_map.get(doc_id, ""),
+            # The study ID the grid prints; `filename` stays for the tooltip.
+            "study_label": label_map.get(doc_id, doc_map.get(doc_id, "")),
             "data_source": data_source,
             "values": values,
             "violations": violations_by_doc.get(doc_id, []),
@@ -270,6 +275,7 @@ async def validate_data(
         for v in row.get("violations", []):
             v["document_id"] = row["document_id"]
             v["filename"] = row["filename"]
+            v["study_label"] = row.get("study_label") or row["filename"]
             all_violations.append(v)
     return all_violations
 

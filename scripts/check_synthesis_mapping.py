@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Baseline check for the Synthesis analysis-mapping suggester.
 
-    python backend/zscripts/check_synthesis_mapping.py
+    python backend/scripts/check_synthesis_mapping.py
 
 Runs two things offline, without touching Supabase or Bedrock:
 
@@ -23,7 +23,7 @@ import json
 import os
 import sys
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # backend/zscripts/ -> project root
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # backend/scripts/ -> project root
 sys.path.insert(0, os.path.join(REPO, "backend"))
 
 # Settings validates at import and the supabase client parses its URL at import,

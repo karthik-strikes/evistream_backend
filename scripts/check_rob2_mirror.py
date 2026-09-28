@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify the copies of RoB 2's questions, routing and algorithm still agree.
 
-    python backend/zscripts/check_rob2_mirror.py
+    python backend/scripts/check_rob2_mirror.py
 
 ``frontend/app/(dashboard)/risk-of-bias/_lib/rob2.ts`` is the authority — what a
 reviewer reads and answers. Two server-side files mirror it:
@@ -44,7 +44,7 @@ import tempfile
 import unicodedata
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]  # backend/zscripts/ -> project root
+ROOT = Path(__file__).resolve().parents[2]  # backend/scripts/ -> project root
 TS = ROOT / "frontend/app/(dashboard)/risk-of-bias/_lib/rob2.ts"
 PY = ROOT / "backend/utils/rob2_questions.py"
 ENGINE = ROOT / "backend/utils/rob2_engine.py"

@@ -12,7 +12,7 @@ declares markdown_content properly.
 
 Two calls: Stage 1, then ONE batched value call with its raw return dumped.
 
-Usage: python zscripts/debug_batch_live.py
+Usage: python scripts/debug_batch_live.py
 """
 
 from __future__ import annotations

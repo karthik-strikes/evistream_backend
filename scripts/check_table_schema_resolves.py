@@ -11,7 +11,7 @@ Reports, per live form with a compiled schema_def:
   · keyed pipelines with no composite key                     → rows unidentifiable
   · which spelling each field currently stores                → migration progress
 
-Usage: python zscripts/check_table_schema_resolves.py
+Usage: python scripts/check_table_schema_resolves.py
 """
 
 from __future__ import annotations

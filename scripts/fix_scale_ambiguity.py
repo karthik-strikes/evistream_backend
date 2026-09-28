@@ -17,8 +17,8 @@ Runtime-composed from schema_def, so it applies on the next extraction with no
 regeneration. Writes forms.schema_def, forms.fields and the schemas mirror.
 
 Usage:
-    python zscripts/fix_scale_ambiguity.py            # dry run
-    python zscripts/fix_scale_ambiguity.py --apply
+    python scripts/fix_scale_ambiguity.py            # dry run
+    python scripts/fix_scale_ambiguity.py --apply
 """
 
 from __future__ import annotations

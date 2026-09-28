@@ -12,7 +12,7 @@ For every value cell returned, it verifies:
 
 A model that pads a long batch by inventing plausible numbers fails both.
 
-Usage: python zscripts/debug_batch_large.py
+Usage: python scripts/debug_batch_large.py
 """
 
 from __future__ import annotations

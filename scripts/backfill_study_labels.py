@@ -30,12 +30,12 @@ the stored PDF and reads the stored markdown, exactly as
 pdf_tasks.backfill_pdf_doi does — that task is mirrored here rather than
 enqueued so a corpus-wide sweep is one observable run instead of ~90 job rows).
 
-DRY RUN BY DEFAULT (repo convention — see zscripts/migrate_key_columns.py):
-    python zscripts/backfill_study_labels.py                # report only
-    python zscripts/backfill_study_labels.py --apply        # write
-    python zscripts/backfill_study_labels.py --apply --from-pdf   # + read PDFs
-    python zscripts/backfill_study_labels.py --apply --project <uuid>
-    python zscripts/backfill_study_labels.py --limit 25
+DRY RUN BY DEFAULT (repo convention — see scripts/migrate_key_columns.py):
+    python scripts/backfill_study_labels.py                # report only
+    python scripts/backfill_study_labels.py --apply        # write
+    python scripts/backfill_study_labels.py --apply --from-pdf   # + read PDFs
+    python scripts/backfill_study_labels.py --apply --project <uuid>
+    python scripts/backfill_study_labels.py --limit 25
 """
 
 from __future__ import annotations

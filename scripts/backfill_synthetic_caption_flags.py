@@ -32,9 +32,9 @@ Safety
 
 Usage
 -----
-    python zscripts/backfill_synthetic_caption_flags.py --project-id <uuid>
-    python zscripts/backfill_synthetic_caption_flags.py --project-id <uuid> --apply
-    python zscripts/backfill_synthetic_caption_flags.py --all-projects
+    python scripts/backfill_synthetic_caption_flags.py --project-id <uuid>
+    python scripts/backfill_synthetic_caption_flags.py --project-id <uuid> --apply
+    python scripts/backfill_synthetic_caption_flags.py --all-projects
 """
 
 import argparse

@@ -40,9 +40,9 @@ Safety
 
 Usage
 -----
-    python zscripts/migrate_key_columns.py             # dry run
-    python zscripts/migrate_key_columns.py --apply     # write
-    python zscripts/migrate_key_columns.py --apply --form-id <uuid>
+    python scripts/migrate_key_columns.py             # dry run
+    python scripts/migrate_key_columns.py --apply     # write
+    python scripts/migrate_key_columns.py --apply --form-id <uuid>
 """
 
 from __future__ import annotations

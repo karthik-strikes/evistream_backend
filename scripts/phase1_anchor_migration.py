@@ -23,8 +23,8 @@ and prints the Redis keys to drop. Workers must be restarted afterwards to clear
 the in-process registry and the signature-class LRU.
 
 Usage:
-    python zscripts/phase1_anchor_migration.py           # dry run
-    python zscripts/phase1_anchor_migration.py --apply
+    python scripts/phase1_anchor_migration.py           # dry run
+    python scripts/phase1_anchor_migration.py --apply
 """
 
 from __future__ import annotations

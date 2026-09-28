@@ -17,8 +17,8 @@ Combined with the raw-completion logging already in `_fill_slots_set_once`, one 
 answers: did the model emit the array, or did the adapter fail to parse it?
 
 Usage:
-    python zscripts/debug_batch_prodpath.py            # full production path
-    python zscripts/debug_batch_prodpath.py --no-census  # bisect step 2
+    python scripts/debug_batch_prodpath.py            # full production path
+    python scripts/debug_batch_prodpath.py --no-census  # bisect step 2
 """
 
 from __future__ import annotations

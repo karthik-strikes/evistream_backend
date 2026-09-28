@@ -9,7 +9,7 @@ either as a plain .json file, or as a saved Supabase-MCP tool-result wrapper
 (the payload is unwrapped automatically).
 
 Usage:
-    python zscripts/phase1_anchor_guard_dryrun.py <path>
+    python scripts/phase1_anchor_guard_dryrun.py <path>
 """
 
 from __future__ import annotations

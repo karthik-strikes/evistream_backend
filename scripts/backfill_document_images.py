@@ -34,8 +34,8 @@ Safety
 
 Usage
 -----
-    python zscripts/backfill_document_images.py --project-id <uuid>
-    python zscripts/backfill_document_images.py --project-id <uuid> --apply
+    python scripts/backfill_document_images.py --project-id <uuid>
+    python scripts/backfill_document_images.py --project-id <uuid> --apply
 """
 
 import argparse

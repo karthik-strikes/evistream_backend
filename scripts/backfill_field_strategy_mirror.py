@@ -43,9 +43,9 @@ Safety
 
 Usage
 -----
-    python zscripts/backfill_field_strategy_mirror.py             # dry run
-    python zscripts/backfill_field_strategy_mirror.py --apply     # write
-    python zscripts/backfill_field_strategy_mirror.py --form-id <uuid>
+    python scripts/backfill_field_strategy_mirror.py             # dry run
+    python scripts/backfill_field_strategy_mirror.py --apply     # write
+    python scripts/backfill_field_strategy_mirror.py --form-id <uuid>
 """
 
 from __future__ import annotations

@@ -10,7 +10,7 @@ Per paper: Stage 1 (real row identities), then ONE batched value call. Records
 whether the answer field came back, how many rows, and on failure the reasoning
 text and truncation flag.
 
-Usage: python zscripts/debug_batch_10papers.py
+Usage: python scripts/debug_batch_10papers.py
 Writes a JSON summary next to itself for later reference.
 """
 

@@ -28,9 +28,9 @@ Three findings are reported per field:
 
 Usage
 -----
-    python zscripts/audit_row_identity_drift.py
-    python zscripts/audit_row_identity_drift.py --form-id <uuid>
-    python zscripts/audit_row_identity_drift.py --verbose
+    python scripts/audit_row_identity_drift.py
+    python scripts/audit_row_identity_drift.py --form-id <uuid>
+    python scripts/audit_row_identity_drift.py --verbose
 """
 
 from __future__ import annotations

@@ -4,8 +4,8 @@
 Three states the R1/R2 model can get into that no code path can resolve on its
 own. Read-only by default; `--apply` performs only the repairs marked SAFE.
 
-    python backend/zscripts/audit_reviewer_slots.py              # report
-    python backend/zscripts/audit_reviewer_slots.py --apply      # do the safe repairs
+    python backend/scripts/audit_reviewer_slots.py              # report
+    python backend/scripts/audit_reviewer_slots.py --apply      # do the safe repairs
 
 1. **orphan** — a manual row sits under a role now assigned to somebody else.
    The current holder is refused on save (they cannot overwrite another

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify the two dataset-hash implementations agree.
 
-    python backend/zscripts/check_synthesis_hash_mirror.py
+    python backend/scripts/check_synthesis_hash_mirror.py
 
 ``frontend/app/(dashboard)/synthesis/_lib/datasetHash.ts`` hashes a run's
 analysis-ready dataset in the browser; ``backend/utils/synthesis_hash.py``
@@ -25,7 +25,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]  # backend/zscripts/ -> project root
+ROOT = Path(__file__).resolve().parents[2]  # backend/scripts/ -> project root
 TS = ROOT / "frontend/app/(dashboard)/synthesis/_lib/datasetHash.ts"
 sys.path.insert(0, str(ROOT / "backend"))
 

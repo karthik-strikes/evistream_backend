@@ -11,7 +11,7 @@ the call repeatedly and, on every attempt, records:
   - the length of `reasoning` (ChainOfThought writes it BEFORE the answer, so a
     runaway reasoning can consume the budget and leave the answer unwritten)
 
-Usage: python zscripts/debug_batch_repeat.py [n=5]
+Usage: python scripts/debug_batch_repeat.py [n=5]
 """
 
 from __future__ import annotations

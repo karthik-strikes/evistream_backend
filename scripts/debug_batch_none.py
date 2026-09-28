@@ -10,7 +10,7 @@ with its raw return dumped, so we can tell which of three things happened:
 
 Each needs a different fix, so this replaces guessing.
 
-Usage:  python zscripts/debug_batch_none.py [paper.md]
+Usage:  python scripts/debug_batch_none.py [paper.md]
 """
 
 from __future__ import annotations

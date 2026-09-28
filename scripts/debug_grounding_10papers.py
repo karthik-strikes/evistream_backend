@@ -10,7 +10,7 @@ appears inside its own quote. Derived values are counted separately: they are
 allowed to sit outside the quote provided the model declared the arithmetic in a
 `derived` key, which is what the derivation clause asks for.
 
-Usage: python zscripts/debug_grounding_10papers.py
+Usage: python scripts/debug_grounding_10papers.py
 """
 
 from __future__ import annotations
@@ -192,7 +192,7 @@ async def main() -> None:
 
     Path(__file__).with_name("grounding_10papers_result.json").write_text(
         json.dumps({"per_paper": per_paper, "total": dict(total)}, indent=2))
-    print("\nwritten: zscripts/grounding_10papers_result.json")
+    print("\nwritten: scripts/grounding_10papers_result.json")
 
 
 if __name__ == "__main__":

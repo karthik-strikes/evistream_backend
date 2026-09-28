@@ -11,7 +11,7 @@ Stage 1 then returned 0 rows on Kohli 2011, a paper with 28 rows on record. This
 runs the SAME Stage 1 signature twice on the SAME paper — once with the block,
 once with it stripped — so the block is the only difference.
 
-Usage: python zscripts/debug_stage1_ab.py [paper.md]
+Usage: python scripts/debug_stage1_ab.py [paper.md]
 """
 
 from __future__ import annotations

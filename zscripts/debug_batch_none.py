@@ -37,9 +37,9 @@ from utils.lm_config import get_dspy_model  # noqa: E402
 from utils.dspy_async import async_dspy_forward  # noqa: E402
 from dspy_components import runtime_builders as rb  # noqa: E402
 
-SCHEMA = Path("eval/studies/ablation/base_schemas/ibuprofen_continuous_outcomes.json")
+SCHEMA = Path("/home/ubuntu/evistream/eval/studies/ablation/base_schemas/ibuprofen_continuous_outcomes.json")
 PAPER = Path(sys.argv[1] if len(sys.argv) > 1
-             else "eval/sheets/markdown_Ibuprofen/Abdelbaser 2022a.md")
+             else "/home/ubuntu/evistream/eval/sheets/markdown_Ibuprofen/Abdelbaser 2022a.md")
 
 # The failing job's exact configuration:
 #   Two-stage extractor for ExtractAllContinuousOutcomes —

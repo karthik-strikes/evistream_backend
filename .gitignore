@@ -79,7 +79,7 @@ dspy_components/tasks/dynamic_*/
 dspy_components/tasks/task_*/
 
 # ── Eval harness lives in its own repo (karthik-strikes/evistreams_eval) ─────
-# checked out at /home/ubuntu/evistream/evistreams_eval; never re-add it here.
+# checked out as /home/ubuntu/evistream/eval (a sibling of backend/); never re-add it here.
 eval/
 
 # Third-party article full text — not redistributed (CC BY-NC-ND)

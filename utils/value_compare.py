@@ -25,8 +25,8 @@ one answer. `adjudication_service` keeps `_unwrap_for_compare` / `_canon` /
 `_align_multiselect` as re-export aliases, because
 `tests/test_services/test_adjudication_absence.py` imports them by name.
 
-**Out of scope on purpose.** The eval harness (its own repo, `evistreams_eval`, at
-`/home/ubuntu/evistream/eval`) has its own comparator and its own
+**Out of scope on purpose.** The eval harness (its own repo, `evistreams_eval`, checked
+out at `/home/ubuntu/evistream/eval`) has its own comparator and its own
 NR vocabulary — `eval/engine/core/comparator.py` and
 `eval/engine/config/nr_synonyms.py`, whose token set deliberately includes
 "none"/""/"unclear" — and it feeds measured numbers with a published baseline.

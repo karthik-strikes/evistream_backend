@@ -78,16 +78,9 @@ storage/processed/
 dspy_components/tasks/dynamic_*/
 dspy_components/tasks/task_*/
 
-# ── Eval harness: track code, exclude secrets / outputs / large data ──────────
-eval/.env
-eval/**/.env
-eval/__pycache__/
-eval/**/__pycache__/
-eval/outputs/
-eval/sheets/
-eval/*.png
-eval/**/*.png
-eval/**/outputs/
+# ── Eval harness lives in its own repo (karthik-strikes/evistreams_eval) ─────
+# checked out as /home/ubuntu/evistream/eval (a sibling of backend/); never re-add it here.
+eval/
 
 # Third-party article full text — not redistributed (CC BY-NC-ND)
 tests/fixtures/pmc13383132_full.xml

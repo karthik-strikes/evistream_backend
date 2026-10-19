@@ -1,0 +1,255 @@
+{
+  "form_name": "CD015432 \u2014 Dichotomous Outcomes",
+  "signatures": [
+    {
+      "class_name": "IbuDichotomousOutcomes",
+      "output_fields": [
+        {
+          "field_name": "dichotomous_outcomes",
+          "field_type": "array",
+          "field_description": "One row per (comparison \u00d7 outcome \u00d7 timepoint). For an outcome reported at multiple timepoints, create one row per timepoint. If ibuprofen is compared to more than one drug, create separate rows per comparison.",
+          "multiple": false,
+          "subform_fields": [
+            {
+              "field_name": "comparison",
+              "field_type": "select",
+              "field_description": "The comparator drug that arm 2 received (ibuprofen is always arm 1). 'naproxen_sodium' = naproxen sodium. Map 'acetaminophen' to 'paracetamol'.",
+              "options": [
+                "placebo",
+                "paracetamol",
+                "morphine",
+                "ketorolac",
+                "naproxen_sodium",
+                "rofecoxib",
+                "aspirin"
+              ],
+              "hints": [
+                "Identify the non-ibuprofen drug named in the study arm/group description or table column header for this comparison",
+                "Check the methods/interventions section for the exact drug names used to define each treatment arm",
+                "If the comparator is named generically (e.g. 'control' or 'active comparator'), look for the actual drug identity elsewhere in the text or tables"
+              ],
+              "rules": [
+                "Must be exactly one of the listed options",
+                "Map synonyms/brand names to the closest option (e.g. 'acetaminophen' \u2192 'paracetamol', 'Toradol' \u2192 'ketorolac')",
+                "Use this field to identify which arm2_label drug is being compared, one row per unique comparator drug",
+                "Do not use this field for ibuprofen itself, since ibuprofen is always arm 1"
+              ],
+              "examples": [
+                {
+                  "value": "placebo",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "anchor"
+            },
+            {
+              "field_name": "outcome",
+              "field_type": "select",
+              "field_description": "Dichotomous outcome reported. 'adverse_events' = any/overall adverse events; 'rescue_medication' = number of children who required rescue analgesia; 'nausea_or_vomiting' = nausea and/or vomiting; 'bleeding' = any bleeding (incl. GI or oral bleeding); 'renal_dysfunction' = renal dysfunction. Map synonyms to the closest option.",
+              "options": [
+                "adverse_events",
+                "rescue_medication",
+                "nausea_or_vomiting",
+                "bleeding",
+                "renal_dysfunction"
+              ],
+              "hints": [
+                "Look in Results/Safety/Adverse Events tables and text comparing ibuprofen to comparator drugs for named outcomes",
+                "Outcome name may be a table row label, subheading, or embedded in a sentence (e.g. 'children requiring rescue analgesia', 'incidence of vomiting')",
+                "Treat 'nausea', 'vomiting', or 'PONV' as nausea_or_vomiting; 'need for additional analgesia' or 'supplemental analgesic use' as rescue_medication; 'side effects' or 'complications' generally as adverse_events unless a more specific option applies",
+                "If a table reports a composite 'adverse events' category that separately breaks out nausea, bleeding, etc., create separate rows for each specific outcome rather than only the composite"
+              ],
+              "rules": [
+                "Value must be exactly one of the listed options",
+                "Map synonyms/paraphrases to the closest matching option; do not invent new outcome categories",
+                "Each row must correspond to a single outcome value \u2014 do not combine multiple outcomes into one row"
+              ],
+              "examples": [
+                {
+                  "value": "adverse_events",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "anchor"
+            },
+            {
+              "field_name": "timepoint",
+              "field_type": "select",
+              "field_description": "Timepoint window at which this outcome was assessed, mapped to the nearest bin. Used mainly for rescue_medication (reported by window). 'under_2h' = less than 2 hours postintervention; '2h_to_24h' = 2 hours to less than 24 hours; '24h_to_7d' = from 24 hours up to 7 days; 'overall' = whole postoperative period / no specific window (typical for adverse events, nausea/vomiting, bleeding, renal dysfunction).",
+              "options": [
+                "under_2h",
+                "2h_to_24h",
+                "24h_to_7d",
+                "overall"
+              ],
+              "hints": [
+                "Look for time windows near the outcome data, e.g. '0-2h', '2-24h', 'first 24 hours', 'postoperative day 1-7', or table column headers indicating assessment periods",
+                "For rescue_medication, check if the paper reports separate counts for different postoperative windows rather than a single overall figure",
+                "If the outcome is reported once for the whole study period with no explicit window, use 'overall' as the implicit default",
+                "When multiple windows are reported for the same comparison and outcome, create separate rows using the timepoint that matches each reported window"
+              ],
+              "rules": [
+                "Must be exactly one of the listed options",
+                "Map any explicit time window to the nearest bin: <2h \u2192 'under_2h'; 2h to <24h \u2192 '2h_to_24h'; 24h to 7 days \u2192 '24h_to_7d'",
+                "Use 'overall' when no specific time window is stated or when the outcome represents the entire postoperative/study period",
+                "Do not invent a specific timepoint if the source text does not indicate one \u2014 default to 'overall'"
+              ],
+              "examples": [
+                {
+                  "value": "overall",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "anchor"
+            },
+            {
+              "field_name": "arm1_label",
+              "field_type": "text",
+              "field_description": "Label for arm 1 \u2014 this is always the ibuprofen arm, so use 'ibuprofen'.",
+              "hints": [
+                "This is a fixed anchor value for every row since ibuprofen is always arm 1 in this review",
+                "Use the exact drug name/dose label as it appears in the study's arm description if it differs slightly (e.g. 'ibuprofen 10mg/kg'), but default to plain 'ibuprofen' if no distinguishing detail is needed",
+                "Do not confuse with arm2_label, which names the comparator drug"
+              ],
+              "rules": [
+                "Always set to 'ibuprofen' (case-insensitive match acceptable, but output lowercase 'ibuprofen')",
+                "Never leave blank or use NR \u2014 ibuprofen is always present as arm 1 by definition of this extraction task",
+                "Do not substitute the comparator drug name here"
+              ],
+              "examples": [
+                {
+                  "value": "ibuprofen",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "anchor"
+            },
+            {
+              "field_name": "arm1_events",
+              "field_type": "number",
+              "field_description": "Number of events (e.g. children with the adverse event, or who required rescue medication) in the IBUPROFEN arm (arm 1). Use '0' if explicitly zero, 'NR' if not stated.",
+              "hints": [
+                "The comparison, outcome, and timepoint for this row are already identified \u2014 find the corresponding results row or table cell for the ibuprofen arm at that specific outcome and timepoint",
+                "Look in results tables reporting adverse events, rescue medication use, nausea/vomiting, bleeding, or renal dysfunction by treatment group",
+                "Events are typically reported as a count (n) alongside a denominator (N) in a fraction or 'n/N' format, e.g. '3/45' \u2014 extract only the numerator here"
+              ],
+              "rules": [
+                "Extract only the numeric count of events, not the percentage or the denominator",
+                "Use '0' if the text or table explicitly states zero events occurred",
+                "Use 'NR' if the number of events for the ibuprofen arm at this outcome/timepoint is not stated"
+              ],
+              "examples": [
+                {
+                  "value": "11",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "value"
+            },
+            {
+              "field_name": "arm1_n",
+              "field_type": "number",
+              "field_description": "Denominator (number of children assessed) for the ibuprofen arm (arm 1) at this outcome. Use 'NR' if not stated.",
+              "hints": [
+                "The comparison, outcome, and timepoint for this row are already identified \u2014 find the ibuprofen arm's sample size for that specific outcome/timepoint",
+                "Look in results tables near the arm1_events count, often reported as 'n/N' (e.g. '3/45') where N is this denominator",
+                "Note the denominator for a specific outcome may differ from the overall arm sample size if there was attrition or missing data for that assessment"
+              ],
+              "rules": [
+                "Extract as a number matching the ibuprofen group's assessed denominator for this specific outcome and timepoint",
+                "If only the overall arm size is reported and no outcome-specific denominator is given, use the overall ibuprofen arm size",
+                "Use \"NR\" if the denominator is not stated anywhere in the source"
+              ],
+              "examples": [
+                {
+                  "value": "40",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "value"
+            },
+            {
+              "field_name": "arm2_label",
+              "field_type": "text",
+              "field_description": "Label for arm 2 \u2014 the comparator drug named in 'comparison' (e.g. 'placebo', 'paracetamol', 'ketorolac').",
+              "hints": [
+                "Copy the drug/treatment name as it appears in the paper's group labels, table headers, or methods description of study arms",
+                "Should correspond directly to the drug selected in the 'comparison' field for this row \u2014 use the same drug identity, but preserve the paper's own wording/label rather than the normalized comparison code",
+                "If the arm is a control group without an active drug, use the label as given in the paper (e.g. 'placebo' or 'control')",
+                "Look near the outcome data table or in the intervention/methods section where treatment groups are first defined"
+              ],
+              "rules": [
+                "Must name the comparator drug given in 'comparison' for this row, using the paper's own label wording (may differ from the normalized comparison value, e.g. 'acetaminophen' vs 'paracetamol')",
+                "Do not use 'ibuprofen' \u2014 that is reserved for arm1_label",
+                "Provide a concise label (drug name, optionally with dose/route if that is how the paper distinguishes arms), not a full sentence"
+              ],
+              "examples": [
+                {
+                  "value": "placebo",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "anchor"
+            },
+            {
+              "field_name": "arm2_events",
+              "field_type": "number",
+              "field_description": "Number of events in the COMPARATOR arm (arm 2). Use '0' if explicitly zero, 'NR' if not stated.",
+              "hints": [
+                "The comparison/outcome/timepoint/arm2 label for this row are already determined \u2014 find the matching numerator (event count) reported for the comparator group at that same outcome and timepoint",
+                "Look in results tables or text near the corresponding arm1_events and arm2_n values, often presented as 'n/N' or 'n (%)' per arm",
+                "Check for outcome-specific subsections (e.g., adverse events table, rescue medication table) since events for different comparators may be reported in separate rows or columns"
+              ],
+              "rules": [
+                "Report as a whole number count of children/events, not a percentage",
+                "If the source reports only a percentage, do not calculate the count unless the denominator (arm2_n) is explicitly given and the calculation is unambiguous",
+                "Use '0' if the text explicitly states zero events occurred in the comparator arm",
+                "Use 'NR' if the event count for this specific comparator, outcome, and timepoint combination is not stated"
+              ],
+              "examples": [
+                {
+                  "value": "10",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "value"
+            },
+            {
+              "field_name": "arm2_n",
+              "field_type": "number",
+              "field_description": "Denominator (number of children assessed) for the comparator arm (arm 2) at this outcome. Use 'NR' if not stated.",
+              "hints": [
+                "The row's comparison drug, outcome, and timepoint are already identified; locate the total N assessed for that comparator arm for this specific outcome, which may differ from the overall group size if there was attrition or missing data",
+                "Check results tables near the arm1_events/arm2_events counts, or group sample size footnotes, for the denominator specific to this outcome"
+              ],
+              "rules": [
+                "Report as a whole number",
+                "Use \"NR\" if the denominator for the comparator arm is not explicitly stated for this outcome"
+              ],
+              "examples": [
+                {
+                  "value": "41",
+                  "source_text": ""
+                }
+              ],
+              "extraction_role": "value"
+            }
+          ],
+          "hints": [
+            "Look in the Results section, particularly tables reporting adverse events, complications, or rescue medication use, broken down by treatment arm",
+            "Check for multiple timepoints (e.g., recovery room, first 24h, up to 7 days) which each require a separate row for the same outcome and comparison",
+            "If the study has more than two arms (e.g., ibuprofen, paracetamol, and placebo), create separate ibuprofen-vs-X rows for each comparator"
+          ],
+          "rules": [
+            "Create one row per unique comparison \u00d7 outcome \u00d7 timepoint combination",
+            "If an outcome is reported at multiple timepoints, create one row per timepoint rather than merging them",
+            "If ibuprofen is compared to more than one drug, create separate rows per comparison rather than combining comparators",
+            "Use {\"value\": \"NR\", \"source_text\": \"NR\"} for the whole field if no dichotomous outcomes are reported anywhere in the document"
+          ],
+          "name": "dichotomous_outcomes",
+          "description": "One row per (comparison \u00d7 outcome \u00d7 timepoint). For an outcome reported at multiple timepoints, create one row per timepoint. If ibuprofen is compared to more than one drug, create separate rows per comparison."
+        }
+      ]
+    }
+  ]
+}

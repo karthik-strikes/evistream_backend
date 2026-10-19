@@ -1,0 +1,119 @@
+Paper,arm_label,arm_category,drug_name,dose,route,frequency,n_in_arm,comparison_summary
+Derkay 1998,acetaminophen,paracetamol,paracetamol,10 mg/kg,oral,single preoperative dose (30-60 min before induction),48,acetaminophen vs acetaminophen with codeine vs ibuprofen vs placebo
+Derkay 1998,acetaminophen with codeine,combination,paracetamol + codeine,10 mg/kg + 1 mg/kg,oral,single preoperative dose (30-60 min before induction),44,acetaminophen vs acetaminophen with codeine vs ibuprofen vs placebo
+Derkay 1998,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,oral,single preoperative dose (30-60 min before induction),46,acetaminophen vs acetaminophen with codeine vs ibuprofen vs placebo
+Derkay 1998,placebo,placebo,placebo,0.5 mL/kg,oral,single preoperative dose (30-60 min before induction),44,acetaminophen vs acetaminophen with codeine vs ibuprofen vs placebo
+Gazal 2006,usual-dose paracetamol,paracetamol,paracetamol,15 mg/kg,oral,single preoperative dose (at least 1 h before GA),55,paracetamol vs ibuprofen vs paracetamol/ibuprofen combination vs high-dose paracetamol
+Gazal 2006,ibuprofen,ibuprofen,ibuprofen,5 mg/kg,oral,single preoperative dose (at least 1 h before GA),47,paracetamol vs ibuprofen vs paracetamol/ibuprofen combination vs high-dose paracetamol
+Gazal 2006,paracetamol/ibuprofen,combination,paracetamol + ibuprofen,15/5 mg/kg,oral,single preoperative dose (at least 1 h before GA),51,paracetamol vs ibuprofen vs paracetamol/ibuprofen combination vs high-dose paracetamol
+Gazal 2006,high-dose paracetamol,paracetamol,paracetamol,20 mg/kg,oral,single preoperative dose (at least 1 h before GA),48,paracetamol vs ibuprofen vs paracetamol/ibuprofen combination vs high-dose paracetamol
+Bernhardt 2001,ibuprofen/ibuprofen,ibuprofen,ibuprofen,400 mg,oral,"preoperative dose 1 hour before separator placement, then repeated 6 hours after initial dose",13,ibuprofen/ibuprofen vs ibuprofen/placebo vs placebo/ibuprofen
+Bernhardt 2001,ibuprofen/placebo,ibuprofen,ibuprofen,400 mg,oral,"single preoperative dose 1 hour before separator placement, followed by placebo 6 hours later",14,ibuprofen/ibuprofen vs ibuprofen/placebo vs placebo/ibuprofen
+Bernhardt 2001,placebo/ibuprofen,placebo,placebo + ibuprofen,lactose capsule (placebo) + 400 mg ibuprofen,oral,"placebo taken 1 hour preoperatively, then ibuprofen 6 hours after initial placebo dose",14,ibuprofen/ibuprofen vs ibuprofen/placebo vs placebo/ibuprofen
+Bogaert 2005,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,oral,single preoperative dose (1 h before surgery),29,ibuprofen vs placebo
+Bogaert 2005,placebo,placebo,placebo,NR,oral,single preoperative dose (1 h before surgery),26,ibuprofen vs placebo
+Pickering 2002,placebo,placebo,paracetamol + placebo,paracetamol 20 mg/kg + placebo,oral,single preoperative dose (1 h before surgery),18,ibuprofen vs rofecoxib vs placebo
+Pickering 2002,rofecoxib,rofecoxib,paracetamol + rofecoxib,paracetamol 20 mg/kg + rofecoxib 0.625 mg/kg,oral,single preoperative dose (1 h before surgery),40,ibuprofen vs rofecoxib vs placebo
+Pickering 2002,ibuprofen,ibuprofen,paracetamol + ibuprofen,paracetamol 20 mg/kg + ibuprofen 5 mg/kg,oral,single preoperative dose (1 h before surgery),40,ibuprofen vs rofecoxib vs placebo
+Raslan 2021,acetaminophen,paracetamol,paracetamol,320 mg/10 ml,oral,"single preoperative dose, 30 min before local anesthetic",22,ibuprofen vs acetaminophen vs placebo
+Raslan 2021,placebo,placebo,placebo,NR,oral,"single preoperative dose, 30 min before local anesthetic",22,ibuprofen vs acetaminophen vs placebo
+Raslan 2021,ibuprofen,ibuprofen,ibuprofen,200 mg/10 ml,oral,"single preoperative dose, 30 min before local anesthetic",22,ibuprofen vs acetaminophen vs placebo
+Santos 2020,placebo,placebo,placebo,NR,oral,single dose 1 h before anaesthesia,16,ibuprofen vs paracetamol vs placebo
+Santos 2020,paracetamol,paracetamol,paracetamol,200 mg/mL (weight-dosed volume),oral,single dose 1 h before anaesthesia,16,ibuprofen vs paracetamol vs placebo
+Santos 2020,ibuprofen,ibuprofen,ibuprofen,100 mg/mL (weight-dosed volume),oral,single dose 1 h before anaesthesia,16,ibuprofen vs paracetamol vs placebo
+Bird 2007,acetaminophen,paracetamol,paracetamol,650 mg,oral,"single preoperative dose, 1 hour before separator placement",NR,acetaminophen vs ibuprofen
+Bird 2007,ibuprofen,ibuprofen,ibuprofen,400 mg,oral,"single preoperative dose, 1 hour before separator placement",NR,acetaminophen vs ibuprofen
+Datoo 2017,morphine,morphine,morphine,"0.5mg/kg, maximum 200mg",oral,every 6 hours as needed for pain for 48 hours,65,morphine vs ibuprofen
+Datoo 2017,ibuprofen,ibuprofen,ibuprofen,"10mg/kg, maximum 600mg",oral,every 6 hours as needed for pain for 48 hours,67,morphine vs ibuprofen
+Kharouba 2019,paracetamol,paracetamol,paracetamol,15 mg/kg,oral,"single preoperative dose, 30 minutes before treatment",43,paracetamol vs ibuprofen vs placebo
+Kharouba 2019,ibuprofen,ibuprofen,ibuprofen,15 mg/kg,oral,"single preoperative dose, 30 minutes before treatment",33,paracetamol vs ibuprofen vs placebo
+Kharouba 2019,placebo,placebo,placebo,NR,oral,"single preoperative dose, 30 minutes before treatment",29,paracetamol vs ibuprofen vs placebo
+Hosseinzadeh 2016,acetaminophen,paracetamol,paracetamol,650 mg,oral,one hour before separator placement and every 6 hours until 24 hours (5 doses),32,acetaminophen vs liquefied ibuprofen vs placebo
+Hosseinzadeh 2016,liquefied ibuprofen,ibuprofen,ibuprofen,400 mg,oral,one hour before separator placement and every 6 hours until 24 hours (5 doses),29,acetaminophen vs liquefied ibuprofen vs placebo
+Hosseinzadeh 2016,placebo,placebo,placebo,NR,oral,one hour before separator placement and every 6 hours until 24 hours (5 doses),28,acetaminophen vs liquefied ibuprofen vs placebo
+Kokki 1994,ibuprofen,ibuprofen,ibuprofen,10-13 mg/kg (40 mg/kg/day total),rectal,"every 6 h, total 40 mg/kg/day divided into four equal doses",40,ibuprofen vs placebo
+Kokki 1994,placebo,placebo,placebo,NR,rectal,every 6 h,41,ibuprofen vs placebo
+Merry 2013,combination,combination,paracetamol + ibuprofen,48 mg/kg/day + 24 mg/kg/day,oral,preoperative dose then every 6 h for 48 hr,52,combination vs acetaminophen vs ibuprofen
+Merry 2013,acetaminophen,paracetamol,paracetamol,48 mg/kg/day,oral,preoperative dose then every 6 h for 48 hr,49,combination vs acetaminophen vs ibuprofen
+Merry 2013,ibuprofen,ibuprofen,ibuprofen,24 mg/kg/day,oral,preoperative dose then every 6 h for 48 hr,51,combination vs acetaminophen vs ibuprofen
+Moss 2014,IV-ibuprofen,ibuprofen,ibuprofen,10 mg/kg (not to exceed 600 mg),IV,"single preoperative dose at induction of anesthesia, infused over 10 min",82,ibuprofen vs placebo
+Moss 2014,placebo,placebo,placebo,NR,IV,"single preoperative dose at induction of anesthesia, infused over 10 min",79,ibuprofen vs placebo
+Polat 2005a,placebo,placebo,placebo,1 tablet,oral,single preoperative dose,20,placebo vs ibuprofen vs naproxen sodium
+Polat 2005a,ibuprofen,ibuprofen,ibuprofen,400 mg,oral,single preoperative dose,20,placebo vs ibuprofen vs naproxen sodium
+Polat 2005a,naproxen sodium,naproxen_sodium,naproxen sodium,550 mg,oral,single preoperative dose,20,placebo vs ibuprofen vs naproxen sodium
+Maunuksela 1992,ibuprofen,ibuprofen,ibuprofen,40 mg/kg/day in divided doses (3 or 4 doses),rectal,"first dose after induction of anaesthesia, then every 6 or 8 hours for up to three days",64,ibuprofen vs placebo
+Maunuksela 1992,placebo,placebo,placebo,NR,rectal,"first dose after induction of anaesthesia, then every 6 or 8 hours for up to three days",64,ibuprofen vs placebo
+Kohli 2011,placebo,placebo,placebo,1 Tablet,oral,"single preoperative dose, 1 hour before separator placement",30,placebo vs ibuprofen vs piroxicam
+Kohli 2011,ibuprofen,ibuprofen,ibuprofen,400 mg,oral,"single preoperative dose, 1 hour before separator placement",30,placebo vs ibuprofen vs piroxicam
+Kohli 2011,piroxicam,other,piroxicam,20 mg,oral,"single preoperative dose, 1 hour before separator placement",30,placebo vs ibuprofen vs piroxicam
+Mahgoobifard 2014,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,oral,"single preoperative dose, 30 minutes before operation",21,ibuprofen vs acetaminophen vs placebo
+Mahgoobifard 2014,acetaminophen,paracetamol,paracetamol,15 mg/kg,oral,"single preoperative dose, 30 minutes before operation",18,ibuprofen vs acetaminophen vs placebo
+Mahgoobifard 2014,placebo,placebo,placebo,NR,oral,"single preoperative dose, 30 minutes before operation",21,ibuprofen vs acetaminophen vs placebo
+Mirashrafi 2021,paracetamol,paracetamol,paracetamol,15 mg/kg,oral,preoperative then every 6 h for 3 days,25,paracetamol vs ibuprofen
+Mirashrafi 2021,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,oral,preoperative then every 6 h for 3 days,25,paracetamol vs ibuprofen
+Polat 2005b,placebo,placebo,placebo,1 tablet,oral,preoperative (1 h before) then postoperative (6 h after bonding),20,placebo vs ibuprofen vs flurbiprofen vs acetaminophen vs naproxen sodium vs aspirin
+Polat 2005b,ibuprofen,ibuprofen,ibuprofen,600 mg,oral,preoperative (1 h before) then postoperative (6 h after bonding),20,placebo vs ibuprofen vs flurbiprofen vs acetaminophen vs naproxen sodium vs aspirin
+Polat 2005b,flurbiprofen,other,flurbiprofen,100 mg,oral,preoperative (1 h before) then postoperative (4 h after bonding),20,placebo vs ibuprofen vs flurbiprofen vs acetaminophen vs naproxen sodium vs aspirin
+Polat 2005b,acetaminophen,paracetamol,paracetamol,500 mg,oral,preoperative (1 h before) then postoperative (6 h after bonding),20,placebo vs ibuprofen vs flurbiprofen vs acetaminophen vs naproxen sodium vs aspirin
+Polat 2005b,naproxen sodium,naproxen_sodium,naproxen sodium,550 mg,oral,preoperative (1 h before) then postoperative (6 h after bonding),20,placebo vs ibuprofen vs flurbiprofen vs acetaminophen vs naproxen sodium vs aspirin
+Polat 2005b,aspirin,aspirin,aspirin,300 mg,oral,preoperative (1 h before) then postoperative (6 h after bonding),20,placebo vs ibuprofen vs flurbiprofen vs acetaminophen vs naproxen sodium vs aspirin
+Rove 2022,NSAID,ibuprofen,ibuprofen,10 mg/kg,oral,"single preoperative dose, at least 15 min prior to stent removal",24,ibuprofen vs placebo
+Rove 2022,placebo,placebo,placebo,similar volume liquid placebo,oral,"single preoperative dose, at least 15 min prior to stent removal",25,ibuprofen vs placebo
+Steen Law 2000,preop ibuprofen,ibuprofen,ibuprofen + placebo,400 mg (preop) / placebo (postop),oral,"single preoperative dose 1 hour before separator placement, single postoperative placebo dose immediately after appointment",22,preoperative ibuprofen vs postoperative ibuprofen vs placebo
+Steen Law 2000,postop ibuprofen,ibuprofen,placebo + ibuprofen,placebo (preop) / 400 mg (postop),oral,"single preoperative placebo dose 1 hour before separator placement, single postoperative ibuprofen dose immediately after appointment",19,preoperative ibuprofen vs postoperative ibuprofen vs placebo
+Steen Law 2000,placebo,placebo,placebo,placebo (preop) / placebo (postop),oral,"single preoperative placebo dose 1 hour before separator placement, single postoperative placebo dose immediately after appointment",22,preoperative ibuprofen vs postoperative ibuprofen vs placebo
+Vicioni-Marques 2022,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,oral,single preemptive dose 30 min before treatment,NR,ibuprofen vs placebo
+Vicioni-Marques 2022,placebo,placebo,placebo,NR,oral,single preemptive dose 30 min before treatment,NR,ibuprofen vs placebo
+Viitanen 2003,acetaminophen,paracetamol,paracetamol,40 mg/kg,rectal,single dose immediately after tracheal intubation,40,acetaminophen vs ibuprofen vs combination vs placebo
+Viitanen 2003,ibuprofen,ibuprofen,ibuprofen,15 mg/kg,rectal,single dose immediately after tracheal intubation,41,acetaminophen vs ibuprofen vs combination vs placebo
+Viitanen 2003,combination,combination,ibuprofen + paracetamol,15 mg/kg + 40 mg/kg,rectal,single dose immediately after tracheal intubation,40,acetaminophen vs ibuprofen vs combination vs placebo
+Viitanen 2003,placebo,placebo,placebo,NR,rectal,single dose immediately after tracheal intubation,38,acetaminophen vs ibuprofen vs combination vs placebo
+Abdelbaser 2022b,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,IV,every 6 h for 24 h,34,ibuprofen vs placebo
+Abdelbaser 2022b,control,placebo,placebo,NR,IV,every 6 h for 24 h,34,ibuprofen vs placebo
+Abou 2019,ibuprofen,ibuprofen,ibuprofen,"100 mg/5 mL syrup, 10 mL age-dosed volume",oral,single preoperative dose 1 h before treatment,20,ibuprofen vs acetaminophen vs placebo
+Abou 2019,acetaminophen,paracetamol,paracetamol,"200 mg/5 mL syrup, 10 mL age-dosed volume",oral,single preoperative dose 1 h before treatment,20,ibuprofen vs acetaminophen vs placebo
+Abou 2019,placebo,placebo,placebo,10 mL age-dosed volume,oral,single preoperative dose 1 h before treatment,20,ibuprofen vs acetaminophen vs placebo
+Gao 2022,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,IV,"single dose, infused over 15 min after induction",45,ibuprofen vs placebo
+Gao 2022,placebo,placebo,placebo,NR,IV,"single dose, slowly administered after induction",44,ibuprofen vs placebo
+Kashefi 2009,ibuprofen,ibuprofen,ibuprofen,20 mg/kg,oral,"single preoperative dose, 2 hours before surgery",25,ibuprofen vs acetaminophen vs placebo
+Kashefi 2009,acetaminophen,paracetamol,paracetamol,35 mg/kg,oral,"single preoperative dose, 2 hours before surgery",25,ibuprofen vs acetaminophen vs placebo
+Kashefi 2009,placebo,placebo,placebo,NR,oral,"single preoperative dose, 2 hours before surgery",25,ibuprofen vs acetaminophen vs placebo
+Primosch 1995,ibuprofen,ibuprofen,ibuprofen,"150-300 mg (age-dosed: 150 mg for 2-3 yrs, 200 mg for 4-5 yrs, 250 mg for 6-8 yrs, 300 mg for 9-10 yrs)",oral,"single preoperative dose, 15 min before local anesthesia",20,ibuprofen vs acetaminophen vs placebo
+Primosch 1995,acetaminophen,paracetamol,paracetamol,"240-480 mg (age-dosed: 240 mg for 2-3 yrs, 320 mg for 4-5 yrs, 400 mg for 6-8 yrs, 480 mg for 9-10 yrs)",oral,"single preoperative dose, 15 min before local anesthesia",20,ibuprofen vs acetaminophen vs placebo
+Primosch 1995,placebo,placebo,placebo,"NR (volume-matched placebo per age group, see Table 1)",oral,"single preoperative dose, 15 min before local anesthesia",20,ibuprofen vs acetaminophen vs placebo
+Salmassian 2009,acetaminophen,paracetamol,paracetamol,600 mg,oral,"2 tablets taken at 3, 7, 19, 24, 31, 48 h and 3, 4, 7 days after archwire placement",21,acetaminophen vs ibuprofen vs placebo
+Salmassian 2009,ibuprofen,ibuprofen,ibuprofen,400 mg,oral,"2 tablets taken at 3, 7, 19, 24, 31, 48 h and 3, 4, 7 days after archwire placement",19,acetaminophen vs ibuprofen vs placebo
+Salmassian 2009,placebo,placebo,placebo,2 tablets,oral,"2 tablets taken at 3, 7, 19, 24, 31, 48 h and 3, 4, 7 days after archwire placement",20,acetaminophen vs ibuprofen vs placebo
+Troendle 2020,ibuprofen,ibuprofen,ibuprofen,10 mg/kg (max 800 mg),IV,single dose at time of scope insertion,29,ibuprofen vs placebo
+Troendle 2020,placebo,placebo,placebo,equivalent volume of IV normal saline,IV,single dose at time of scope insertion,29,ibuprofen vs placebo
+Tuncer 2014,ibuprofen,ibuprofen,ibuprofen,400 mg,oral,"one tablet 1 hour before appointment, one tablet 6 hours after bonding",17,ibuprofen vs acetaminophen vs placebo
+Tuncer 2014,acetaminophen,paracetamol,paracetamol,500 mg,oral,"one tablet 1 hour before appointment, one tablet 6 hours after bonding",15,ibuprofen vs acetaminophen vs placebo
+Tuncer 2014,placebo,placebo,placebo,NR,oral,"one tablet 1 hour before appointment, one tablet 6 hours after bonding",16,ibuprofen vs acetaminophen vs placebo
+Abdelbaser 2022a,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,IV,"every 6 h for 24 h, first dose started 15 min before end of surgery",30,ibuprofen vs ketorolac
+Abdelbaser 2022a,ketorolac,ketorolac,ketorolac,0.5 mg/kg,IV,"every 6 h for 24 h, first dose started 15 min before end of surgery",29,ibuprofen vs ketorolac
+Alshami 2021,ibuprofen,ibuprofen,ibuprofen,7.5-15 ml/kg,oral,single preoperative dose,28,ibuprofen vs placebo
+Alshami 2021,placebo,placebo,placebo,NR,oral,single preoperative dose,28,ibuprofen vs placebo
+Bahrololoomi 2019,ibuprofen,ibuprofen,ibuprofen,10 mg/kg/dose,oral,"single preoperative dose, 1 h before treatment",20,ibuprofen vs acetaminophen vs placebo
+Bahrololoomi 2019,acetaminophen,paracetamol,paracetamol,15 mg/kg/dose,oral,"single preoperative dose, 1 h before treatment",19,ibuprofen vs acetaminophen vs placebo
+Bahrololoomi 2019,placebo,placebo,placebo,NR,oral,"single preoperative dose, 1 h before treatment",21,ibuprofen vs acetaminophen vs placebo
+Bennie 1997,placebo,placebo,placebo,NR,oral,"single preoperative dose, 30 min before induction of anaesthesia",14,ibuprofen vs acetaminophen vs placebo
+Bennie 1997,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,oral,"single preoperative dose, 30 min before induction of anaesthesia",13,ibuprofen vs acetaminophen vs placebo
+Bennie 1997,acetaminophen,paracetamol,paracetamol,15 mg/kg,oral,"single preoperative dose, 30 min before induction of anaesthesia",16,ibuprofen vs acetaminophen vs placebo
+Bogaert 2004,ibuprofen,ibuprofen,ibuprofen,10 mg/kg,oral,single preoperative dose (1 h before surgery),28,ibuprofen vs placebo
+Bogaert 2004,placebo,placebo,placebo,NR,oral,single preoperative dose (1 h before surgery),26,ibuprofen vs placebo
+Diercks 2019,ibuprofen,ibuprofen,ibuprofen,"10 mg/kg (maximum dose, 600 mg)",oral,every 6 h for first 9 postoperative days,372,ibuprofen vs acetaminophen
+Diercks 2019,acetaminophen,paracetamol,paracetamol,"15 mg/kg (maximum dose, 650 mg)",oral,every 6 h for first 9 postoperative days,369,ibuprofen vs acetaminophen
+Peng 2021,IV-ibuprofen,ibuprofen,ibuprofen,10 mg/kg,IV,"single dose at induction, infused over 10 min before incision",20,ibuprofen vs placebo
+Peng 2021,Placebo,placebo,placebo,NR,IV,"single dose at induction, infused over 10 min before incision",20,ibuprofen vs placebo
+Bradley 2007,paracetamol,paracetamol,paracetamol,1 g (two 500-mg caplets),oral,1 hour before separator placement and again 6 hours after initial dose,95,ibuprofen vs paracetamol
+Bradley 2007,ibuprofen,ibuprofen,ibuprofen,400 mg (two 200-mg caplets),oral,1 hour before separator placement and again 6 hours after initial dose,92,ibuprofen vs paracetamol
+Cui 2022,IV ibuprofen,ibuprofen,ibuprofen,10 mg/kg (maximum 400 mg),IV,single preoperative dose,50,IV ibuprofen vs placebo
+Cui 2022,placebo,placebo,placebo,volume-matched normal saline,IV,single preoperative dose,45,IV ibuprofen vs placebo
+Farzanegan 2012,placebo,placebo,placebo,NR,oral,immediately after archwire placement then every 8 h for a week if pain persisted,10,ibuprofen vs placebo vs chewing gum vs soft viscoelastic wafer vs hard viscoelastic wafer
+Farzanegan 2012,ibuprofen,ibuprofen,ibuprofen,400 mg,oral,immediately after archwire placement then every 8 h for a week if pain persisted,10,ibuprofen vs placebo vs chewing gum vs soft viscoelastic wafer vs hard viscoelastic wafer
+Farzanegan 2012,chewing gum,other,chewing gum,NR,NR,5 minutes immediately after archwire placement then every 8 h for 1 week if pain persisted,10,ibuprofen vs placebo vs chewing gum vs soft viscoelastic wafer vs hard viscoelastic wafer
+Farzanegan 2012,soft viscoelastic wafer,other,soft viscoelastic bite wafer,NR,NR,chewed/bit for 5 minutes at 8-hour intervals for 1 week if pain persisted,10,ibuprofen vs placebo vs chewing gum vs soft viscoelastic wafer vs hard viscoelastic wafer
+Farzanegan 2012,hard viscoelastic wafer,other,hard viscoelastic bite wafer,NR,NR,chewed/bit for 5 minutes at 8-hour intervals for 1 week if pain persisted,10,ibuprofen vs placebo vs chewing gum vs soft viscoelastic wafer vs hard viscoelastic wafer
+Ngan 1994,ibuprofen,ibuprofen,ibuprofen,400 mg,oral,single dose immediately after insertion of separators and again after insertion of arch wire,28,ibuprofen vs aspirin vs placebo
+Ngan 1994,aspirin,aspirin,aspirin,650 mg,oral,single dose immediately after insertion of separators and again after insertion of arch wire,28,ibuprofen vs aspirin vs placebo
+Ngan 1994,placebo,placebo,placebo,two capsules of beta-lactose,oral,single dose immediately after insertion of separators and again after insertion of arch wire,28,ibuprofen vs aspirin vs placebo

@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "task_name": "dynamic_7d186a2f_InterventionCharacteristics",
+  "schema_name": "dynamic_7d186a2f_InterventionCharacteristics",
+  "_pulled_from": "evistream-dev (wjgwfdmilhhxikqkytdg) · project Periodontitis db2dd1f4-c06a-4511-ae1f-165419004eac · form Intervention Characteristics 7d186a2f-cbaa-4946-ae10-eb6e92c8b391 · status active",
+  "signatures": [
+    {
+      "class_name": "ExtractAllStudyArmInterventions",
+      "docstring": "Extract all study arms and their interventions from a clinical research paper, including control and usual-care arms.\n\nForm Questions:\n- interventions: \"List every study arm (including control/usual-care arms), with its label, comparison summary, intervention description, participant count, follow-up duration, and Cochrane subgroup category.\"\n\nThis signature extracts repeating data — one row per study arm. Every arm described in the paper must be captured, including placebo, usual-care, and control arms.",
+      "input_fields": [
+        {
+          "name": "markdown_content",
+          "type": "str",
+          "desc": "Full markdown content of the clinical research paper from which study arm and intervention data will be extracted."
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "interventions",
+          "type": "Dict[str, Any]",
+          "description": "One row per study arm (including control and usual-care arms), capturing each arm's label, comparison context, treatment description, participant count, follow-up duration, and Cochrane subgroup category. Each row is independent.",
+          "hints": [
+            "Look in the Methods section under headings such as 'Interventions', 'Study Arms', 'Treatment Groups', or 'Participants'",
+            "The abstract or results tables may also list arm labels and participant counts",
+            "Control and usual-care arms must be included as separate rows"
+          ],
+          "rules": [
+            "Extract EVERY arm described in the paper, including control, placebo, and usual-care arms",
+            "Each arm must appear as a separate row in the output array",
+            "Use {\"value\": \"NR\", \"source_text\": \"NR\"} if no study arms are reported at all",
+            "Each cell within each row must itself be a {\"value\": ..., \"source_text\": ...} dict"
+          ],
+          "anchor_columns": [
+            "arm_label",
+            "cochrane_subgroup_category",
+            "intervention_description",
+            "n_in_arm"
+          ],
+          "subform_fields": [
+            {
+              "field_name": "arm_label",
+              "field_type": "text",
+              "extraction_role": "anchor",
+              "field_description": "Arm/group label as the paper names it, unique within the study (e.g. 'Gp A (n=12)', 'Group 1', 'SRP group', 'control'). Copy the paper's own wording.",
+              "hints": [
+                "Look in the Methods section under 'Study arms', 'Randomisation', 'Treatment groups', or 'Participants' for how each arm is formally named",
+                "Check tables (e.g. baseline characteristics, CONSORT flow diagram) where arms are listed as column headers or row labels",
+                "If the paper uses abbreviations (e.g. 'Gp A', 'T1', 'C') copy them exactly as written, including any parenthetical counts",
+                "For control or usual-care arms, the label may be implicit (e.g. 'control group', 'placebo arm') — copy the closest explicit label used in the text",
+                "Each arm must have a distinct label; if the paper uses the same term for two arms, append a disambiguating detail from the paper (e.g. dose level)"
+              ],
+              "rules": [
+                "Copy the label verbatim from the paper, preserving capitalisation, abbreviations, and parenthetical notes exactly as written",
+                "Each row must have a unique arm_label within the extraction; do not merge two arms under one label",
+                "Do not paraphrase, translate, or normalise the label — use the paper's own wording",
+                "If the paper assigns no explicit label to an arm (e.g. only describes it narratively), construct the shortest unambiguous label from the paper's own terms and note it is inferred"
+              ],
+              "examples": [
+                { "value": "Gp A (n=12)", "source_text": "" }
+              ]
+            },
+            {
+              "field_name": "comparison_summary",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "One-line summary of the comparison the paper makes, from the paper's own description (e.g. 'SRP vs supragingival scaling', 'SRP+doxycycline vs usual care').",
+              "hints": [
+                "Look in the abstract, introduction, or methods section where the study design or primary comparison is stated",
+                "Often found in sentences like 'patients were randomised to X or Y' or in the trial registration description",
+                "The comparison summary is the same for all arms within a single study — derive it from the overall study design, not arm-specific text",
+                "Use 'vs' to separate the two (or more) arms being compared, mirroring the paper's own terminology"
+              ],
+              "rules": [
+                "Copy the paper's own wording as closely as possible in a single concise line",
+                "Use 'vs' (not 'versus' or '/') to separate arms unless the paper uses different notation",
+                "Do not duplicate the full intervention_description — this is a high-level label only",
+                "This field describes the overall study comparison and will be the same value repeated across all arms of the same study",
+                "Use \"NR\" if the paper does not explicitly state a comparison and one cannot be reasonably inferred"
+              ],
+              "examples": [
+                { "value": "SRP vs supragingival scaling", "source_text": "" }
+              ]
+            },
+            {
+              "field_name": "intervention_description",
+              "field_type": "text",
+              "extraction_role": "anchor",
+              "field_description": "Verbatim description of this arm's treatment from the paper (procedure, anaesthesia, instruments, frequency, adjuncts).",
+              "hints": [
+                "Look in the Methods, Interventions, or Treatment Protocol sections for the detailed description of each arm's treatment",
+                "Copy the paper's own wording as closely as possible, including procedural details such as instruments used, anaesthesia type, number of sessions, and any adjunctive agents",
+                "If the paper uses a table to describe interventions, extract the relevant cell text for this arm",
+                "Check figure legends and supplementary materials if the main text is sparse on procedural detail",
+                "Distinguish this arm's description from those of other arms — each row should capture only the treatment specific to that arm"
+              ],
+              "rules": [
+                "Copy the paper's own wording verbatim or near-verbatim; do not paraphrase or summarise beyond light normalisation of whitespace",
+                "Include all procedural details mentioned: instruments, anaesthesia, number/frequency of sessions, adjunctive drugs or rinses, and any other treatment components",
+                "Do not conflate details from different arms — each row must describe only its own arm's treatment",
+                "Use \"NR\" if the paper provides no description of the treatment for this arm beyond its label"
+              ],
+              "examples": [
+                { "value": "supragingival scaling with ultrasonic device, single 60 min appointment", "source_text": "" }
+              ]
+            },
+            {
+              "field_name": "n_in_arm",
+              "field_type": "number",
+              "extraction_role": "anchor",
+              "field_description": "Number of participants randomised to this arm. Use 'NR' if not stated.",
+              "hints": [
+                "Look in the CONSORT flow diagram, randomisation section, or baseline characteristics table for per-arm allocation counts",
+                "The value is often embedded in the arm label itself (e.g., 'Group A (n=24)') or in a participants table",
+                "Check the methods section under 'randomisation' or 'allocation' for the number assigned to each group",
+                "If the paper reports only a total N and equal allocation, calculate the per-arm count only if explicitly stated; otherwise use NR"
+              ],
+              "rules": [
+                "Output a whole number (integer) representing the count of participants randomised to this arm",
+                "Do not use the number of completers or analysed participants — randomised count only",
+                "Use \"NR\" if the per-arm randomised count is not explicitly stated",
+                "Do not infer or calculate from total N unless the paper explicitly states equal allocation and the per-arm figure"
+              ],
+              "examples": [
+                { "value": "12", "source_text": "" }
+              ]
+            },
+            {
+              "field_name": "duration_of_followup",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Total follow-up duration for this arm (e.g. '6 mths', '3 months'). Use 'NR' if not stated.",
+              "hints": [
+                "Look in the Methods section under 'Follow-up', 'Study duration', or 'Assessment schedule' for the total observation period",
+                "Check the Results section or summary tables for the final time-point reported for this arm",
+                "Follow-up duration may be stated once for all arms; if so, apply the same value to each arm row",
+                "Distinguish follow-up duration from treatment duration — capture the total post-baseline observation period, not just the active treatment window"
+              ],
+              "rules": [
+                "Record the total follow-up period as stated in the paper, preserving the paper's own units and abbreviations (e.g. '6 months', '6 mths', '1 year', '12 wks')",
+                "Do not convert units — if the paper says '6 mths', output '6 mths', not '0.5 years'",
+                "If follow-up duration is not reported for this arm, output 'NR'",
+                "Do not conflate treatment duration with follow-up duration; use the longer post-baseline observation period when both are mentioned"
+              ],
+              "examples": [
+                { "value": "6 mths", "source_text": "" }
+              ]
+            },
+            {
+              "field_name": "cochrane_subgroup_category",
+              "field_type": "select",
+              "extraction_role": "anchor",
+              "field_description": "Treatment-type class of this arm, derived from the paper's description (OPTIONAL). 'SI_alone' = subgingival instrumentation (scaling/root planing) alone; 'SI_plus_systemic_local_antimicrobial' = SI plus a systemic or locally delivered antimicrobial; 'SI_plus_mouthrinse' = SI plus an antiseptic mouthrinse; 'usual_care' = control / no active periodontal treatment; 'supragingival_only' = supragingival scaling only.",
+              "options": [
+                "SI_alone",
+                "SI_plus_systemic_local_antimicrobial",
+                "SI_plus_mouthrinse",
+                "usual_care",
+                "supragingival_only"
+              ],
+              "hints": [
+                "Derive the category from the intervention_description already captured for this arm — do not rely on the paper explicitly naming a Cochrane subgroup",
+                "If the arm receives subgingival scaling/root planing with no adjuncts, classify as 'SI_alone'",
+                "If the arm receives subgingival scaling/root planing plus any antibiotic (systemic or local) or antimicrobial agent (e.g. chlorhexidine chips, doxycycline gel, metronidazole), classify as 'SI_plus_systemic_local_antimicrobial'",
+                "If the arm receives subgingival scaling/root planing plus an antiseptic mouthrinse (e.g. chlorhexidine rinse), classify as 'SI_plus_mouthrinse'",
+                "If the arm is described as a control, placebo, no-treatment, or usual-care arm with no active periodontal instrumentation, classify as 'usual_care'",
+                "If the arm receives only supragingival scaling or prophylaxis without subgingival instrumentation, classify as 'supragingival_only'",
+                "When an arm combines mouthrinse and a systemic/local antimicrobial alongside SI, prefer 'SI_plus_systemic_local_antimicrobial'"
+              ],
+              "rules": [
+                "Must be exactly one of the listed options: 'SI_alone', 'SI_plus_systemic_local_antimicrobial', 'SI_plus_mouthrinse', 'usual_care', 'supragingival_only'",
+                "Use exact spelling, underscores, and lowercase as shown in the options list",
+                "This field is OPTIONAL; use 'NR' only if the intervention description is too ambiguous to assign any category",
+                "Do not invent new category values outside the allowed list"
+              ],
+              "examples": [
+                { "value": "SI_alone", "source_text": "" }
+              ]
+            }
+          ],
+          "source_grounded": true,
+          "extraction_strategy": "row_then_columns"
+        }
+      ]
+    }
+  ],
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": ["ExtractAllStudyArmInterventions"],
+      "provides_fields": ["interventions"],
+      "requires_fields": []
+    }
+  ],
+  "fallback_structures": {
+    "ExtractAllStudyArmInterventions": {
+      "interventions": []
+    }
+  },
+  "field_to_signature_map": {
+    "interventions": "ExtractAllStudyArmInterventions"
+  }
+}

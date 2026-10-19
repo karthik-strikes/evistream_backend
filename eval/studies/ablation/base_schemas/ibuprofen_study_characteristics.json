@@ -1,0 +1,179 @@
+{
+  "form_name": "CD015432 \u2014 Study Characteristics v3",
+  "signatures": [
+    {
+      "class_name": "IbuStudyCharacteristics",
+      "output_fields": [
+        {
+          "field_name": "country",
+          "field_type": "text",
+          "field_description": "Country in which the study was conducted (from the affiliations or setting statement). If multiple sites across countries, list all comma-separated. Use 'NR' if not stated.",
+          "example": "Egypt",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "Egypt",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Check author affiliations, the methods/setting section, or acknowledgements for the country of study conduct"
+          ],
+          "rules": [
+            "If multiple sites across countries are reported, list all countries comma-separated",
+            "Use 'NR' if not stated"
+          ],
+          "name": "country",
+          "description": "Country in which the study was conducted (from the affiliations or setting statement). If multiple sites across countries, list all comma-separated. Use 'NR' if not stated.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "surgery_type",
+          "field_type": "text",
+          "field_description": "Type of surgery or procedure the children underwent, verbatim from the paper (e.g. 'tonsillectomy with/without adenoidectomy', 'dental extraction', 'orthodontic separator placement', 'inguinal herniorrhaphy'). Use 'NR' if not stated.",
+          "example": "tonsillectomy with or without adenoidectomy",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "tonsillectomy with or without adenoidectomy",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Look in the methods, participants, or procedure section describing the surgical intervention"
+          ],
+          "rules": [
+            "Extract the surgery/procedure name verbatim from the document, preserving original wording",
+            "Do not paraphrase or normalize terminology beyond what is written",
+            "Use \"NR\" if not stated"
+          ],
+          "name": "surgery_type",
+          "description": "Type of surgery or procedure the children underwent, verbatim from the paper (e.g. 'tonsillectomy with/without adenoidectomy', 'dental extraction', 'orthodontic separator placement', 'inguinal herniorrhaphy'). Use 'NR' if not stated.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "route_of_administration",
+          "field_type": "select",
+          "field_description": "Route by which ibuprofen was administered in this study. 'oral' = by mouth (tablet/suspension); 'IV' = intravenous; 'rectal' = suppository. Use 'NR' if not stated.",
+          "example": "oral",
+          "options": [
+            "oral",
+            "IV",
+            "rectal",
+            "NR"
+          ],
+          "multiple": false,
+          "examples": [
+            {
+              "value": "oral",
+              "source_text": ""
+            }
+          ],
+          "name": "route_of_administration",
+          "description": "Route by which ibuprofen was administered in this study. 'oral' = by mouth (tablet/suspension); 'IV' = intravenous; 'rectal' = suppository. Use 'NR' if not stated.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "outcomes_measured",
+          "field_type": "text",
+          "field_description": "The full list of outcomes this study measured/reported, taken verbatim from the paper's Outcomes/Methods (this mirrors the 'Outcomes' column of the review's Table 1). Record every outcome as a '; '-separated list, in the paper's own wording (the list may be long). Use 'NR' if not stated.",
+          "example": "Postoperative pain score assessed by a third party (mCHEOPS scale); Time to first rescue analgesia; Total morphine consumption; Incidence of adverse effects (vomiting, epigastric pain, bleeding)",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "Postoperative pain score assessed by a third party (mCHEOPS scale); Time to first rescue analgesia; Total morphine consumption; Incidence of adverse effects (vomiting, epigastric pain, bleeding)",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Look in the Methods, Outcome Measures, or Endpoints sections of the paper",
+            "Check subsections labeled 'Primary Outcome(s)' and 'Secondary Outcome(s)'",
+            "Outcomes may also be listed in table footnotes or the study protocol summary"
+          ],
+          "rules": [
+            "List every outcome the paper states it measured, not just the ones with reported results",
+            "Preserve the paper's own wording for each outcome rather than paraphrasing",
+            "Separate multiple outcomes with '; ' in a single string",
+            "Include both primary and secondary outcomes if distinguished in the source",
+            "Use \"NR\" if not reported"
+          ],
+          "name": "outcomes_measured",
+          "description": "The full list of outcomes this study measured/reported, taken verbatim from the paper's Outcomes/Methods (this mirrors the 'Outcomes' column of the review's Table 1). Record every outcome as a '; '-separated list, in the paper's own wording (the list may be long). Use 'NR' if not stated.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "trial_design",
+          "field_type": "text",
+          "field_description": "Verbatim trial design description (blinding, number of arms, parallel/crossover, superiority/non-inferiority) as the paper states it. Example: 'Double-blind, non-inferiority RCT with 2 parallel arms'.",
+          "example": "Double-blind RCT",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "Double-blind RCT",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Look in the abstract or methods section, often near the study design or trial registration statement"
+          ],
+          "rules": [
+            "Extract the trial design description as close to verbatim as possible from the source text",
+            "Use \"NR\" if not reported"
+          ],
+          "name": "trial_design",
+          "description": "Verbatim trial design description (blinding, number of arms, parallel/crossover, superiority/non-inferiority) as the paper states it. Example: 'Double-blind, non-inferiority RCT with 2 parallel arms'.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "number_of_centres",
+          "field_type": "text",
+          "field_description": "Recruiting-centre count as a coded value: output '1' if the trial is single-centre / one centre; 'multicentre' if it is described as multicentre without a specific count; otherwise 'NR'. Do NOT write phrases like 'single-centre' or '3 centres' \u2014 map single-centre to '1'.",
+          "example": "1",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "1",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Check the methods section for phrases like 'single-centre', 'single-center', 'multicentre', 'multicenter', or a specific number of sites"
+          ],
+          "rules": [
+            "Output must be coded as '1' for single-centre/one centre studies",
+            "Output 'multicentre' if described as multicentre without a specific numeric count",
+            "Do NOT output phrases like 'single-centre' or '3 centres' verbatim",
+            "Use 'NR' if the number of centres cannot be determined"
+          ],
+          "name": "number_of_centres",
+          "description": "Recruiting-centre count as a coded value: output '1' if the trial is single-centre / one centre; 'multicentre' if it is described as multicentre without a specific count; otherwise 'NR'. Do NOT write phrases like 'single-centre' or '3 centres' \u2014 map single-centre to '1'.",
+          "source_grounded": true
+        },
+        {
+          "field_name": "funding_source",
+          "field_type": "text",
+          "field_description": "Funder(s) verbatim from the funding / acknowledgements statement, or 'none declared' (OPTIONAL). Use 'NR' if not stated.",
+          "example": "none declared",
+          "multiple": false,
+          "examples": [
+            {
+              "value": "none declared",
+              "source_text": ""
+            }
+          ],
+          "hints": [
+            "Look in the funding, financial disclosure, or acknowledgements section, often near the end of the document"
+          ],
+          "rules": [
+            "Extract the funder name(s) verbatim as written in the funding or acknowledgements statement",
+            "If the document explicitly states no funding was received, use 'none declared'",
+            "Use \"NR\" if not stated"
+          ],
+          "name": "funding_source",
+          "description": "Funder(s) verbatim from the funding / acknowledgements statement, or 'none declared' (OPTIONAL). Use 'NR' if not stated.",
+          "source_grounded": true
+        }
+      ]
+    }
+  ]
+}

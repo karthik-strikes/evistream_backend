@@ -1,0 +1,3 @@
+# Keep benchmark bytes and their recorded hashes intact, including CRLF records.
+*.csv -text -whitespace
+*.xlsx binary

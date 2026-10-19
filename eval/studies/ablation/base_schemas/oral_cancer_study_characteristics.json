@@ -1,0 +1,518 @@
+{
+  "version": 1,
+  "task_name": "dynamic_a1420ad8_OralCancerStudyCharacteristics",
+  "signatures": [
+    {
+      "docstring": "Extract bibliographic reference information from a research article to establish its identity in the review database.\n\nForm Questions:\n- refid: \"What is the unique reference identifier assigned to this study in the review database?\"\n- authors_last_name: \"What is the last name of the first author followed by the publication year?\"\n- year_of_study: \"What year was this article published?\"",
+      "class_name": "EstablishBibliographicContext",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research article or document to extract bibliographic information from.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "refid",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a reference ID, study ID, or record number assigned in the review database or extraction spreadsheet header",
+            "This value is typically pre-assigned and may appear in document metadata, headers, or accompanying extraction materials"
+          ],
+          "rules": [
+            "Copy the identifier exactly as listed \u2014 do not modify, pad, or reformat",
+            "The value is a string (may be numeric digits but treat as text)",
+            "Use \"NR\" if the reference identifier is not present in the document"
+          ],
+          "examples": [
+            {
+              "value": "78",
+              "source_text": ""
+            }
+          ],
+          "description": "Unique reference identifier assigned to the study in the review database (e.g., '78', '7'). Copy exactly as listed in the extraction spreadsheet.",
+          "source_grounded": true
+        },
+        {
+          "name": "authors_last_name",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look at the author list at the top of the article or in the citation/reference section",
+            "Use only the first-listed author's last name",
+            "The year should match the publication year of the article, not the data collection period"
+          ],
+          "rules": [
+            "Format must be '[LastName] [YYYY]' with a single space between last name and year",
+            "Use the first author's last name only \u2014 do not include given names, initials, or additional authors",
+            "The year must be a 4-digit publication year",
+            "Use \"NR\" if the author name or year cannot be determined"
+          ],
+          "examples": [
+            {
+              "value": "Winton Kalluvelil 2022",
+              "source_text": ""
+            }
+          ],
+          "description": "Last name of the first author followed by the publication year. Format: '[LastName] [YYYY]' (e.g., 'Winton Kalluvelil 2022'). Use the first author only.",
+          "source_grounded": true
+        },
+        {
+          "name": "year_of_study",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for the publication date in the journal header, copyright notice, or citation metadata",
+            "Distinguish between the publication year and the study's data-collection period \u2014 use only the publication year"
+          ],
+          "rules": [
+            "Must be a 4-digit integer (e.g., 2022)",
+            "Do NOT use the data-collection or study-period year",
+            "Use \"NR\" if the publication year cannot be determined"
+          ],
+          "examples": [
+            {
+              "value": "2022",
+              "source_text": ""
+            }
+          ],
+          "description": "Year the article was published as a 4-digit integer. Do NOT use the data-collection period.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract study logistics information including the data collection period, country of conduct, and number of study sites from a research paper.\n\nForm Questions:\n- study_period: \"When were the study data collected?\"\n- country: \"In which country or countries was the study conducted?\"\n- number_of_centers: \"Was the study conducted at a single site or multiple sites?\"\n  Options: Single center, Multiple center, Unclear or not reported\n\nThese fields capture the logistical context of the study, helping to situate findings geographically and temporally.",
+      "class_name": "ExtractStudyLogistics",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper to extract study logistics from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "study_period",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Period', 'Data Collection', or 'Participants' for date ranges",
+            "Check the abstract for a brief mention of the study timeframe",
+            "Look for phrases like 'between [year] and [year]', 'from [year] to [year]', or 'during [year]\u2013[year]'"
+          ],
+          "rules": [
+            "Extract the data collection period verbatim or in a normalised 'YYYY to YYYY' format as reported",
+            "Use \"NR\" for studies belonging to the Walsh or Lingen cohorts (studies conducted before 2021)",
+            "Use \"NR\" if the study period is not stated anywhere in the paper",
+            "Do not infer or estimate dates not explicitly reported"
+          ],
+          "examples": [
+            {
+              "value": "2016 to 2018",
+              "source_text": ""
+            }
+          ],
+          "description": "When the study data were collected, as reported in the paper (e.g., '2016 to 2018'). Use NR for studies before 2021 (Walsh or Lingen cohorts) or when not reported.",
+          "source_grounded": true
+        },
+        {
+          "name": "country",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Setting', 'Study Site', or 'Participants'",
+            "Check author affiliations or the abstract for country mentions",
+            "Multi-country studies often describe sites in a table or list within the Methods section"
+          ],
+          "rules": [
+            "List the country or countries exactly as reported, using standard English country names",
+            "For multi-country studies, list all countries comma-separated (e.g., 'India, China, Brazil')",
+            "Use \"NR\" if the country of conduct is not stated anywhere in the paper",
+            "Do not infer country from author affiliations alone unless explicitly confirmed in the text"
+          ],
+          "examples": [
+            {
+              "value": "India",
+              "source_text": ""
+            }
+          ],
+          "description": "Country (or countries) where the study was conducted. If multi-site across countries, list all comma-separated. Use NR if not stated.",
+          "source_grounded": true
+        },
+        {
+          "name": "number_of_centers",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section for terms like 'single-center', 'multicenter', 'multi-site', or 'multi-institutional'",
+            "Check the abstract or study design description for site count information",
+            "A list of multiple hospitals or institutions in the Methods section indicates a multi-center study"
+          ],
+          "rules": [
+            "Must be exactly one of the allowed options: 'Single center', 'Multiple center', or 'Unclear or not reported'",
+            "Use 'Single center' if the paper explicitly states one site or institution",
+            "Use 'Multiple center' if the paper mentions two or more sites, hospitals, or institutions",
+            "Use 'Unclear or not reported' if the number of centers cannot be determined from the text",
+            "Use \"NR\" only if the field value cannot be determined at all (maps to 'Unclear or not reported')"
+          ],
+          "options": [
+            "Single center",
+            "Multiple center",
+            "Unclear or not reported"
+          ],
+          "examples": [
+            {
+              "value": "Single center",
+              "source_text": ""
+            }
+          ],
+          "description": "Whether the study was conducted at a single site or multiple sites, as reported in the paper.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Classify and describe the setting in which the study was conducted, including verbatim location details and harmonized category labels.\n\nForm Questions:\n- study_setting_verbatim: \"What is the exact or paraphrased description of where the study was conducted (department name, hospital, city/country)?\"\n- study_setting_original: \"What is the original setting category as reported?\"\n  Options: Primary care setting (general dental practice), Secondary or tertiary care setting (hospital or specialist dental service), Other, Unclear or not reported\n- study_setting_transformed: \"What is the harmonized setting category after transformation?\"\n  Options: Primary care setting (general dental practice), Secondary or tertiary care setting (hospital or specialist dental service), Other, Unclear or not reported\n- study_setting_comment: \"Are there any free-text notes clarifying the setting (e.g., rural vs. urban, specialty focus)?\"\n\nThese fields capture where the study was conducted to support cross-study comparisons and setting-level subgroup analyses in systematic reviews of dental research.",
+      "class_name": "ClassifyStudySetting",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper from which study setting information is to be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "study_setting_verbatim",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Setting', 'Study Site', or 'Participants' subsections",
+            "Check the abstract for brief location mentions",
+            "Institutional affiliations in the title page or author information may also indicate the setting"
+          ],
+          "rules": [
+            "Extract the verbatim or closely paraphrased description of the study location including department, institution, city, and/or country as stated",
+            "Do not infer or expand beyond what is explicitly stated in the document",
+            "Use \"NR\" if the study setting is not mentioned anywhere in the document"
+          ],
+          "examples": [
+            {
+              "value": "Department of Oral Medicine and Radiology, rural Karnataka, India",
+              "source_text": ""
+            }
+          ],
+          "description": "Exact or paraphrased description of where the study was conducted (department name, hospital, city/country). Use NR if not stated.",
+          "source_grounded": true
+        },
+        {
+          "name": "study_setting_original",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Read the Methods section for explicit descriptions such as 'general dental practice', 'hospital', 'specialist clinic', or 'tertiary care centre'",
+            "If the paper self-labels its setting, use that label to guide classification",
+            "Community-based or population-based studies without a clinical site may fall under 'Other'"
+          ],
+          "rules": [
+            "Must be exactly one of the allowed options",
+            "Use exact spelling and capitalisation as listed in options",
+            "Select 'Primary care setting (general dental practice)' for studies conducted in general dental practices or community dental clinics",
+            "Select 'Secondary or tertiary care setting (hospital or specialist dental service)' for studies in hospitals, dental schools, or specialist referral services",
+            "Select 'Other' if the setting is clearly described but does not fit primary or secondary/tertiary categories",
+            "Select 'Unclear or not reported' if the setting cannot be determined from the text",
+            "Use \"NR\" only if the field value itself cannot be assigned (treat as 'Unclear or not reported' in that case)"
+          ],
+          "options": [
+            "Primary care setting (general dental practice)",
+            "Secondary or tertiary care setting (hospital or specialist dental service)",
+            "Other",
+            "Unclear or not reported"
+          ],
+          "examples": [
+            {
+              "value": "Secondary or tertiary care setting (hospital or specialist dental service)",
+              "source_text": ""
+            }
+          ],
+          "description": "Original setting category as reported, selected from the allowed options based on how the study describes its own setting.",
+          "source_grounded": true
+        },
+        {
+          "name": "study_setting_transformed",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Apply the same classification logic as study_setting_original but with cross-study consistency in mind",
+            "If the original category is ambiguous, use contextual clues (e.g., department name, referral patterns) to assign the most appropriate harmonized category",
+            "Dental schools and university clinics are typically classified as secondary or tertiary care"
+          ],
+          "rules": [
+            "Must be exactly one of the allowed options",
+            "Use exact spelling and capitalisation as listed in options",
+            "This field may differ from study_setting_original when the original report is ambiguous or inconsistent with standard definitions",
+            "Apply harmonization rules uniformly: hospital-based or specialist-based settings \u2192 'Secondary or tertiary care setting'; general practice or community dental \u2192 'Primary care setting'",
+            "Use 'Unclear or not reported' only when harmonization is genuinely impossible",
+            "Use \"NR\" if the field value cannot be assigned after harmonization"
+          ],
+          "options": [
+            "Primary care setting (general dental practice)",
+            "Secondary or tertiary care setting (hospital or specialist dental service)",
+            "Other",
+            "Unclear or not reported"
+          ],
+          "examples": [
+            {
+              "value": "Secondary or tertiary care setting (hospital or specialist dental service)",
+              "source_text": ""
+            }
+          ],
+          "description": "Harmonized setting category after transformation, applied consistently across studies using the same allowed options as the original classification.",
+          "source_grounded": true
+        },
+        {
+          "name": "study_setting_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Note any additional contextual details about the setting that are not captured by the category alone, such as rural/urban location, specialty department, or patient population served",
+            "Check for geographic descriptors (e.g., 'rural Karnataka') or departmental names (e.g., 'Department of Oral Medicine and Radiology') that add nuance"
+          ],
+          "rules": [
+            "Provide a brief free-text clarification if the setting has notable characteristics not captured by the category field",
+            "Use \"NA\" if no additional comment is needed (i.e., the category alone is sufficient)",
+            "Use \"NR\" only if the setting is entirely unreported and no comment can be made",
+            "Do not repeat the verbatim setting description unless it adds meaningful clarification beyond what is in study_setting_verbatim"
+          ],
+          "examples": [
+            {
+              "value": "Department of Oral Medicine and Radiology, rural Karnataka, India",
+              "source_text": ""
+            }
+          ],
+          "description": "Free-text notes clarifying the setting (e.g., rural vs. urban, specialty focus). Use NA if no comment needed.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract funding source classification and conflict-of-interest declarations from a research paper.\n\nForm Questions:\n- funding_category: \"What is the classification of the funding source?\"\n  Options: Industry and for-profit organizations, Government, institutional, not-for-profit foundation, None, Not reported\n- funding_comment: \"Provide the verbatim funding statement or relevant notes.\"\n- conflicts_of_interest: \"What is the conflict-of-interest declaration as stated in the paper?\"\n  Options: The authors declare conflict of interests., The authors declare that there are no conflicts of interest., Report includes no conflict of interest statements.\n- conflicts_of_interest_comment: \"Provide additional detail about the conflict-of-interest declaration if needed.\"",
+      "class_name": "ExtractFundingAndConflicts",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper to extract funding and conflict-of-interest information from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "funding_category",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Acknowledgements, Funding, or Financial Disclosure sections near the end of the paper",
+            "Check footnotes on the title page or abstract for funding statements"
+          ],
+          "rules": [
+            "Must be exactly one of the allowed options",
+            "Use exact spelling and capitalisation as listed in options",
+            "Select 'None' if the paper explicitly states no funding was received",
+            "Select 'Not reported' if the paper contains no mention of funding at all",
+            "Use \"NR\" only if the field itself cannot be determined (e.g., document is truncated)"
+          ],
+          "options": [
+            "Industry and for-profit organizations",
+            "Government, institutional, not-for-profit foundation",
+            "None",
+            "Not reported"
+          ],
+          "examples": [
+            {
+              "value": "None",
+              "source_text": ""
+            }
+          ],
+          "description": "Classification of the funding source as reported in the paper.",
+          "source_grounded": true
+        },
+        {
+          "name": "funding_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Copy the exact funding statement from the Acknowledgements or Funding section",
+            "If the funding category alone is sufficient (e.g., 'None' or 'Not reported'), set value to NA"
+          ],
+          "rules": [
+            "Copy the funding statement verbatim from the document when present",
+            "Use \"NA\" if the funding category is self-explanatory and no additional comment is needed",
+            "Use \"NR\" if the document is unreadable or the field cannot be assessed"
+          ],
+          "examples": [
+            {
+              "value": "NA",
+              "source_text": ""
+            }
+          ],
+          "description": "Verbatim funding statement or relevant notes. Use NA if the funding category is self-explanatory.",
+          "source_grounded": true
+        },
+        {
+          "name": "conflicts_of_interest",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for a 'Conflict of Interest', 'Competing Interests', or 'Disclosures' section, typically near the end of the paper",
+            "Check author contribution statements or footnotes for COI declarations"
+          ],
+          "rules": [
+            "Must be exactly one of the allowed options",
+            "Use exact spelling and capitalisation as listed in options",
+            "Select 'The authors declare conflict of interests.' if any author discloses a conflict",
+            "Select 'The authors declare that there are no conflicts of interest.' if the paper explicitly states no conflicts",
+            "Select 'Report includes no conflict of interest statements.' if the paper contains no COI section or statement at all",
+            "Use \"NR\" only if the document is truncated or the field cannot be assessed"
+          ],
+          "options": [
+            "The authors declare conflict of interests.",
+            "The authors declare that there are no conflicts of interest.",
+            "Report includes no conflict of interest statements."
+          ],
+          "examples": [
+            {
+              "value": "The authors declare that there are no conflicts of interest.",
+              "source_text": ""
+            }
+          ],
+          "description": "Conflict-of-interest declaration as stated in the paper.",
+          "source_grounded": true
+        },
+        {
+          "name": "conflicts_of_interest_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "If specific conflicts are named (e.g., speaker fees, stock ownership, advisory roles), quote them verbatim",
+            "If the COI statement is a simple blanket declaration with no specifics, set value to NA"
+          ],
+          "rules": [
+            "Copy relevant COI details verbatim from the document when specific conflicts are disclosed",
+            "Use \"NA\" if no additional detail is needed beyond the selected conflicts_of_interest category",
+            "Use \"NR\" if the document is unreadable or the field cannot be assessed"
+          ],
+          "examples": [
+            {
+              "value": "NA",
+              "source_text": ""
+            }
+          ],
+          "description": "Additional detail about the conflict-of-interest declaration if needed. Use NA if none.",
+          "source_grounded": true
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_a1420ad8_OralCancerStudyCharacteristics",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "EstablishBibliographicContext",
+        "ExtractStudyLogistics",
+        "ClassifyStudySetting",
+        "ExtractFundingAndConflicts"
+      ],
+      "provides_fields": [
+        "refid",
+        "authors_last_name",
+        "year_of_study",
+        "study_period",
+        "country",
+        "number_of_centers",
+        "study_setting_verbatim",
+        "study_setting_original",
+        "study_setting_transformed",
+        "study_setting_comment",
+        "funding_category",
+        "funding_comment",
+        "conflicts_of_interest",
+        "conflicts_of_interest_comment"
+      ],
+      "requires_fields": []
+    }
+  ],
+  "fallback_structures": {
+    "ClassifyStudySetting": {
+      "study_setting_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "study_setting_original": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "study_setting_verbatim": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "study_setting_transformed": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractStudyLogistics": {
+      "country": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "study_period": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "number_of_centers": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractFundingAndConflicts": {
+      "funding_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "funding_category": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "conflicts_of_interest": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "conflicts_of_interest_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "EstablishBibliographicContext": {
+      "refid": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "year_of_study": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "authors_last_name": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    }
+  },
+  "field_to_signature_map": {
+    "refid": "EstablishBibliographicContext",
+    "country": "ExtractStudyLogistics",
+    "study_period": "ExtractStudyLogistics",
+    "year_of_study": "EstablishBibliographicContext",
+    "funding_comment": "ExtractFundingAndConflicts",
+    "funding_category": "ExtractFundingAndConflicts",
+    "authors_last_name": "EstablishBibliographicContext",
+    "number_of_centers": "ExtractStudyLogistics",
+    "conflicts_of_interest": "ExtractFundingAndConflicts",
+    "study_setting_comment": "ClassifyStudySetting",
+    "study_setting_original": "ClassifyStudySetting",
+    "study_setting_verbatim": "ClassifyStudySetting",
+    "study_setting_transformed": "ClassifyStudySetting",
+    "conflicts_of_interest_comment": "ExtractFundingAndConflicts"
+  },
+  "_pulled_from": "project ca68ea03-abd0-48bd-b180-c474a5d5c398 \u00b7 form Oral Cancer \u2014 Study Characteristics (a1420ad8-f599-4ff9-bdbf-7e6a6b8f4760) \u00b7 slug oral_cancer \u00b7 form_label study_characteristics"
+}

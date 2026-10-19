@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "task_name": "dynamic_d8bb4cce_StudyCharacteristics",
+  "signatures": [
+    {
+      "docstring": "Extract publication context metadata including year, country, and institutional setting from a research article.\n\nForm Questions:\n- year: \"What year was the article published?\"\n- country: \"In which country was the study conducted?\"\n- setting_institution: \"What is the name of the institution or department where the study was conducted?\"",
+      "class_name": "EstablishPublicationContext",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research article from which publication context is to be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "year",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for the publication date in the journal header, citation line, copyright notice, or article metadata at the top or bottom of the document",
+            "Distinguish between the study recruitment/data-collection period and the actual publication year"
+          ],
+          "rules": [
+            "Return a 4-digit integer (e.g., 2004, 2010)",
+            "Use the publication year only \u2014 not the data-collection or recruitment period",
+            "Must be a plausible journal publication year (e.g., 1900\u20132100)"
+          ],
+          "examples": [
+            {
+              "value": "2004",
+              "source_text": ""
+            }
+          ],
+          "description": "Year the article was published as a 4-digit integer. Do NOT use the data-collection or recruitment period.",
+          "source_grounded": true
+        },
+        {
+          "name": "country",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Check author affiliations, the Methods section under 'Study Setting' or 'Study Site', and any institutional address lines",
+            "If the paper mentions a specific city or hospital, infer the country from that context if not explicitly stated"
+          ],
+          "rules": [
+            "Use the country name in English (e.g., 'Jordan', 'United States', 'United Kingdom')",
+            "If multiple countries are involved, list all comma-separated (e.g., 'Jordan, Egypt')",
+            "Use \"NR\" if the country is not stated or cannot be inferred from the document"
+          ],
+          "examples": [
+            {
+              "value": "Jordan",
+              "source_text": ""
+            }
+          ],
+          "description": "Country in which the study was conducted, derived from the author affiliations or setting statement. If multiple sites span different countries, list all comma-separated.",
+          "source_grounded": true
+        },
+        {
+          "name": "setting_institution",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the author affiliation block, the Methods section under 'Study Setting', 'Study Site', or 'Participants', and any ethics approval statements that name the institution",
+            "Prefer the most specific unit name (e.g., department + faculty + university) over a generic hospital name alone"
+          ],
+          "rules": [
+            "Extract the institution name verbatim as it appears in the document",
+            "Include department, faculty, university, and city if all are stated (e.g., 'Oral and Maxillofacial Surgery Department, Faculty of Dentistry, University of Jordan, Amman')",
+            "Do not paraphrase or abbreviate the institution name",
+            "Use \"NR\" if no institution or setting is stated in the document"
+          ],
+          "examples": [
+            {
+              "value": "Oral and Maxillofacial Surgery Department, Faculty of Dentistry, University of Jordan, Amman",
+              "source_text": ""
+            }
+          ],
+          "description": "Verbatim institution or department name where the study was conducted, typically the hospital, dental school, or university clinic listed in the Methods section or author affiliations.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Classify the high-level trial design and publication type of a clinical study from the research document.\n\nForm Questions:\n- design: \"What is the high-level trial design?\"\n  Options: RCT, quasi-RCT, other\n- publication_type: \"What type of publication is this primary study record?\"\n  Options: full paper, conference abstract\n\nDesign classification follows Cochrane conventions: 'RCT' covers any randomised parallel-group or split-mouth design; 'quasi-RCT' applies when allocation is by alternation, date of birth, or another non-random method; 'other' covers non-randomised comparative designs.",
+      "class_name": "ClassifyStudyDesign",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the clinical research document to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "design",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under headings such as 'Study Design', 'Trial Design', or 'Randomisation'",
+            "Check the abstract for design descriptors such as 'randomised', 'randomized', 'alternation', 'quasi-randomised'",
+            "Inspect the title for design keywords if the methods section is absent"
+          ],
+          "rules": [
+            "Must be exactly one of: RCT, quasi-RCT, other",
+            "Use 'RCT' for parallel-group or split-mouth designs with explicit random allocation",
+            "Use 'quasi-RCT' when allocation is by alternation, odd/even date of birth, hospital number, or any other non-random systematic method",
+            "Use 'other' for all non-randomised comparative designs (e.g., controlled clinical trials, before-after studies)",
+            "Use exact spelling and capitalisation as listed in options"
+          ],
+          "options": [
+            "RCT",
+            "quasi-RCT",
+            "other"
+          ],
+          "examples": [
+            {
+              "value": "RCT",
+              "source_text": ""
+            }
+          ],
+          "description": "High-level trial design. Use 'RCT' for any randomised parallel-group or split-mouth design; 'quasi-RCT' if allocation is by alternation, date of birth, or another non-random method; 'other' for non-randomised comparative designs.",
+          "source_grounded": true
+        },
+        {
+          "name": "publication_type",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Check the document header, journal name, or source metadata for publication venue",
+            "Conference abstracts typically lack full methods sections and appear in proceedings volumes or supplement issues",
+            "Full papers have structured sections (Introduction, Methods, Results, Discussion) and a journal ISSN or DOI"
+          ],
+          "rules": [
+            "Must be exactly one of: full paper, conference abstract",
+            "Use 'full paper' for any peer-reviewed full-text article published in a journal",
+            "Use 'conference abstract' for conference proceedings, poster abstracts, or unpublished abstracts",
+            "Use exact spelling and capitalisation as listed in options"
+          ],
+          "options": [
+            "full paper",
+            "conference abstract"
+          ],
+          "examples": [
+            {
+              "value": "full paper",
+              "source_text": ""
+            }
+          ],
+          "description": "Type of publication for this primary study record. Use 'full paper' for peer-reviewed full-text articles and 'conference abstract' for conference proceedings / unpublished abstracts.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract key study characteristics including participant enrollment numbers and surgery type from orthognathic surgery research papers.\n\nForm Questions:\n- n_enrolled: \"What is the total number of participants enrolled / randomised across all study arms?\"\n- surgery_type: \"What type of orthognathic surgery was studied?\"",
+      "class_name": "ExtractStudyCharacteristics",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the orthognathic surgery research paper to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "n_enrolled",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Participants', 'Study Population', or 'Randomisation'",
+            "Check CONSORT flow diagrams or participant flow charts for enrollment numbers",
+            "Distinguish between enrolled/randomised (target) and analyzed (post-dropout) counts \u2014 report the enrolled/randomised figure"
+          ],
+          "rules": [
+            "Extract the total enrolled or randomised count across ALL arms combined",
+            "Do NOT report the number analyzed if it differs from enrolled; report the enrolled/randomised figure",
+            "Return as an integer",
+            "Use \"NR\" if the enrollment count is not stated in the document"
+          ],
+          "examples": [
+            {
+              "value": "34",
+              "source_text": ""
+            }
+          ],
+          "description": "Total number of participants enrolled or randomised across all study arms, not the number analyzed after drop-out.",
+          "source_grounded": true
+        },
+        {
+          "name": "surgery_type",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the title, abstract, or Methods section for the surgical procedure name",
+            "Check inclusion/exclusion criteria for the specific surgery type described"
+          ],
+          "rules": [
+            "Copy or closely paraphrase the surgery type as described in the paper",
+            "Preserve standard surgical terminology (e.g. 'bilateral sagittal split ramus osteotomy', 'Le Fort I osteotomy', 'bimaxillary osteotomy')",
+            "If multiple surgery types are included, describe the mix (e.g. 'mixed orthognathic surgery')",
+            "Use \"NR\" if the surgery type is not stated"
+          ],
+          "examples": [
+            {
+              "value": "orthognathic operations (mixed)",
+              "source_text": ""
+            }
+          ],
+          "description": "Type of orthognathic surgery studied, copied or paraphrased from the paper (e.g. mixed orthognathic surgery, bimaxillary OS, bilateral sagittal split ramus osteotomy, Le Fort I osteotomy).",
+          "source_grounded": true
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_d8bb4cce_StudyCharacteristics",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "EstablishPublicationContext",
+        "ClassifyStudyDesign",
+        "ExtractStudyCharacteristics"
+      ],
+      "provides_fields": [
+        "year",
+        "country",
+        "setting_institution",
+        "design",
+        "publication_type",
+        "n_enrolled",
+        "surgery_type"
+      ],
+      "requires_fields": []
+    }
+  ],
+  "fallback_structures": {
+    "ClassifyStudyDesign": {
+      "design": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "publication_type": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "EstablishPublicationContext": {
+      "year": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "country": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "setting_institution": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractStudyCharacteristics": {
+      "n_enrolled": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "surgery_type": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    }
+  },
+  "field_to_signature_map": {
+    "year": "EstablishPublicationContext",
+    "design": "ClassifyStudyDesign",
+    "country": "EstablishPublicationContext",
+    "n_enrolled": "ExtractStudyCharacteristics",
+    "surgery_type": "ExtractStudyCharacteristics",
+    "publication_type": "ClassifyStudyDesign",
+    "setting_institution": "EstablishPublicationContext"
+  },
+  "_pulled_from": "project b6328d50-55c5-41f4-b44c-6eed4857b51b \u00b7 form Study Characteristics (d8bb4cce-8af2-4182-8a44-001e67408a31) \u00b7 slug antibiotic \u00b7 form_label study_characteristics"
+}

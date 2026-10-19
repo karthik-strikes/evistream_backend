@@ -1,0 +1,856 @@
+{
+  "version": 1,
+  "task_name": "dynamic_db0fd9e3_OralCancerPatientPopulationCharacteristicsV3",
+  "signatures": [
+    {
+      "docstring": "Extract the unique study identifier for each row in the evidence table, formatted as 'First Author Year'.\n\nForm Questions:\n- paper: \"What is the study identifier (First Author Year)?\"",
+      "class_name": "EstablishStudyIdentifier",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper or document from which the study identifier is to be extracted",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "paper",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look at the author list on the title page or header of the paper for the first (or sole) author's surname",
+            "Look for the publication year in the citation, copyright line, or journal header",
+            "If the document covers multiple studies or arms, check whether a suffix (a, b, c) is needed to distinguish them"
+          ],
+          "rules": [
+            "Format must be 'Surname YYYY' with a single space between surname and year (e.g., 'Aggarwal 2022')",
+            "Use only the first author's surname \u2014 do not include initials, given names, or 'et al.'",
+            "If the same study contributes multiple rows (e.g., separate index-test arms), append a lowercase letter suffix: 'Sharma 2021a', 'Sharma 2021b'",
+            "Year must be the 4-digit publication year",
+            "Capitalise the surname as it appears in the paper",
+            "This field must always be filled \u2014 do not use NR"
+          ],
+          "examples": [
+            {
+              "value": "Aggarwal 2022",
+              "source_text": ""
+            }
+          ],
+          "description": "Study identifier. Format: 'First Author Year' (e.g., 'Aggarwal 2022'). If the same study has multiple entries (e.g., two index-test arms reported separately), use a suffix such as 'Sharma 2021a' and 'Sharma 2021b'. This field is the row key and must be filled for every row.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Classify the patient population arms enrolled in an oral lesion or oral cancer screening study, identifying which categories of patients were included and describing the inclusion criteria for each arm.\n\nForm Questions:\n- patient_population_categories: \"Which patient population categories were enrolled in the study? Select ALL that apply.\"\n  Options: Patients with clinically evident, innocuous, or nonsuspicious lesions in the oral cavity or lips, Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips, Healthy patients without lesions, Other\n- patient_population_innocuous_comment: \"Describe the innocuous/nonsuspicious lesion arm inclusion criteria (or NA if no such arm, NR if arm exists but criteria not stated).\"\n- patient_population_suspicious_comment: \"Describe the suspicious-lesion arm inclusion criteria (or NA if no such arm, NR if arm exists but criteria not stated).\"\n\nThese fields capture the composition of the study population to enable downstream analysis of diagnostic accuracy across different patient risk strata.",
+      "class_name": "ClassifyPatientPopulationArms",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the clinical research paper from which patient population arm information is to be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "patient_population_categories",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Population', 'Participants', 'Inclusion Criteria', or 'Study Design'",
+            "Check whether the study enrolled healthy controls, patients with benign/innocuous lesions, patients with suspicious lesions, or any other group",
+            "If multiple arms are described (e.g., a control group and a lesion group), select all applicable options"
+          ],
+          "rules": [
+            "Select ALL options that apply \u2014 this is a multi-select field",
+            "Each selected value must be exactly one of the four allowed options, using exact spelling",
+            "Do NOT invent or free-text values outside the four listed options",
+            "Return the value as a list of strings (List[str]) even if only one option applies",
+            "Use \"NR\" if the study population cannot be determined from the document"
+          ],
+          "options": [
+            "Patients with clinically evident, innocuous, or nonsuspicious lesions in the oral cavity or lips",
+            "Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips",
+            "Healthy patients without lesions",
+            "Other"
+          ],
+          "examples": [
+            {
+              "value": "Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips",
+              "source_text": ""
+            }
+          ],
+          "description": "All patient population categories enrolled in the study, selected from a fixed list of four options; multiple selections are allowed when the study includes more than one arm.",
+          "source_grounded": true
+        },
+        {
+          "name": "patient_population_innocuous_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for descriptions of lesions that were clinically considered benign, non-suspicious, or without malignancy concern",
+            "This arm is often labelled 'benign lesions', 'non-suspicious lesions', 'clinically innocuous', or 'low-risk lesions'",
+            "Do NOT include criteria from the suspicious-lesion arm here \u2014 keep arms strictly separated"
+          ],
+          "rules": [
+            "Extract verbatim or closely paraphrased inclusion criteria for the innocuous/nonsuspicious lesion arm only",
+            "Use exactly \"NA\" (not blank, not 'not applicable') when the study did NOT include an innocuous-lesion arm",
+            "Use exactly \"NR\" when the study had an innocuous-lesion arm but did not describe its inclusion criteria",
+            "Do NOT include histopathological findings, recruitment method, or anatomical site details \u2014 those belong in other fields",
+            "Do NOT include criteria from the suspicious-lesion arm"
+          ],
+          "examples": [
+            {
+              "value": "Clinically visible lesions without suspicion of malignancy",
+              "source_text": ""
+            }
+          ],
+          "description": "Verbatim or paraphrased description of the innocuous/nonsuspicious lesion arm's inclusion criteria; use NA when no such arm was enrolled, or NR when the arm exists but criteria are not described.",
+          "source_grounded": true
+        },
+        {
+          "name": "patient_population_suspicious_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for descriptions of lesions clinically suspected of being oral potentially malignant disorders (OPMDs) or oral squamous cell carcinoma (OSCC)",
+            "Relevant terms include 'suspicious lesion', 'potentially malignant', 'leukoplakia', 'erythroplakia', 'persistent ulcer', 'clinically suspected malignancy'",
+            "Focus on CLINICAL enrolment criteria (what the clinician observed), not on histopathological confirmation or biopsy results",
+            "Check for age thresholds, lesion duration requirements, or persistence criteria after removal of irritants"
+          ],
+          "rules": [
+            "Extract verbatim or closely paraphrased CLINICAL inclusion criteria for the suspicious-lesion arm only",
+            "Do NOT include histopathological findings (e.g., dysplasia grade, biopsy result) \u2014 those belong in severity_target_condition",
+            "Do NOT include recruitment or referral method \u2014 that belongs in method_of_patient_selection",
+            "Do NOT include anatomical site details \u2014 those belong in site_target_condition",
+            "Use exactly \"NA\" when the study did NOT include a suspicious-lesion arm",
+            "Use exactly \"NR\" when the arm exists but inclusion criteria are not stated"
+          ],
+          "examples": [
+            {
+              "value": "Patients \u226518 years with oral lesions persistent for >3 weeks despite removal of possible causative agents (sharp teeth, ill-fitting denture, infection).",
+              "source_text": ""
+            }
+          ],
+          "description": "Verbatim or paraphrased inclusion criteria for the suspicious-lesion arm, capturing the clinical features that qualified patients for enrolment such as lesion type, duration, persistence after irritant removal, age cut-off, or OPMD/OSCC clinical diagnosis.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Synthesize a harmonized population category for meta-analysis by mapping previously extracted patient population categories to a standardized controlled vocabulary.\n\nForm Questions:\n- population_transformed: \"What is the harmonized population category for meta-analysis?\"\n  Options: Patients with clinically evident, innocuous, or nonsuspicious lesions in the oral cavity or lips, Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips, Healthy patients without lesions\n\nThis signature depends on a previously extracted 'patient_population_categories' field and applies a precedence-based mapping rule to produce a single harmonized category (or semicolon-separated pair when two populations are co-primary). The 'Other' option must never appear in the output.",
+      "class_name": "SynthesizeHarmonizedPopulationCategory",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the document to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        },
+        {
+          "desc": "Previously extracted patient_population_categories with source grounding from another signature (contains 'value' and 'source_text' keys)",
+          "name": "patient_population_categories",
+          "type": "Dict[str, Any]"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "population_transformed",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Inspect the 'value' key of the input patient_population_categories field to determine which options were selected",
+            "If only one option was selected, carry it forward verbatim",
+            "If multiple options were selected, apply the precedence rule: 'Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips' takes priority",
+            "If two populations are co-primary (e.g., suspicious + healthy controls, or innocuous + suspicious without a clear dominant arm), list both separated by a semicolon"
+          ],
+          "rules": [
+            "Output value MUST be exactly one of the three listed options, or two options joined by a semicolon separator when co-primary",
+            "Never output 'Other' \u2014 map or omit it entirely",
+            "If only one option was selected in patient_population_categories, enter that option verbatim",
+            "If two or more options were selected, apply precedence: 'Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips' takes precedence when present",
+            "If two populations are co-primary (e.g., suspicious + healthy controls, or innocuous + suspicious without a clear dominant arm), list both using a semicolon separator",
+            "Use \"NR\" if patient_population_categories is NR",
+            "Use exact spelling and capitalisation matching the listed options"
+          ],
+          "options": [
+            "Patients with clinically evident, innocuous, or nonsuspicious lesions in the oral cavity or lips",
+            "Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips",
+            "Healthy patients without lesions"
+          ],
+          "examples": [
+            {
+              "value": "Patients with clinically evident suspicious lesions or seemingly malignant lesions in the oral cavity or lips",
+              "source_text": ""
+            }
+          ],
+          "description": "Harmonized population category for meta-analysis derived by mapping the previously extracted patient_population_categories to a standardized controlled vocabulary using a defined precedence rule.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract recruitment method and sociodemographic characteristics of the study population from a research paper.\n\nForm Questions:\n- method_of_patient_selection: \"How were patients selected or recruited for the study?\"\n- ses_population: \"What is the socioeconomic status of the study population?\"\n- ethnicity_population: \"What is the ethnic or racial composition of the study population?\"",
+      "class_name": "ExtractRecruitmentAndSociodemographics",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper to extract recruitment and sociodemographic data from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "method_of_patient_selection",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Design', 'Participants', 'Patient Selection', or 'Recruitment'",
+            "Check for keywords such as consecutive, random, convenience, purposive, retrospective, or prospective enrollment",
+            "Distinguish recruitment mechanism from inclusion/exclusion criteria \u2014 only the former belongs here"
+          ],
+          "rules": [
+            "Begin the value with a short label identifying the recruitment type (e.g., 'Consecutive sample', 'Convenience sample', 'Randomized \u2014 alternate allocation')",
+            "Follow the label with a single short paraphrase describing the mechanism",
+            "Do NOT include inclusion or exclusion criteria in this field",
+            "Do NOT combine 'NR' with a follow-up quote \u2014 if the mechanism is not described, use exactly 'NR'",
+            "Use \"NR\" if no recruitment mechanism is described"
+          ],
+          "examples": [
+            {
+              "value": "Consecutive sample \u2014 patients attending the oral medicine clinic between Jan and Dec 2020 were enrolled in order of presentation.",
+              "source_text": ""
+            }
+          ],
+          "description": "RECRUITMENT mechanism only \u2014 describe HOW patients were selected (consecutive, random/randomized, alternate allocation, convenience, purposive, retrospective chart review). Begin with a short label (e.g., 'Consecutive sample', 'Convenience sample', 'Randomized \u2014 alternate allocation', 'NR') and then add a single short paraphrase. Do NOT put inclusion criteria here (those belong in patient_population_suspicious_comment). Do NOT combine 'NR' with a follow-up quote on a new line \u2014 pick one stance. Use NR if no recruitment mechanism is described.",
+          "source_grounded": true
+        },
+        {
+          "name": "ses_population",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Population', 'Demographics', or Table 1 for SES-related variables",
+            "Check for rural/urban classification, income brackets, employment status, education level, or insurance coverage",
+            "Do not infer SES from the hospital name, city, or country unless the paper explicitly labels it as such"
+          ],
+          "rules": [
+            "Only report SES descriptors explicitly stated in the paper (rural/urban, income, employment, education, insurance)",
+            "Do NOT infer SES from geographic location or institution name",
+            "Do NOT include age, sex, or disease-related demographics here \u2014 those belong in their own fields",
+            "Use \"NR\" if socioeconomic status is not reported"
+          ],
+          "examples": [
+            {
+              "value": "77% rural, 23% urban (from study Table 1).",
+              "source_text": ""
+            }
+          ],
+          "description": "Socioeconomic status descriptor as reported by the paper. Acceptable content: rural/urban split, income category, employment, education level, insurance status. Use NR if not reported. Do NOT infer SES from the hospital location unless the paper explicitly states it. Do NOT include unrelated demographics (those go in their own fields).",
+          "source_grounded": true
+        },
+        {
+          "name": "ethnicity_population",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section, Table 1, or baseline characteristics table for ethnicity or race data",
+            "Check for labels such as 'race', 'ethnicity', 'ethnic group', or specific group names (e.g., Hispanic, White, African American)",
+            "Do not assume ethnicity based on the country or region where the study was conducted"
+          ],
+          "rules": [
+            "Report ethnicity/race exactly as described in the paper, including counts or percentages if provided",
+            "Do NOT infer or impute ethnicity from the study country, region, or institution",
+            "If only a single ethnicity is described for the whole cohort, report that descriptor",
+            "Use \"NR\" if ethnicity or race is not reported"
+          ],
+          "examples": [
+            {
+              "value": "African American 15 (34.1%), White Caucasian 16 (36.4%), Hispanic/Latino 10 (22.7%), Other 3 (6.8%).",
+              "source_text": ""
+            }
+          ],
+          "description": "Ethnicity or racial composition of the study population as reported in the paper. Acceptable content: counts/percentages per ethnic group, or a single-ethnicity descriptor. Use NR if not reported. Do NOT infer ethnicity from the country of the study.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract and standardize risk-factor information from oral cancer or related research papers, capturing both the verbatim reported data and a normalized summary.\n\nForm Questions:\n- risk_factors_original: \"What risk-factor information is reported verbatim (or close paraphrase) in the paper?\"\n- risk_factors_transformed: \"Provide a standardized risk-factor summary in the format 'Substance N(%)' joined by semicolons.\"\n\nCommon risk factors in this domain include tobacco chewing, smoking, alcohol, betel nut, gutkha, and pan. Counts and percentages must be preserved exactly as reported. The transformed field normalizes substance names to lower-case and appends a bracketed note when totals differ from the study's total patient count.",
+      "class_name": "ExtractAndStandardizeRiskFactors",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper from which risk-factor data is to be extracted",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "risk_factors_original",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the patient demographics, baseline characteristics, or methods section for risk-factor tables or sentences",
+            "Check for terms like 'habits', 'tobacco use', 'alcohol consumption', 'betel nut', 'gutkha', 'pan', 'smokeless tobacco'",
+            "Risk factors may appear in a dedicated table row or as a parenthetical in the study population description"
+          ],
+          "rules": [
+            "Reproduce counts and percentages exactly as written in the source \u2014 do not recalculate or round",
+            "If the paper explicitly states no risk-factor data is available, write 'None reported' as the value (not NR)",
+            "Use 'NR' only when the paper does not address risk factors at all (the topic is entirely absent)",
+            "Use 'NA' only when risk factors are genuinely not applicable (e.g., healthy-volunteer-only studies)",
+            "Do not infer or impute values not stated in the paper"
+          ],
+          "examples": [
+            {
+              "value": "Smokeless tobacco 87 (87%), alcohol 37 (37%), betel nut 56 (56%), smoking tobacco 39 (39%) [n=100; multiple habits per patient].",
+              "source_text": ""
+            }
+          ],
+          "description": "Risk-factor information VERBATIM (or close paraphrase) as reported by the paper. Common factors: tobacco chewing, smoking, alcohol, betel nut, gutkha, pan. Preserve counts and percentages exactly as in the source. If the paper explicitly states no risk-factor data, write 'None reported' rather than NR. Use NR only if the paper does not address risk factors at all. Use NA if risk factors are not applicable (rare \u2014 typically only for healthy-only studies).",
+          "source_grounded": true
+        },
+        {
+          "name": "risk_factors_transformed",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Derive directly from the risk_factors_original value \u2014 do not re-read the document independently",
+            "Map reported substance names to the canonical lower-case forms: 'smokeless tobacco', 'smoking tobacco', 'alcohol', 'betel nut', 'gutkha', 'pan'",
+            "If the sum of individual habit counts exceeds the total patient count, append a bracketed note explaining the discrepancy"
+          ],
+          "rules": [
+            "Format each factor as 'substance_name N(%)' with no space between N and the opening parenthesis, e.g., '87(87%)'",
+            "Join multiple factors with '; ' (semicolon followed by a space)",
+            "Use strictly lower-case substance names",
+            "Append '[total n=<X>; multiple habits per patient]' (or equivalent) in square brackets when the denominator or overlap needs clarification",
+            "Use 'NR' if risk_factors_original is NR",
+            "Use 'NA' only if risk factors are not applicable",
+            "Do not add substances not mentioned in risk_factors_original"
+          ],
+          "examples": [
+            {
+              "value": "smokeless tobacco 87(87%); alcohol 37(37%); betel nut 56(56%); smoking tobacco 39(39%) [total n=100; multiple habits per patient]",
+              "source_text": ""
+            }
+          ],
+          "description": "Standardized risk-factor summary. Format: 'Substance N(%)' for each factor reported, joined by semicolons. Use lower-case substance names (e.g., 'smokeless tobacco', 'alcohol', 'betel nut', 'smoking tobacco', 'gutkha', 'pan'). Append a trailing note in square brackets if totals differ from n_total_patients (e.g., '[total n=100; multiple habits per patient]'). Use NR if 'risk_factors_original' is NR. Use NA only if the field does not apply.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract numeric demographic statistics (age, sex distribution, and total sample size) from a medical research paper.\n\nForm Questions:\n- age_central_tendency_type: \"Which central-tendency statistic is reported for age?\"\n  Options: Mean, Median, Not reported\n- age_central_tendency_value: \"What is the mean or median age for the whole study sample (in years)?\"\n- age_sd: \"What is the standard deviation of age for the whole study sample?\"\n- age_range: \"What is the age range for the whole study sample (Min-Max)?\"\n- n_total_patients: \"How many patients were initially recruited (before any attrition)?\"\n- n_female: \"How many female participants were in the study?\"\n- pct_female: \"What percentage of participants were female?\"\n- n_male: \"How many male participants were in the study?\"\n- pct_male: \"What percentage of participants were male?\"\n\nThese fields capture the core demographic numerics needed for systematic review and meta-analysis. Age statistics must reflect the whole sample; per-subgroup values should not be entered in the numeric fields. Sex counts and percentages should be mutually consistent (pct_female + pct_male \u2248 100).",
+      "class_name": "ExtractDemographicNumerics",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the medical research paper from which demographic statistics are to be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "age_central_tendency_type",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Demographics or Patient Characteristics table, or the first paragraph of the Results section",
+            "If both mean and median are reported, select 'Mean'",
+            "If age is reported only per subgroup (e.g., SCC vs non-SCC) with no whole-sample value, still record the type used for those subgroups"
+          ],
+          "rules": [
+            "Must be exactly one of: 'Mean', 'Median', 'Not reported'",
+            "Use exact spelling and capitalisation as listed in options",
+            "Prefer 'Mean' when both mean and median are reported",
+            "Use 'Not reported' only when neither mean nor median appears anywhere in the paper"
+          ],
+          "options": [
+            "Mean",
+            "Median",
+            "Not reported"
+          ],
+          "examples": [
+            {
+              "value": "Mean",
+              "source_text": ""
+            }
+          ],
+          "description": "Which central-tendency statistic (Mean or Median) is reported for age in the study, or 'Not reported' if neither is given.",
+          "source_grounded": true
+        },
+        {
+          "name": "age_central_tendency_value",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Demographics or Patient Characteristics table for a row labelled 'Age (mean)' or 'Age (median)'",
+            "Check the first paragraph of the Results or Methods section",
+            "If age is reported only per subgroup, enter NR here and note subgroup values elsewhere"
+          ],
+          "rules": [
+            "Must be a single numeric value (integer or decimal) or 'NR'",
+            "Do NOT include units, parenthetical text, or subgroup breakdowns",
+            "Decimal values are allowed (e.g., 49.70)",
+            "Use 'NR' if the whole-sample value is not reported"
+          ],
+          "examples": [
+            {
+              "value": "49.70",
+              "source_text": ""
+            }
+          ],
+          "description": "Single numeric value of the mean or median age for the WHOLE study sample, in years. Decimal allowed (e.g., 49.70). MUST be a single number or NR. Do NOT enter per-subgroup values (e.g., 'OSCC: 56.85; Benign: 58.03') \u2014 those belong in 'severity_target_condition' as a note. Do NOT append text such as '(analyzed)'. Use NR if not reported for the whole sample.",
+          "source_grounded": true
+        },
+        {
+          "name": "age_sd",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for 'SD', '\u00b1', or 'standard deviation' adjacent to the mean age value",
+            "Check footnotes of the demographics table",
+            "If only IQR or range is reported, enter NR"
+          ],
+          "rules": [
+            "Must be a single numeric value (integer or decimal) or 'NR'",
+            "Do NOT include the '\u00b1' symbol or any text",
+            "Do NOT enter per-subgroup SDs",
+            "Use 'NR' if SD is not reported, including when only IQR or range is given"
+          ],
+          "examples": [
+            {
+              "value": "12.38",
+              "source_text": ""
+            }
+          ],
+          "description": "Standard deviation of age for the WHOLE study sample. Single numeric value or NR. Do NOT enter per-subgroup SDs or text such as '(analyzed)'. Use NR if not reported (including studies that report only IQR or range).",
+          "source_grounded": true
+        },
+        {
+          "name": "age_range",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for 'range', 'min', 'max', or parenthetical values adjacent to the mean/median age",
+            "Check the demographics table footnotes or the patient characteristics section",
+            "If only a categorical range is given (e.g., '<20 to >70'), preserve that exact wording"
+          ],
+          "rules": [
+            "Format as 'Min-Max' using a plain hyphen (e.g., '25-86')",
+            "Do NOT use en-dash (\u2013) or em-dash (\u2014); use only a plain hyphen (-)",
+            "If a categorical range is reported, preserve the original wording verbatim",
+            "Do NOT enter multiple per-subgroup ranges; enter NR and note subgroup ranges elsewhere",
+            "Use 'NR' if no range is reported for the whole sample"
+          ],
+          "examples": [
+            {
+              "value": "25-86",
+              "source_text": ""
+            }
+          ],
+          "description": "Age range for the WHOLE study sample, formatted as 'Min-Max' using a plain hyphen (e.g., '25-86'). If the paper reports a categorical range (e.g., '<20 to >70'), preserve that wording. Do NOT enter multiple per-subgroup ranges here (e.g., 'SCC 39-98, non-SCC 20-98'); put subgroup ranges in 'severity_target_condition'. Use NR if not reported. Use a single dash character consistently \u2014 do NOT mix en-dash / em-dash.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_total_patients",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for 'enrolled', 'recruited', 'included', or 'total' in the Methods or Patient Characteristics section",
+            "Check the CONSORT flow diagram or study flowchart for the initial enrolment number",
+            "Distinguish the recruited total from the analysed subset \u2014 use the recruited total here"
+          ],
+          "rules": [
+            "Must be a single integer or 'NR'",
+            "Do NOT include parenthetical text such as '(98 analyzed)'",
+            "Do NOT enter a value that is plausibly a year (e.g., 2018, 2026) without verifying it is a patient count",
+            "Use 'NR' if the recruited total is not reported"
+          ],
+          "examples": [
+            {
+              "value": "87",
+              "source_text": ""
+            }
+          ],
+          "description": "Total number of patients INITIALLY recruited (denominator before any attrition). MUST be a single integer or NR. Do NOT include parenthetical detail such as '105 (98 analyzed)' or '200 (100 stained, 100 not)' \u2014 the analyzed count belongs in the reference-standard form. Verify any value that looks like a year (e.g., 2018, 2026) before entering. Use NR if not reported.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_female",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for 'female', 'women', or 'F' in the demographics table or patient characteristics section",
+            "Check if sex is reported as a count (n) or only as a percentage; if only percentage, enter NR here"
+          ],
+          "rules": [
+            "Must be a single integer or 'NR'",
+            "Use 0 if the paper explicitly states zero female participants",
+            "Do NOT include percentages in this field",
+            "Use 'NR' if the count of female participants is not reported"
+          ],
+          "examples": [
+            {
+              "value": "38",
+              "source_text": ""
+            }
+          ],
+          "description": "Number of female participants in the study. Single integer or NR. Use 0 if explicitly reported as zero. Do NOT include percentages here \u2014 those belong in 'pct_female'.",
+          "source_grounded": true
+        },
+        {
+          "name": "pct_female",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for '%' or 'percent' adjacent to the female count in the demographics table",
+            "If only counts are available, compute: round(100 \u00d7 n_female / n_total_patients, 2)"
+          ],
+          "rules": [
+            "Must be a decimal number without the '%' symbol (e.g., 43.70)",
+            "If the percentage is not directly stated but n_female and n_total_patients are available, compute it: round(100 \u00d7 n_female / n_total_patients, 2)",
+            "Do NOT include the '%' symbol",
+            "Use 'NR' if neither the percentage nor the components needed to compute it are reported"
+          ],
+          "examples": [
+            {
+              "value": "43.70",
+              "source_text": ""
+            }
+          ],
+          "description": "Percentage of female participants as a decimal number WITHOUT the '%' symbol (e.g., 43.70). If only n_female and n_total_patients are reported, compute pct_female = round(100 \u00d7 n_female / n_total_patients, 2). Use NR if neither the percentage nor the components are reported.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_male",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for 'male', 'men', or 'M' in the demographics table or patient characteristics section",
+            "If sex is reported only as a percentage, enter NR here",
+            "n_male may be derivable as n_total_patients \u2212 n_female if both are reported"
+          ],
+          "rules": [
+            "Must be a single integer or 'NR'",
+            "Use 0 if the paper explicitly states zero male participants",
+            "Do NOT include percentages in this field",
+            "Use 'NR' if the count of male participants is not reported"
+          ],
+          "examples": [
+            {
+              "value": "49",
+              "source_text": ""
+            }
+          ],
+          "description": "Number of male participants in the study. Single integer or NR. Use 0 if explicitly reported as zero.",
+          "source_grounded": true
+        },
+        {
+          "name": "pct_male",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for '%' or 'percent' adjacent to the male count in the demographics table",
+            "If only counts are available, compute: round(100 \u00d7 n_male / n_total_patients, 2)",
+            "Verify that pct_female + pct_male \u2248 100; if not, recheck the source numbers"
+          ],
+          "rules": [
+            "Must be a decimal number without the '%' symbol (e.g., 56.30)",
+            "If the percentage is not directly stated but n_male and n_total_patients are available, compute it: round(100 \u00d7 n_male / n_total_patients, 2)",
+            "pct_female + pct_male should sum to approximately 100; flag discrepancies by rechecking source values",
+            "Do NOT include the '%' symbol",
+            "Use 'NR' if neither the percentage nor the components needed to compute it are reported"
+          ],
+          "examples": [
+            {
+              "value": "56.30",
+              "source_text": ""
+            }
+          ],
+          "description": "Percentage of male participants as a decimal number without '%' (e.g., 56.30). If only counts are reported, compute pct_male = round(100 \u00d7 n_male / n_total_patients, 2). pct_female + pct_male should sum to \u2248100 (allow small rounding); if not, recheck the underlying numbers. Use NR if neither percentage nor components are reported.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract and characterize the target conditions studied in an oral potentially malignant disorder (OPMD) or oral squamous cell carcinoma (OSCC) research paper, including condition definitions, severity spectrum, and anatomical sites.\n\nForm Questions:\n- target_condition_opmd_comment: \"How does the study define the OPMD target condition (subtypes or dysplasia grades considered positive)?\"\n- target_condition_oscc_comment: \"How does the study define the oral cancer / OSCC target condition?\"\n- severity_target_condition: \"What is the severity or grade spectrum of the target condition as reported in the study sample?\"\n- site_target_condition: \"What anatomical site(s) within the oral cavity or lips did the target lesion(s) occur?\"\n\nDomain context: Studies may target OPMD only, OSCC only, or both. Use NA when a condition is not a target of the study at all; use NR when it is a target but the paper does not define it. Do not conflate OPMD and OSCC content across fields.",
+      "class_name": "CharacterizeTargetCondition",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the oral medicine or oncology research paper to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "target_condition_opmd_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Study Population', 'Inclusion Criteria', 'Case Definition', or 'Diagnostic Criteria'",
+            "Check the Abstract for a concise statement of which OPMD subtypes were studied",
+            "Look for terms such as 'oral leukoplakia', 'erythroplakia', 'oral submucous fibrosis (OSF)', 'oral lichen planus (OLP)', 'potentially malignant disorder', 'PMD', 'epithelial dysplasia'"
+          ],
+          "rules": [
+            "Extract the definition or list of OPMD subtypes/dysplasia grades the study considers as the positive target condition",
+            "Do NOT include oral cancer or OSCC content here \u2014 that belongs in 'target_condition_oscc_comment'",
+            "Do NOT copy inclusion/exclusion criteria verbatim; summarise which OPMD subtypes or grades are considered positive",
+            "Use \"NA\" if OPMD is NOT a target condition in this study",
+            "Use \"NR\" if OPMD is a target condition but the paper does not define or specify which subtypes/grades are included"
+          ],
+          "examples": [
+            {
+              "value": "Low- and high-risk PMDs; included subtypes: oral leukoplakia, OLP, oral submucous fibrosis, erythroplakia.",
+              "source_text": ""
+            }
+          ],
+          "description": "How the study defines the OPMD target condition \u2014 the OPMD subtypes or dysplasia grades considered positive in this study.",
+          "source_grounded": true
+        },
+        {
+          "name": "target_condition_oscc_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Case Definition', 'Histopathological Criteria', or 'Diagnostic Criteria'",
+            "Check for terms such as 'squamous cell carcinoma', 'SCC', 'carcinoma in situ', 'CIS', 'verrucous carcinoma', 'well/moderately/poorly differentiated'",
+            "The Abstract or Results may also state which cancer categories were included"
+          ],
+          "rules": [
+            "Extract the definition or list of oral cancer/OSCC subtypes, differentiation grades, or staging categories the study considers as the positive target condition",
+            "Do NOT include OPMD or dysplasia content here \u2014 that belongs in 'target_condition_opmd_comment'",
+            "Do NOT copy inclusion/exclusion criteria verbatim; summarise which cancer subtypes or grades are considered positive",
+            "Use \"NA\" if OSCC is NOT a target condition in this study",
+            "Use \"NR\" if OSCC is a target condition but the paper does not define or specify which subtypes/grades are included"
+          ],
+          "examples": [
+            {
+              "value": "Carcinoma in situ; squamous cell carcinoma (well/moderately/poorly differentiated, invasive/microinvasive).",
+              "source_text": ""
+            }
+          ],
+          "description": "How the study defines the oral cancer / OSCC target condition \u2014 the cancer subtypes, differentiation grades, or staging categories considered positive in this study.",
+          "source_grounded": true
+        },
+        {
+          "name": "severity_target_condition",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Results section for tables or text reporting the distribution of severity grades, dysplasia categories, or TNM stages among study participants",
+            "Check for phrases such as 'mild dysplasia', 'moderate dysplasia', 'severe dysplasia', 'carcinoma in situ', 'well-differentiated', 'Stage I/II/III/IV', 'low-risk PMD', 'high-risk PMD'",
+            "Per-subgroup age/sex breakdowns and per-subgroup age ranges should also be captured here when they cannot fit in numeric fields",
+            "Frequency tables (e.g., 'mild 28.6%, moderate 30.2%') should be transcribed as reported"
+          ],
+          "rules": [
+            "Report the severity/grade spectrum exactly as described in the paper, including any percentages or counts per subgroup",
+            "Include dysplasia grades (mild/moderate/severe), CIS, SCC differentiation tiers (well/moderately/poorly), TNM staging, or risk strata as applicable",
+            "Include per-subgroup demographic breakdowns (age, sex) when reported alongside severity categories",
+            "Use \"NR\" if severity or grade information is not stated in the paper"
+          ],
+          "examples": [
+            {
+              "value": "Low-risk (no/questionable/mild dysplasia) and high-risk PMD (moderate/severe dysplasia); carcinoma.",
+              "source_text": ""
+            }
+          ],
+          "description": "Free-text description of the severity or grade spectrum of the target condition as reported in the study sample, including dysplasia grades, CIS, SCC differentiation tiers, TNM staging, risk strata, or per-subgroup counts and demographic breakdowns.",
+          "source_grounded": true
+        },
+        {
+          "name": "site_target_condition",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Results section or participant characteristics tables for site distribution data",
+            "Check for terms such as 'buccal mucosa', 'tongue', 'floor of mouth', 'gingiva', 'palate', 'lip', 'alveolar ridge', 'retromolar trigone'",
+            "Frequency tables listing site counts or percentages (e.g., 'buccal mucosa 40 (63.5%)') should be transcribed as reported",
+            "Do not confuse anatomical site with histopathological severity \u2014 severity belongs in 'severity_target_condition'"
+          ],
+          "rules": [
+            "Extract only anatomical site information \u2014 do NOT include histopathological severity grades (those go in 'severity_target_condition')",
+            "Do NOT include the name of the target condition itself (e.g., 'OSCC', 'leukoplakia') as the site",
+            "Do NOT include examination methodology or instrument descriptions",
+            "A list of sites or a frequency table by site is acceptable",
+            "Use \"NR\" if anatomical site information is not stated in the paper"
+          ],
+          "examples": [
+            {
+              "value": "Lateral tongue, buccal mucosa, floor of mouth, lower lip, soft palate, hard palate, alveolar ridge.",
+              "source_text": ""
+            }
+          ],
+          "description": "Anatomical site(s) within the oral cavity or lips where the target lesion(s) occurred, as reported in the study, including any frequency distributions by site.",
+          "source_grounded": true
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_db0fd9e3_OralCancerPatientPopulationCharacteristicsV3",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "EstablishStudyIdentifier",
+        "ClassifyPatientPopulationArms",
+        "ExtractRecruitmentAndSociodemographics",
+        "ExtractAndStandardizeRiskFactors",
+        "ExtractDemographicNumerics",
+        "CharacterizeTargetCondition"
+      ],
+      "provides_fields": [
+        "paper",
+        "patient_population_categories",
+        "patient_population_innocuous_comment",
+        "patient_population_suspicious_comment",
+        "method_of_patient_selection",
+        "ses_population",
+        "ethnicity_population",
+        "risk_factors_original",
+        "risk_factors_transformed",
+        "age_central_tendency_type",
+        "age_central_tendency_value",
+        "age_sd",
+        "age_range",
+        "n_total_patients",
+        "n_female",
+        "pct_female",
+        "n_male",
+        "pct_male",
+        "target_condition_opmd_comment",
+        "target_condition_oscc_comment",
+        "severity_target_condition",
+        "site_target_condition"
+      ],
+      "requires_fields": []
+    },
+    {
+      "stage": 2,
+      "execution": "sequential",
+      "signatures": [
+        "SynthesizeHarmonizedPopulationCategory"
+      ],
+      "provides_fields": [
+        "population_transformed"
+      ],
+      "requires_fields": [
+        "patient_population_categories"
+      ],
+      "waits_for_stage": 1
+    }
+  ],
+  "fallback_structures": {
+    "EstablishStudyIdentifier": {
+      "paper": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractDemographicNumerics": {
+      "age_sd": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_male": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_female": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "pct_male": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "age_range": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "pct_female": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_total_patients": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "age_central_tendency_type": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "age_central_tendency_value": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "CharacterizeTargetCondition": {
+      "site_target_condition": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "severity_target_condition": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "target_condition_opmd_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "target_condition_oscc_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ClassifyPatientPopulationArms": {
+      "patient_population_categories": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "patient_population_innocuous_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "patient_population_suspicious_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractAndStandardizeRiskFactors": {
+      "risk_factors_original": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "risk_factors_transformed": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractRecruitmentAndSociodemographics": {
+      "ses_population": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "ethnicity_population": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "method_of_patient_selection": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "SynthesizeHarmonizedPopulationCategory": {
+      "population_transformed": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    }
+  },
+  "field_to_signature_map": {
+    "paper": "EstablishStudyIdentifier",
+    "age_sd": "ExtractDemographicNumerics",
+    "n_male": "ExtractDemographicNumerics",
+    "n_female": "ExtractDemographicNumerics",
+    "pct_male": "ExtractDemographicNumerics",
+    "age_range": "ExtractDemographicNumerics",
+    "pct_female": "ExtractDemographicNumerics",
+    "ses_population": "ExtractRecruitmentAndSociodemographics",
+    "n_total_patients": "ExtractDemographicNumerics",
+    "ethnicity_population": "ExtractRecruitmentAndSociodemographics",
+    "risk_factors_original": "ExtractAndStandardizeRiskFactors",
+    "site_target_condition": "CharacterizeTargetCondition",
+    "population_transformed": "SynthesizeHarmonizedPopulationCategory",
+    "risk_factors_transformed": "ExtractAndStandardizeRiskFactors",
+    "age_central_tendency_type": "ExtractDemographicNumerics",
+    "severity_target_condition": "CharacterizeTargetCondition",
+    "age_central_tendency_value": "ExtractDemographicNumerics",
+    "method_of_patient_selection": "ExtractRecruitmentAndSociodemographics",
+    "patient_population_categories": "ClassifyPatientPopulationArms",
+    "target_condition_opmd_comment": "CharacterizeTargetCondition",
+    "target_condition_oscc_comment": "CharacterizeTargetCondition",
+    "patient_population_innocuous_comment": "ClassifyPatientPopulationArms",
+    "patient_population_suspicious_comment": "ClassifyPatientPopulationArms"
+  },
+  "_pulled_from": "project ca68ea03-abd0-48bd-b180-c474a5d5c398 \u00b7 form Oral Cancer \u2014 Patient Population Characteristics v3 (db0fd9e3-142b-4486-bde8-6f00950fa3fa) \u00b7 slug oral_cancer \u00b7 form_label patient_population"
+}

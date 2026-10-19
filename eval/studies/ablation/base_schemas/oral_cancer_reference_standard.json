@@ -1,0 +1,534 @@
+{
+  "version": 1,
+  "task_name": "dynamic_b747ed61_OralCancerReferenceStandardV2",
+  "signatures": [
+    {
+      "docstring": "Extract the unique study identifier for each row in the evidence table from the research paper.\n\nForm Questions:\n- paper: \"What is the study identifier for this entry?\"\n\nThe study identifier follows the format 'First Author Year' (e.g., 'Aggarwal 2022'). When the same study contributes multiple entries (e.g., two index-test arms reported separately), a letter suffix disambiguates them (e.g., 'Sharma 2021a', 'Sharma 2021b'). This field serves as the row key and must be populated for every row.",
+      "class_name": "EstablishStudyIdentifier",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper from which the study identifier is to be extracted",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "paper",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for the first-listed or corresponding author's surname in the paper header, title page, or citation line",
+            "The publication year is typically found on the title page, journal header, or copyright line",
+            "If multiple entries from the same study are being extracted in separate rows, append a lowercase letter suffix (a, b, c\u2026) to distinguish them"
+          ],
+          "rules": [
+            "Format must be 'Surname YYYY' with a single space between surname and year (e.g., 'Aggarwal 2022')",
+            "Use only the first author's surname \u2014 do not include initials, given names, or co-authors",
+            "Year must be the 4-digit publication year of the paper",
+            "If the same study has multiple entries reported separately (e.g., two index-test arms), append a lowercase letter suffix: 'Sharma 2021a', 'Sharma 2021b'",
+            "Do not abbreviate or alter the surname spelling"
+          ],
+          "examples": [
+            {
+              "value": "Aggarwal 2022",
+              "source_text": ""
+            }
+          ],
+          "description": "Study identifier in 'First Author Year' format, serving as the unique row key for this entry in the evidence table.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Classify the reference standard and positivity threshold used in a diagnostic accuracy study of oral potentially malignant disorders (OPMDs).\n\nForm Questions:\n- reference_standard_type: \"What type of reference standard was used to establish the final diagnosis?\"\n  Options: Biopsy and histopathological assessment, Clinical follow-up, Other\n- positivity_threshold_transformed: \"What is the harmonized positivity threshold for disease classification?\"\n  Options: dysplasia and carcinoma, severe dysplasia and carcinoma, dysplasia, carcinoma only, other\n\nThe reference standard type captures the method used to confirm disease presence or absence. The positivity threshold captures which histological grades count as 'disease-positive' for meta-analysis purposes, mapped to one of five fixed categories regardless of the terminology used in the source paper.",
+      "class_name": "ClassifyReferenceStandard",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "reference_standard_type",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under headings such as 'Reference Standard', 'Gold Standard', 'Histopathological Assessment', or 'Diagnosis Confirmation'",
+            "Check whether the study confirms disease via tissue biopsy and pathology report, or via longitudinal clinical follow-up without biopsy",
+            "If the paper describes a combination approach, determine which method is the primary truth standard"
+          ],
+          "rules": [
+            "Must be exactly one of the three allowed options: 'Biopsy and histopathological assessment', 'Clinical follow-up', or 'Other'",
+            "Use 'Biopsy and histopathological assessment' when tissue biopsy followed by histopathological analysis is the primary method of diagnosis confirmation",
+            "Use 'Clinical follow-up' only when the study uses clinical follow-up (without biopsy) as the truth standard",
+            "Use 'Other' for any arrangement not covered by the above two options",
+            "Do NOT record the biopsy technique (e.g., punch biopsy, excisional biopsy) in this field \u2014 that belongs elsewhere",
+            "Use exact spelling and capitalisation as listed in the options"
+          ],
+          "options": [
+            "Biopsy and histopathological assessment",
+            "Clinical follow-up",
+            "Other"
+          ],
+          "examples": [
+            {
+              "value": "Biopsy and histopathological assessment",
+              "source_text": ""
+            }
+          ],
+          "description": "Type of reference standard used to establish the final diagnosis. For this review, the expected value is 'Biopsy and histopathological assessment'. Choose 'Clinical follow-up' only if the study uses follow-up (not biopsy) as the truth standard. Choose 'Other' for any other arrangement and describe it in 'reference_standard_comment'. Do not place biopsy technique here.",
+          "source_grounded": true
+        },
+        {
+          "name": "positivity_threshold_transformed",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Histopathological Criteria', 'Outcome Definition', 'Disease Definition', or 'Positivity Threshold'",
+            "Check how the study defines a 'positive' biopsy result \u2014 which histological grades are counted as disease",
+            "Note whether mild/moderate dysplasia are included or excluded from the positive category",
+            "If the paper uses WHO or other grading systems, map the described threshold to the closest fixed option"
+          ],
+          "rules": [
+            "Must be exactly one of the five allowed options: 'dysplasia and carcinoma', 'severe dysplasia and carcinoma', 'dysplasia', 'carcinoma only', or 'other'",
+            "Use 'dysplasia and carcinoma' when any grade of dysplasia OR any carcinoma qualifies as disease-positive",
+            "Use 'severe dysplasia and carcinoma' when only severe/high-grade dysplasia and carcinoma are positive; mild and moderate dysplasia are negative",
+            "Use 'dysplasia' when only dysplasia (any grade) is the target outcome and carcinoma is not included or is excluded",
+            "Use 'carcinoma only' when only invasive carcinoma and/or carcinoma in situ (CIS) is positive and dysplasia is treated as negative",
+            "Use 'other' for any threshold rule not captured by the above four options (e.g., site-specific criteria, staging-based, OPMD subtype labels)",
+            "Do NOT enter free text \u2014 always map to the closest fixed option",
+            "Use exact lowercase spelling as listed in the options"
+          ],
+          "options": [
+            "dysplasia and carcinoma",
+            "severe dysplasia and carcinoma",
+            "dysplasia",
+            "carcinoma only",
+            "other"
+          ],
+          "examples": [
+            {
+              "value": "dysplasia and carcinoma",
+              "source_text": ""
+            }
+          ],
+          "description": "Harmonized positivity threshold mapped to one of five fixed options for meta-analysis. Mapping rules: (a) 'dysplasia and carcinoma' \u2014 any degree of dysplasia OR any carcinoma is disease-positive; (b) 'severe dysplasia and carcinoma' \u2014 only severe dysplasia and/or carcinoma is positive (mild and moderate dysplasia are negative); (c) 'dysplasia' \u2014 only dysplasia (any grade) is positive, carcinoma is not targeted or excluded; (d) 'carcinoma only' \u2014 only invasive carcinoma and/or CIS is positive, dysplasia is treated as negative; (e) 'other' \u2014 any other rule (e.g., site-specific, staging-based, OPMD subtype labels). MUST be one of these five exact strings. Do not enter free text \u2014 map to the closest option and capture verbatim text in the comment fields.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract patient and lesion counts related to the reference-standard (biopsy) procedure from a clinical or diagnostic accuracy study.\n\nForm Questions:\n- n_patients_rs: \"Total number of patients enrolled in the reference-standard (biopsy) procedure?\"\n- n_patients_rs_analyzed: \"Number of patients whose biopsy results were included in the final analysis?\"\n- n_lesions_rs: \"Total number of lesions biopsied (if the study reports lesion-level counts)?\"",
+      "class_name": "ExtractBiopsySampleCounts",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper from which biopsy sample counts are to be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "n_patients_rs",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Participants', 'Study Population', or 'Patients enrolled'",
+            "Check the flow diagram or CONSORT diagram for enrollment numbers",
+            "Parenthetical clarifications (e.g., exclusions, subgroup breakdowns) often appear immediately after the count in the text"
+          ],
+          "rules": [
+            "Enter as a single integer when available",
+            "Parenthetical context may follow the number to explain exclusions or subgroups (e.g., '110 (38 excluded as a result of inadequate cellularity)', '420 (502 minus 32 stomatitis minus 50 normal mucosa)')",
+            "If the paper reports only a year-like number or a value that looks implausible as a patient count (e.g., 2018, 2026), double-check before entering",
+            "Use 'NR' if not reported; 'NR because [reason]' is acceptable when the paper explains why a count is not available",
+            "Do not confuse enrollment count with analyzed count \u2014 this field captures the enrolled total"
+          ],
+          "examples": [
+            {
+              "value": "87",
+              "source_text": ""
+            }
+          ],
+          "description": "Total number of patients enrolled in the reference-standard (biopsy) procedure. Parenthetical context may follow the number to explain exclusions or subgroups.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_patients_rs_analyzed",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for phrases such as 'included in the analysis', 'evaluable patients', 'adequate specimens', or 'final analysis'",
+            "Check the Results section or a participant flow diagram for the analyzed subset",
+            "If the paper embeds the count within a descriptive sentence, quote that sentence as source_text"
+          ],
+          "rules": [
+            "Enter as a single integer or NR/NA",
+            "Parenthetical context or a brief quoted sentence may be appended when the paper embeds the analyzed count within a descriptive sentence",
+            "Use NR if not reported",
+            "If equal to n_patients_rs, still enter the number explicitly",
+            "Do not substitute the enrolled count for the analyzed count without explicit confirmation they are the same"
+          ],
+          "examples": [
+            {
+              "value": "87",
+              "source_text": ""
+            }
+          ],
+          "description": "Number of patients whose biopsy results were included in the final analysis, which may be less than the enrolled total due to inadequate specimens, withdrawal, or other exclusions.",
+          "source_grounded": true
+        },
+        {
+          "name": "n_lesions_rs",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for phrases such as 'lesions biopsied', 'biopsy sites', 'lesion-level analysis', or 'specimens obtained'",
+            "Check the Methods and Results sections for lesion counts separate from patient counts",
+            "If the study clearly uses only one biopsy per patient with no separate lesion count reported, use NA"
+          ],
+          "rules": [
+            "Enter as a single integer or NR/NA",
+            "Use NA when the study reports only patient-level counts (one biopsy per patient, no separate lesion count)",
+            "Use NR if the study uses lesion-level analysis but does not state the total",
+            "Parenthetical context may follow when needed",
+            "'NR because [reason]' is acceptable when the paper explains why a lesion count is unavailable",
+            "Do not conflate patient count with lesion count \u2014 a single patient may contribute multiple lesions"
+          ],
+          "examples": [
+            {
+              "value": "122",
+              "source_text": ""
+            }
+          ],
+          "description": "Total number of lesions biopsied when the study reports lesion-level counts, as distinct from patient-level counts.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract details about the biopsy procedure used as the reference standard in oral cancer/lesion diagnostic accuracy studies.\n\nForm Questions:\n- site_of_biopsy: \"Where was the biopsy taken from (anatomical site(s) or selection rule)?\"\n- reference_standard_comment: \"What biopsy technique was used, and what is the procedural context?\"\n- calibration_rs_examiners: \"Who assessed the biopsy slides, what were their qualifications, and was there any calibration or inter-rater reliability process?\"\n- blinding_rs_examiners: \"Were the pathologist(s) reading the biopsy blinded to the index-test result and other clinical information?\"\n\nThese fields capture the reference standard methodology \u2014 anatomical site selection, biopsy technique, pathologist credentials and calibration, and blinding status \u2014 needed for quality appraisal of diagnostic accuracy studies.",
+      "class_name": "ExtractBiopsyProcedureDetails",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the research paper from which biopsy procedure details are to be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "site_of_biopsy",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under headings such as 'Biopsy', 'Reference Standard', 'Histopathology', or 'Specimen Collection'",
+            "Check whether the paper states that biopsy sites were guided by the index test (e.g., Lugol's iodine staining, VELscope, toluidine blue) \u2014 if so, record that selection rule",
+            "Anatomical sites are often listed in participant inclusion criteria or in the description of the clinical examination workflow"
+          ],
+          "rules": [
+            "List all anatomical sites mentioned (e.g., 'buccal mucosa, lateral tongue, floor of mouth')",
+            "If the site was selected based on an index-test result, state that rule verbatim or paraphrased (e.g., 'biopsy taken from the Lugol-unstained area')",
+            "Do NOT include biopsy technique (incisional, punch, etc.) in this field \u2014 that belongs in reference_standard_comment",
+            "Use \"NR\" if no site information is provided; a brief contextual quote from the paper may follow NR on the same entry (e.g., 'NR. \"a biopsy sample was taken from suspected lesions\"')"
+          ],
+          "examples": [
+            {
+              "value": "Lateral tongue, floor of mouth, buccal mucosa",
+              "source_text": ""
+            }
+          ],
+          "description": "Where the biopsy was taken from \u2014 anatomical site(s) within the oral cavity, the selection rule used (e.g., 'biopsy taken from the blue-stained area'), or a combination of both. If the paper reports anatomical sites, list them (e.g., 'buccal mucosa, lateral tongue, floor of mouth'). If the site was determined by the index-test result, state that rule verbatim or paraphrased. If no site information is given, use NR; a brief contextual quote may follow NR on the same entry (e.g., 'NR. \"a biopsy sample was taken from suspected lesions\"'). Do NOT put biopsy technique here (that belongs in reference_standard_comment).",
+          "source_grounded": true
+        },
+        {
+          "name": "reference_standard_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Reference Standard', 'Biopsy Procedure', 'Histopathological Examination', or 'Specimen Collection'",
+            "The technique name is often embedded in a sentence describing the clinical workflow (e.g., 'All suspicious lesions underwent incisional biopsy')",
+            "If the paper only describes tissue processing (fixation, staining) without naming the collection technique, use 'unclear: [quoted text]'"
+          ],
+          "rules": [
+            "Lead with the technique name (e.g., 'Incisional biopsy', 'Punch biopsy', 'Wedge biopsy', 'Surgical excision', 'Scalpel biopsy')",
+            "Multiple techniques may be combined (e.g., 'Incisional and/or excisional biopsy')",
+            "A short contextual note may follow the technique name when tied to the study workflow",
+            "Use 'unclear: [quoted text]' when the paper describes specimen processing rather than the biopsy collection procedure itself",
+            "Use \"NR\" if neither the technique nor any relevant context is specified",
+            "Spell 'biopsy' correctly \u2014 never 'biopsey' or 'biposy'"
+          ],
+          "examples": [
+            {
+              "value": "Incisional biopsy",
+              "source_text": ""
+            }
+          ],
+          "description": "Biopsy technique and any brief context about how or why biopsies were performed. Lead with the technique name (e.g., 'Incisional biopsy', 'Punch biopsy', 'Wedge biopsy', 'Surgical excision', 'Scalpel biopsy'). Multiple techniques may be combined (e.g., 'Incisional and/or excisional biopsy'). A short contextual note may follow the technique name when the paper's description is tied to the workflow (e.g., 'lesions examined under DrOroscope were referred for a confirmatory biopsy', 'To be included, patients had to have a confirmed diagnosis by biopsy'). Use NR if neither the technique nor the context is specified; 'unclear: [quoted text]' is acceptable when the paper describes specimen processing rather than the biopsy procedure itself. Spell 'biopsy' correctly.",
+          "source_grounded": true
+        },
+        {
+          "name": "calibration_rs_examiners",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Histopathological Assessment', 'Pathology Review', 'Reference Standard', or 'Grading'",
+            "Kappa statistics or inter-rater agreement values are strong indicators that calibration was described",
+            "Check whether the paper names the grading system used (e.g., WHO 2017, Ljubljana classification, Brothwell criteria)",
+            "If only one pathologist is mentioned with no calibration process, record their credentials and note 'No calibration reported'"
+          ],
+          "rules": [
+            "Record the number and type of pathologists (e.g., 'two oral pathologists', 'one experienced histopathologist')",
+            "Include credentials, experience level, or institutional affiliation if stated",
+            "Include grading guidelines or classification systems used (e.g., WHO 2017 criteria)",
+            "Include consensus or joint-reading arrangements and any kappa/agreement statistics if reported",
+            "If no calibration is described, write 'No calibration reported' followed by any available credential detail",
+            "Use \"NR\" when the paper mentions pathology reading but provides no information about who performed it or how"
+          ],
+          "examples": [
+            {
+              "value": "Two oral pathologists graded independently using WHO 2017 criteria; disagreements resolved by consensus.",
+              "source_text": ""
+            }
+          ],
+          "description": "Who assessed the biopsy slides, their qualifications, and any calibration or inter-rater reliability process. Acceptable content: the number and type of pathologists (e.g., 'two oral pathologists'), their credentials or experience level, the grading guidelines used (e.g., WHO 2017 criteria), joint reading or consensus arrangements, and kappa or agreement statistics. If the paper only states credentials without describing the reading process, record those credentials. If the paper says no calibration was done, write 'No calibration reported' followed by any available detail. Use NR when the paper mentions pathology reading but provides no information about who did it or how.",
+          "source_grounded": true
+        },
+        {
+          "name": "blinding_rs_examiners",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look for explicit blinding statements in the Methods section under 'Blinding', 'Masking', 'Reference Standard', or 'Histopathological Assessment'",
+            "If the biopsy was taken before the index test was performed, 'Probably blinded' is a reasonable inference \u2014 state the reasoning",
+            "If the paper describes independent pathologist review without mentioning blinding, note this after NR"
+          ],
+          "rules": [
+            "Use one of the four preferred answers: 'Blinded', 'Not blinded', 'Probably blinded', or 'NR'",
+            "Follow the answer with a brief quoted phrase or explanation from the paper when available",
+            "Use 'Probably blinded' with explicit reasoning when blinding can be inferred from the study workflow (e.g., biopsy preceded index test)",
+            "Use 'Not blinded' with a brief reason when the paper explicitly states or implies pathologists had access to index-test results",
+            "Use \"NR\" when blinding status is not mentioned; a brief contextual note may follow (e.g., 'NR \u2014 two independent pathologists assessed specimens but blinding not mentioned')",
+            "Quote the relevant sentence from the paper verbatim when it directly addresses blinding"
+          ],
+          "examples": [
+            {
+              "value": "Blinded \u2014 \"The pathologists examining the biopsy specimens were not informed regarding the staining information of the samples.\"",
+              "source_text": ""
+            }
+          ],
+          "description": "Whether the pathologist(s) reading the biopsy were blinded to the index-test result and other clinical information. Preferred answers: 'Blinded' (with a brief quoted phrase or explanation), 'Not blinded' (with a brief reason), 'Probably blinded' (with the reasoning, e.g., biopsy was taken prior to the index test), or 'NR'. A brief contextual note may follow NR when the paper provides relevant but incomplete information (e.g., 'NR \u2014 two independent pathologists assessed specimens but blinding not mentioned'). Quote the relevant sentence from the paper when available.",
+          "source_grounded": true
+        }
+      ]
+    },
+    {
+      "docstring": "Extract histopathological positivity threshold details and final diagnosis distributions from oral cancer and OPMD diagnostic accuracy studies.\n\nForm Questions:\n- positive_threshold_oral_cancer_comment: \"What histopathological criteria does the study use to define a POSITIVE result for oral cavity cancer (invasive carcinoma or carcinoma in situ)?\"\n- positive_threshold_opmd_comment: \"What histopathological criteria does the study use to define a POSITIVE result for an oral potentially malignant disorder (OPMD)?\"\n- final_diagnosis_patients: \"What are the histopathological diagnoses observed in the study sample, ideally with counts or percentages per diagnostic category?\"\n\nThese fields capture the reference standard definitions used in diagnostic accuracy studies of oral cancer and OPMD, enabling cross-study comparison of positivity thresholds and case-mix distributions.",
+      "class_name": "ExtractPositivityThresholdDetails",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the oral cancer or OPMD diagnostic accuracy study to extract from",
+          "name": "markdown_content",
+          "type": "str"
+        },
+        {
+          "desc": "Previously extracted positivity threshold data with source grounding from another signature (contains 'value' and 'source_text' keys)",
+          "name": "positivity_threshold_transformed",
+          "type": "Dict[str, Any]"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "positive_threshold_oral_cancer_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Reference standard', 'Histopathological diagnosis', or 'Outcome definition'",
+            "Check the Results section for descriptions of confirmed cancer cases",
+            "Look for terms such as 'squamous cell carcinoma', 'carcinoma in situ', 'verrucous carcinoma', or 'oral cancer recurrence'",
+            "If the study defines a binary positive/negative outcome, find the cancer-side definition"
+          ],
+          "rules": [
+            "Extract the exact histological label(s) used by the study to define oral cancer positivity",
+            "Do NOT include dysplasia-only grades (e.g., mild, moderate, severe dysplasia) unless the study explicitly groups them with carcinoma in the same positivity class",
+            "Use 'NA' when oral cancer is NOT a target condition in the study",
+            "Use 'NR' when the study targets oral cancer but does not specify the histological cut-off",
+            "Separate multiple histological categories with ' + ' or list them as written in the paper"
+          ],
+          "examples": [
+            {
+              "value": "Carcinoma in situ and squamous cell carcinoma",
+              "source_text": ""
+            }
+          ],
+          "description": "Histopathological criteria that the study uses to call a biopsy POSITIVE for oral cavity cancer (invasive carcinoma or carcinoma in situ).",
+          "source_grounded": true
+        },
+        {
+          "name": "positive_threshold_opmd_comment",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Reference standard', 'Histopathological diagnosis', or 'Outcome definition'",
+            "Check for dysplasia grading thresholds such as 'mild, moderate and severe dysplasia' or 'any dysplasia'",
+            "Look for OPMD subtype labels such as 'leukoplakia with epithelial dysplasia' or 'oral submucous fibrosis'",
+            "Carcinoma in situ may appear here if the study groups it with dysplasia rather than with invasive carcinoma",
+            "Patient counts per dysplasia grade may be embedded in the threshold description \u2014 include them if present"
+          ],
+          "rules": [
+            "Extract the exact histological label(s) or grade threshold(s) used by the study to define OPMD positivity",
+            "Include patient counts per grade if the paper embeds them in the threshold description",
+            "Use 'NA' when OPMD is not a target condition in the study",
+            "Use 'NR' when OPMD is targeted but the threshold is not stated",
+            "Do not conflate with the oral cancer threshold unless the study explicitly merges them"
+          ],
+          "examples": [
+            {
+              "value": "Mild, moderate, and severe epithelial dysplasia",
+              "source_text": ""
+            }
+          ],
+          "description": "Histopathological criteria that the study uses to call a biopsy POSITIVE for an oral potentially malignant disorder (OPMD).",
+          "source_grounded": true
+        },
+        {
+          "name": "final_diagnosis_patients",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Results section, often in a 'Study population', 'Patient characteristics', or 'Histopathological findings' table or paragraph",
+            "Check for a breakdown such as 'X normal, Y mild dysplasia, Z SCC'",
+            "If no per-category breakdown is given, look for a summary label describing the positive and negative case mix",
+            "Percentage breakdowns are acceptable when absolute counts are not reported"
+          ],
+          "rules": [
+            "Preferred format: a count or frequency list by diagnostic category (e.g., '40 normal, 22 mild dysplasia, 10 moderate dysplasia, 5 SCC')",
+            "If no per-category breakdown is available, enter the positivity category label as a summary (e.g., 'dysplasia and carcinoma')",
+            "Use 'NR' if the paper does not report diagnosis distribution at all",
+            "Do not invent or infer counts not explicitly stated in the paper"
+          ],
+          "examples": [
+            {
+              "value": "40 normal, 22 mild dysplasia, 10 moderate dysplasia, 5 SCC",
+              "source_text": ""
+            }
+          ],
+          "description": "The histopathological diagnoses observed in the study sample, preferably as a frequency table or count list by diagnostic category.",
+          "source_grounded": true
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_b747ed61_OralCancerReferenceStandardV2",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "EstablishStudyIdentifier",
+        "ClassifyReferenceStandard",
+        "ExtractBiopsySampleCounts",
+        "ExtractBiopsyProcedureDetails"
+      ],
+      "provides_fields": [
+        "paper",
+        "reference_standard_type",
+        "positivity_threshold_transformed",
+        "n_patients_rs",
+        "n_patients_rs_analyzed",
+        "n_lesions_rs",
+        "site_of_biopsy",
+        "reference_standard_comment",
+        "calibration_rs_examiners",
+        "blinding_rs_examiners"
+      ],
+      "requires_fields": []
+    },
+    {
+      "stage": 2,
+      "execution": "sequential",
+      "signatures": [
+        "ExtractPositivityThresholdDetails"
+      ],
+      "provides_fields": [
+        "positive_threshold_oral_cancer_comment",
+        "positive_threshold_opmd_comment",
+        "final_diagnosis_patients"
+      ],
+      "requires_fields": [
+        "positivity_threshold_transformed"
+      ],
+      "waits_for_stage": 1
+    }
+  ],
+  "fallback_structures": {
+    "EstablishStudyIdentifier": {
+      "paper": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ClassifyReferenceStandard": {
+      "reference_standard_type": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "positivity_threshold_transformed": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractBiopsySampleCounts": {
+      "n_lesions_rs": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_patients_rs": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "n_patients_rs_analyzed": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractBiopsyProcedureDetails": {
+      "site_of_biopsy": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "blinding_rs_examiners": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "calibration_rs_examiners": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "reference_standard_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    },
+    "ExtractPositivityThresholdDetails": {
+      "final_diagnosis_patients": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "positive_threshold_opmd_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      },
+      "positive_threshold_oral_cancer_comment": {
+        "value": "NR",
+        "source_text": "NR"
+      }
+    }
+  },
+  "field_to_signature_map": {
+    "paper": "EstablishStudyIdentifier",
+    "n_lesions_rs": "ExtractBiopsySampleCounts",
+    "n_patients_rs": "ExtractBiopsySampleCounts",
+    "site_of_biopsy": "ExtractBiopsyProcedureDetails",
+    "blinding_rs_examiners": "ExtractBiopsyProcedureDetails",
+    "n_patients_rs_analyzed": "ExtractBiopsySampleCounts",
+    "reference_standard_type": "ClassifyReferenceStandard",
+    "calibration_rs_examiners": "ExtractBiopsyProcedureDetails",
+    "final_diagnosis_patients": "ExtractPositivityThresholdDetails",
+    "reference_standard_comment": "ExtractBiopsyProcedureDetails",
+    "positive_threshold_opmd_comment": "ExtractPositivityThresholdDetails",
+    "positivity_threshold_transformed": "ClassifyReferenceStandard",
+    "positive_threshold_oral_cancer_comment": "ExtractPositivityThresholdDetails"
+  },
+  "_pulled_from": "project ca68ea03-abd0-48bd-b180-c474a5d5c398 \u00b7 form Oral Cancer \u2014 Reference Standard v2 (b747ed61-9bcc-44f6-9e63-028e8716a400) \u00b7 slug oral_cancer \u00b7 form_label reference_standard"
+}

@@ -1,0 +1,448 @@
+Paper,comparison,outcome_type,reporter,timepoint,scale,mean_arm1,sd_arm1,n_arm1,mean_arm2,sd_arm2,n_arm2
+Gazal 2006,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,NR,NR,47,NR,NR,55
+Gazal 2006,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,NR,NR,47,NR,NR,55
+Gazal 2006,paracetamol,pain_intensity,third_party,under_2h,Smiling faces distress scale (5-point),1.77,1.13,47,2.07,1.40,55
+Gazal 2006,paracetamol,pain_intensity,third_party,under_2h,Smiling faces distress scale (5-point),0.94,1.22,47,1.93,1.63,55
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Bernhardt 2001,placebo,pain_intensity,,,,NR,NR,NR,NR,NR,NR
+Bogaert 2005,placebo,pain_intensity,child,under_2h,Faces Pain Scale,NR,NR,29,NR,NR,26
+Bogaert 2005,placebo,pain_intensity,third_party,under_2h,Faces Pain Scale,NR,NR,29,NR,NR,26
+Bogaert 2005,placebo,pain_intensity,third_party,under_2h,CHEOPS,NR,NR,29,NR,NR,26
+Bogaert 2005,placebo,pain_intensity,child,under_2h,Faces Pain Scale,NR,NR,29,NR,NR,26
+Bogaert 2005,placebo,pain_intensity,third_party,under_2h,Faces Pain Scale,NR,NR,NR,NR,NR,NR
+Bogaert 2005,placebo,pain_intensity,third_party,under_2h,CHEOPS,NR,NR,29,NR,NR,26
+Bogaert 2005,placebo,pain_intensity,child,2h_to_24h,Faces Pain Scale,NR,NR,NR,NR,NR,NR
+Bogaert 2005,placebo,pain_intensity,third_party,2h_to_24h,Faces Pain Scale,NR,NR,29,NR,NR,26
+Bogaert 2005,placebo,pain_intensity,child,24h_to_7d,Faces Pain Scale,NR,NR,NR,NR,NR,NR
+Bogaert 2005,placebo,pain_intensity,third_party,24h_to_7d,Faces Pain Scale,NR,NR,NR,NR,NR,NR
+Bogaert 2005,placebo,opioid_consumption,,under_2h,piritramide (mg/kg) doses administered,NR,NR,29,NR,NR,26
+Pickering 2002,placebo,time_to_rescue,third_party,overall,NR,NR,NR,40,NR,NR,18
+Pickering 2002,rofecoxib,time_to_rescue,third_party,overall,NR,NR,NR,40,NR,NR,40
+Pickering 2002,placebo,pain_intensity,child,2h_to_24h,Oucher,NR,NR,40,NR,NR,18
+Pickering 2002,rofecoxib,pain_intensity,child,2h_to_24h,Oucher,NR,NR,NR,NR,NR,NR
+Pickering 2002,placebo,opioid_consumption,,overall,NR,NR,NR,NR,NR,NR,NR
+Pickering 2002,rofecoxib,opioid_consumption,,overall,NR,NR,NR,NR,NR,NR,NR
+Raslan 2021,paracetamol,pain_intensity,child,under_2h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,paracetamol,pain_intensity,child,under_2h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,NR,NR,NR,NR
+Raslan 2021,paracetamol,pain_intensity,child,under_2h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,paracetamol,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,paracetamol,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,paracetamol,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,paracetamol,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,paracetamol,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,placebo,pain_intensity,child,under_2h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,placebo,pain_intensity,child,under_2h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,placebo,pain_intensity,child,under_2h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,placebo,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,placebo,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,placebo,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Raslan 2021,placebo,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,NR,NR,NR,NR
+Raslan 2021,placebo,pain_intensity,child,2h_to_24h,Wong-Baker faces® pain rating scale (WBFS),NR,NR,22,NR,NR,22
+Santos 2020,placebo,pain_intensity,child,under_2h,VAS,6.50,12.14,16,16.88,24.07,16
+Santos 2020,placebo,pain_intensity,child,under_2h,VAS,6.50,12.14,16,16.88,24.07,16
+Santos 2020,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,16,NR,NR,16
+Santos 2020,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Santos 2020,placebo,pain_intensity,child,24h_to_7d,VAS,1.38,3.86,16,6.25,22.39,16
+Santos 2020,placebo,time_to_rescue,third_party,2h_to_24h,NR,NR,NR,NR,NR,NR,NR
+Santos 2020,paracetamol,pain_intensity,child,under_2h,VAS,6.50,12.14,16,13.06,23.49,16
+Santos 2020,paracetamol,pain_intensity,child,under_2h,VAS,6.50,12.14,16,13.06,23.49,16
+Santos 2020,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,16,NR,NR,16
+Santos 2020,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,16,NR,NR,16
+Santos 2020,paracetamol,pain_intensity,child,24h_to_7d,VAS,1.38,3.86,16,1.75,5.06,16
+Santos 2020,paracetamol,time_to_rescue,third_party,2h_to_24h,NR,NR,NR,16,NR,NR,16
+Bird 2007,paracetamol,pain_intensity,child,under_2h,VAS - teeth not touching,20,NR,NR,15,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,2h_to_24h,VAS - teeth not touching,10,NR,NR,10,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,2h_to_24h,VAS - teeth not touching (bedtime),18,NR,NR,15,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,24h_to_7d,VAS - teeth not touching (next morning),22,NR,NR,18,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,under_2h,VAS - chewing food,NR,NR,NR,NR,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,2h_to_24h,VAS - chewing food,10,NR,NR,18,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,2h_to_24h,VAS - chewing food (bedtime),30,NR,NR,30,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,24h_to_7d,VAS - chewing food (next morning),30,NR,NR,35,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,under_2h,VAS - biting back teeth together,28,NR,NR,32,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,2h_to_24h,VAS - biting back teeth together,10,NR,NR,18,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,2h_to_24h,VAS - biting back teeth together (bedtime),30,NR,NR,30,NR,NR
+Bird 2007,paracetamol,pain_intensity,child,24h_to_7d,VAS - biting back teeth together (next morning),30,NR,NR,35,NR,NR
+Datoo 2017,morphine,pain_intensity,child,under_2h,FPS-R,1.8,1.1,67,1.1,1,65
+Datoo 2017,morphine,pain_intensity,child,2h_to_24h,FPS-R,1,1,67,1,1.1,65
+Datoo 2017,morphine,pain_intensity,child,2h_to_24h,FPS-R,NR,NR,65,NR,NR,67
+Datoo 2017,morphine,pain_intensity,child,2h_to_24h,FPS-R,NR,NR,NR,NR,NR,NR
+Datoo 2017,morphine,pain_intensity,child,24h_to_7d,FPS-R,NR,NR,NR,NR,NR,NR
+Datoo 2017,morphine,pain_intensity,child,24h_to_7d,FPS-R,NR,NR,NR,NR,NR,NR
+Datoo 2017,morphine,pain_intensity,child,24h_to_7d,FPS-R,NR,NR,NR,NR,NR,NR
+Datoo 2017,morphine,pain_intensity,child,24h_to_7d,FPS-R,NR,NR,NR,NR,NR,NR
+Kharouba 2019,paracetamol,pain_intensity,child,under_2h,Wong-Baker FACES,NR,NR,33,NR,NR,43
+Kharouba 2019,paracetamol,pain_intensity,child,under_2h,Wong-Baker FACES,NR,NR,33,NR,NR,43
+Kharouba 2019,paracetamol,pain_intensity,child,under_2h,Wong-Baker FACES,NR,NR,33,NR,NR,43
+Kharouba 2019,paracetamol,pain_intensity,child,2h_to_24h,Wong-Baker FACES,NR,NR,33,NR,NR,43
+Kharouba 2019,paracetamol,pain_intensity,child,24h_to_7d,Wong-Baker FACES,1.5,NR,33,1.5,NR,43
+Kharouba 2019,placebo,pain_intensity,child,under_2h,Wong-Baker FACES,NR,NR,NR,NR,NR,NR
+Kharouba 2019,placebo,pain_intensity,child,under_2h,Wong-Baker FACES,NR,NR,33,NR,NR,29
+Kharouba 2019,placebo,pain_intensity,child,under_2h,Wong-Baker FACES,NR,NR,33,NR,NR,29
+Kharouba 2019,placebo,pain_intensity,child,2h_to_24h,Wong-Baker FACES,NR,NR,33,NR,NR,29
+Kharouba 2019,placebo,pain_intensity,child,24h_to_7d,Wong-Baker FACES,NR,NR,NR,NR,NR,NR
+Kharouba 2019,paracetamol,pain_intensity,third_party,under_2h,Taddio Behavioral Pain Scale,4.3,2.19,33,3.86,2.1,43
+Kharouba 2019,paracetamol,pain_intensity,third_party,under_2h,Taddio Behavioral Pain Scale,4.3,2.19,33,3.86,2.1,43
+Kharouba 2019,paracetamol,pain_intensity,third_party,under_2h,Taddio Behavioral Pain Scale,3.67,2.01,33,3.12,2.11,43
+Kharouba 2019,placebo,pain_intensity,third_party,under_2h,Taddio Behavioral Pain Scale,4.3,2.19,33,4.79,2.33,29
+Kharouba 2019,placebo,pain_intensity,third_party,under_2h,Taddio Behavioral Pain Scale,4.3,2.19,33,4.79,2.33,29
+Kharouba 2019,placebo,pain_intensity,third_party,under_2h,Taddio Behavioral Pain Scale,4.3,2.19,33,4.79,2.33,29
+Kokki 1994,placebo,pain_intensity,third_party,under_2h,behavioural pain intensity score (0-9),2.6,2.5,40,3.8,2.3,41
+Kokki 1994,placebo,pain_intensity,third_party,overall,behavioural pain intensity score (0-9),2.6,2.5,NR,3.8,2.3,NR
+Kokki 1994,placebo,opioid_consumption,,under_2h,mg·kg⁻¹ morphine,0.06,0.06,40,0.10,0.07,41
+Kokki 1994,placebo,opioid_consumption,,2h_to_24h,mg·kg⁻¹ morphine,0.14,0.11,40,0.16,0.11,41
+Kokki 1994,placebo,time_to_rescue,third_party,under_2h,"time to first morphine (min), Kaplan-Meier",NR,NR,40,NR,NR,41
+Merry 2013,paracetamol,pain_intensity,child,overall,VAS,34.0,13.44,50,30.4,14.0,49
+Merry 2013,paracetamol,pain_intensity,child,overall,VAS,34.0,13.44,50,30.4,14.00,49
+Moss 2014,placebo,opioid_consumption,,under_2h,Number of rescue analgesic doses of fentanyl in the PACU,1.6,1.30,73,1.9,1.06,65
+Moss 2014,placebo,opioid_consumption,,under_2h,Postoperative fentanyl (µg·kg−1),0.8,0.61,73,0.9,0.52,65
+Moss 2014,placebo,time_to_rescue,third_party,under_2h,hours,0.6,0.05,73,0.5,0.06,65
+Moss 2014,placebo,pain_intensity,child,under_2h,VAS (mm),NR,NR,73,NR,NR,65
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (chewing, 2h)",NR,NR,NR,NR,NR,NR
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (chewing, 6h)",3.49,3.04,20,5.18,3.07,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (chewing, night)",4.96,3.97,20,5.99,2.88,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (chewing, 24h)",NR,NR,20,NR,NR,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (chewing, 2d)",5.01,3.10,20,3.27,2.81,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (chewing, 3d)",4.94,3.07,20,3.27,2.81,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (chewing, 7d)",1.55,2.49,20,1.06,0.80,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (biting, 2h)",2.15,2.44,20,5.41,2.78,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (biting, 6h)",4.56,3.50,20,5.73,3.71,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (biting, night)",5.08,3.56,20,6.34,2.93,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (biting, 24h)",6.08,3.38,20,6.69,2.84,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (biting, 2d)",5.54,2.83,20,4.49,1.95,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (biting, 3d)",4.38,3.03,20,3.78,2.95,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (biting, 7d)",1.79,2.54,20,1.93,1.72,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (fitting front teeth, 2h)",2.03,2.52,20,3.81,3.03,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (fitting front teeth, 6h)",4.09,3.69,20,5.83,3.13,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (fitting front teeth, night)",5.68,3.66,20,6.55,2.84,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting front teeth, 24h)",6.27,2.75,20,6.63,2.91,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting front teeth, 2d)",6.24,3.34,20,5.11,2.88,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting front teeth, 3d)",4.88,3.62,20,4.58,2.87,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting front teeth, 7d)",4.88,3.62,20,2.57,1.97,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (fitting back teeth, 2h)",2.20,2.19,20,3.41,3.01,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (fitting back teeth, 6h)",2.21,2.19,20,5.20,3.07,20
+Polat 2005a,placebo,pain_intensity,child,2h_to_24h,"VAS (fitting back teeth, night)",3.50,3.41,20,5.34,3.07,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting back teeth, 24h)",4.90,3.92,20,5.22,3.32,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting back teeth, 2d)",3.76,3.38,20,3.44,2.97,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting back teeth, 3d)",3.34,3.21,20,2.24,2.09,20
+Polat 2005a,placebo,pain_intensity,child,24h_to_7d,"VAS (fitting back teeth, 7d)",1.22,2.38,20,1.44,1.46,20
+Polat 2005a,naproxen_sodium,pain_intensity,child,2h_to_24h,"VAS (chewing, 2h)",2.18,2.68,20,1.43,2.66,20
+Polat 2005a,naproxen_sodium,pain_intensity,child,2h_to_24h,"VAS (chewing, 6h)",3.49,3.04,20,1.62,2.40,20
+Polat 2005a,naproxen_sodium,pain_intensity,child,2h_to_24h,"VAS (chewing, night)",4.96,3.97,20,2.81,2.76,20
+Polat 2005a,naproxen_sodium,pain_intensity,child,24h_to_7d,"VAS (chewing, 24h)",5.46,3.82,20,3.41,3.27,20
+Polat 2005a,naproxen_sodium,pain_intensity,child,24h_to_7d,"VAS (chewing, 2d)",5.01,3.10,20,3.60,3.16,20
+Polat 2005a,naproxen_sodium,pain_intensity,child,24h_to_7d,"VAS (chewing, 3d)",4.94,3.07,20,2.48,3.09,20
+Polat 2005a,naproxen_sodium,pain_intensity,,,,NR,NR,20,NR,NR,20
+Maunuksela 1992,placebo,pain_intensity,third_party,under_2h,Observer pain score (0-9),NR,NR,63,NR,NR,64
+Maunuksela 1992,placebo,pain_intensity,child,under_2h,Patient pain score (0-3),NR,NR,52,NR,NR,58
+Maunuksela 1992,placebo,opioid_consumption,,under_2h,mg·kg⁻¹ morphine (or oxycodone) equivalents,NR,NR,64,NR,NR,64
+Maunuksela 1992,placebo,opioid_consumption,,2h_to_24h,mg·kg⁻¹ morphine (or oxycodone) equivalents,NR,NR,64,NR,NR,64
+Maunuksela 1992,placebo,opioid_consumption,,24h_to_7d,mg·kg⁻¹ morphine (or oxycodone) equivalents,NR,NR,64,NR,NR,64
+Derkay 1998,paracetamol,pain_intensity,third_party,under_2h,Objective Pain Scale,1.31,2.81,46,1.64,2.67,48
+Derkay 1998,paracetamol,pain_intensity,third_party,under_2h,Objective Pain Scale,1.31,2.81,46,1.64,2.67,48
+Derkay 1998,paracetamol,pain_intensity,third_party,under_2h,Objective Pain Scale,1.31,2.81,46,1.64,2.67,48
+Derkay 1998,placebo,pain_intensity,third_party,under_2h,Objective Pain Scale,1.31,2.81,46,2.3,3.2,44
+Derkay 1998,placebo,pain_intensity,third_party,under_2h,Objective Pain Scale,1.31,2.81,46,2.3,3.2,44
+Derkay 1998,placebo,pain_intensity,third_party,under_2h,Objective Pain Scale,1.31,2.81,46,2.3,3.2,44
+Derkay 1998,paracetamol,opioid_consumption,,under_2h,NR,NR,NR,NR,NR,NR,NR
+Derkay 1998,paracetamol,opioid_consumption,,24h_to_7d,NR,NR,NR,NR,NR,NR,NR
+Derkay 1998,placebo,opioid_consumption,,under_2h,NR,NR,NR,46,NR,NR,44
+Derkay 1998,placebo,opioid_consumption,,24h_to_7d,NR,NR,NR,NR,NR,NR,NR
+Kohli 2011,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Kohli 2011,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Kohli 2011,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Kohli 2011,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Kohli 2011,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Kohli 2011,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Kohli 2011,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Mahgoobifard 2014,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,8.14,0.85,21,7.05,0.63,18
+Mahgoobifard 2014,paracetamol,pain_intensity,third_party,2h_to_24h,CHEOPS,7.75,0.78,21,6.77,0.64,18
+Mahgoobifard 2014,placebo,pain_intensity,third_party,under_2h,CHEOPS,8.14,0.85,21,8.36,1.03,21
+Mahgoobifard 2014,placebo,pain_intensity,third_party,2h_to_24h,CHEOPS,7.75,0.78,21,8.04,1.02,21
+Mirashrafi 2021,paracetamol,pain_intensity,child,2h_to_24h,VAS (Wong-Baker),6.16,NR,25,6,NR,25
+Mirashrafi 2021,paracetamol,pain_intensity,child,24h_to_7d,VAS (Wong-Baker),1.80,NR,25,2.04,NR,25
+Mirashrafi 2021,paracetamol,pain_intensity,child,24h_to_7d,VAS (Wong-Baker),4.00,NR,25,4.16,NR,25
+Polat 2005b,placebo,pain_intensity,child,under_2h,VAS (chewing),3.7,2.75,20,3.81,3.28,20
+Polat 2005b,placebo,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Polat 2005b,placebo,pain_intensity,child,24h_to_7d,VAS (chewing),1.17,1.88,20,1.43,1.81,20
+Polat 2005b,placebo,pain_intensity,child,under_2h,VAS (biting),1.3,2.07,20,3.91,3.42,20
+Polat 2005b,placebo,pain_intensity,child,2h_to_24h,VAS (biting),NR,NR,20,NR,NR,20
+Polat 2005b,placebo,pain_intensity,child,24h_to_7d,VAS (biting),NR,NR,NR,NR,NR,NR
+Polat 2005b,placebo,pain_intensity,child,under_2h,VAS (fitting front teeth),1.30,2.07,20,3.91,3.42,20
+Polat 2005b,placebo,pain_intensity,child,2h_to_24h,VAS (fitting front teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,placebo,pain_intensity,child,24h_to_7d,VAS (fitting front teeth),1.23,1.54,20,2.81,2.21,20
+Polat 2005b,placebo,pain_intensity,child,under_2h,VAS (fitting back teeth),1.65,2.54,20,3.33,3.01,20
+Polat 2005b,placebo,pain_intensity,child,2h_to_24h,VAS (fitting back teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,placebo,pain_intensity,child,24h_to_7d,VAS (fitting back teeth),NR,NR,20,NR,NR,20
+Polat 2005b,paracetamol,pain_intensity,child,under_2h,VAS (chewing),3.7,2.75,20,2.28,2.65,20
+Polat 2005b,paracetamol,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Polat 2005b,paracetamol,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Polat 2005b,paracetamol,pain_intensity,child,under_2h,VAS (biting),1.3,2.07,NR,1.00,2.01,NR
+Polat 2005b,paracetamol,pain_intensity,child,2h_to_24h,VAS (biting),NR,NR,20,NR,NR,20
+Polat 2005b,paracetamol,pain_intensity,child,24h_to_7d,VAS (biting),NR,NR,NR,NR,NR,NR
+Polat 2005b,paracetamol,pain_intensity,child,under_2h,VAS (fitting front teeth),1.30,2.07,20,1.00,2.01,20
+Polat 2005b,paracetamol,pain_intensity,child,2h_to_24h,VAS (fitting front teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,paracetamol,pain_intensity,child,24h_to_7d,VAS (fitting front teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,paracetamol,pain_intensity,child,under_2h,VAS (fitting back teeth),1.65,2.54,20,0.42,0.67,20
+Polat 2005b,paracetamol,pain_intensity,child,2h_to_24h,VAS (fitting back teeth),NR,NR,20,NR,NR,20
+Polat 2005b,paracetamol,pain_intensity,child,24h_to_7d,VAS (fitting back teeth),NR,NR,20,NR,NR,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,under_2h,VAS (chewing),3.7,2.75,20,2.53,3.2,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Polat 2005b,naproxen_sodium,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,20,NR,NR,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,under_2h,VAS (biting),1.3,2.07,20,0.87,2.04,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,2h_to_24h,VAS (biting),NR,NR,20,NR,NR,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,24h_to_7d,VAS (biting),NR,NR,20,NR,NR,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,under_2h,VAS (fitting front teeth),1.30,2.07,20,0.87,2.04,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,2h_to_24h,VAS (fitting front teeth),NR,NR,20,NR,NR,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,24h_to_7d,VAS (fitting front teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,naproxen_sodium,pain_intensity,child,under_2h,VAS (fitting back teeth),1.65,2.54,20,0.40,1.11,20
+Polat 2005b,naproxen_sodium,pain_intensity,child,2h_to_24h,VAS (fitting back teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,naproxen_sodium,pain_intensity,child,24h_to_7d,VAS (fitting back teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,aspirin,pain_intensity,child,under_2h,VAS (chewing),3.7,2.75,20,1.19,2.09,20
+Polat 2005b,aspirin,pain_intensity,child,2h_to_24h,VAS (chewing),NR,NR,NR,NR,NR,NR
+Polat 2005b,aspirin,pain_intensity,child,24h_to_7d,VAS (chewing),NR,NR,NR,NR,NR,NR
+Polat 2005b,aspirin,pain_intensity,child,under_2h,VAS (biting),1.3,2.07,20,1.12,2.58,20
+Polat 2005b,aspirin,pain_intensity,child,2h_to_24h,VAS (biting),NR,NR,NR,NR,NR,NR
+Polat 2005b,aspirin,pain_intensity,child,24h_to_7d,VAS (biting),NR,NR,NR,NR,NR,NR
+Polat 2005b,aspirin,pain_intensity,child,under_2h,VAS (fitting front teeth),1.30,2.07,20,1.12,2.58,20
+Polat 2005b,aspirin,pain_intensity,child,2h_to_24h,VAS (fitting front teeth),NR,NR,20,NR,NR,20
+Polat 2005b,aspirin,pain_intensity,child,24h_to_7d,VAS (fitting front teeth),NR,NR,NR,NR,NR,NR
+Polat 2005b,aspirin,pain_intensity,child,under_2h,VAS (fitting back teeth),1.65,2.54,20,0.62,1.56,20
+Polat 2005b,aspirin,pain_intensity,child,2h_to_24h,VAS (fitting back teeth),NR,NR,20,NR,NR,20
+Polat 2005b,aspirin,pain_intensity,child,24h_to_7d,VAS (fitting back teeth),NR,NR,NR,NR,NR,NR
+Rove 2022,placebo,pain_intensity,child,24h_to_7d,FPS-R/VAS,0.4,NR,22,0.2,NR,22
+Rove 2022,placebo,pain_intensity,third_party,under_2h,NR,NR,NR,22,NR,NR,22
+Rove 2022,placebo,opioid_consumption,,under_2h,mg/kg IV morphine equivalent,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when chewing,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when chewing,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when fitting back teeth together,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when fitting front teeth together,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when fitting front teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting front teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting front teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting front teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting front teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when chewing,9.5,11.6,22,25.2,27.8,22
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when chewing,9.5,11.6,22,25.2,27.8,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when chewing,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when biting,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,2h_to_24h,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting back teeth together,NR,NR,22,NR,NR,22
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,VAS - pain when fitting back teeth together,NR,NR,NR,NR,NR,NR
+Steen Law 2000,placebo,pain_intensity,child,24h_to_7d,,NR,NR,22,NR,NR,22
+Vicioni-Marques 2022,placebo,pain_intensity,child,under_2h,Wong-Baker scale,NR,NR,NR,NR,NR,NR
+Vicioni-Marques 2022,placebo,pain_intensity,child,under_2h,Wong-Baker scale,NR,NR,NR,NR,NR,NR
+Vicioni-Marques 2022,placebo,pain_intensity,child,under_2h,Wong-Baker scale,NR,NR,NR,NR,NR,NR
+Vicioni-Marques 2022,placebo,pain_intensity,child,under_2h,Wong-Baker scale,NR,NR,NR,NR,NR,NR
+Vicioni-Marques 2022,placebo,pain_intensity,child,2h_to_24h,Wong-Baker scale,NR,NR,NR,NR,NR,NR
+Viitanen 2003,paracetamol,opioid_consumption,,under_2h,mg meperidine kg-1,0.78,0.37,41,0.87,0.39,40
+Viitanen 2003,placebo,opioid_consumption,,under_2h,mg meperidine kg-1,0.78,0.37,41,1.07,0.38,38
+Viitanen 2003,paracetamol,time_to_rescue,third_party,under_2h,minutes,12,7,41,11,11,40
+Viitanen 2003,placebo,time_to_rescue,third_party,under_2h,minutes,12,7,41,10,5,38
+Abdelbaser 2022b,placebo,opioid_consumption,,2h_to_24h,μg/kg fentanyl,3.5,1.3,34,5.1,1.4,34
+Abdelbaser 2022b,placebo,opioid_consumption,,overall,μg/kg fentanyl,3.5,1.3,34,5.1,1.4,34
+Abdelbaser 2022b,placebo,time_to_rescue,third_party,overall,hours,8,4.3,34,5.7,2.8,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,under_2h,MOPS,NR,NR,34,NR,NR,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,2h_to_24h,MOPS,NR,NR,34,NR,NR,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,2h_to_24h,MOPS,NR,NR,34,NR,NR,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,2h_to_24h,MOPS,NR,NR,34,NR,NR,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,2h_to_24h,MOPS,NR,NR,34,NR,NR,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,2h_to_24h,MOPS,NR,NR,34,NR,NR,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,2h_to_24h,MOPS,NR,NR,34,NR,NR,34
+Abdelbaser 2022b,placebo,pain_intensity,third_party,24h_to_7d,MOPS,NR,NR,34,NR,NR,34
+Abou 2019,paracetamol,pain_intensity,child,overall,Wong-Baker FACES Pain Rating Scale,NR,NR,20,NR,NR,20
+Abou 2019,paracetamol,pain_intensity,child,under_2h,Wong-Baker FACES Pain Rating Scale,NR,NR,20,NR,NR,20
+Abou 2019,placebo,pain_intensity,child,overall,Wong-Baker FACES Pain Rating Scale,NR,NR,20,NR,NR,20
+Abou 2019,placebo,pain_intensity,child,under_2h,Wong-Baker FACES Pain Rating Scale,NR,NR,20,NR,NR,20
+Gao 2022,placebo,pain_intensity,third_party,under_2h,FLACC,NR,NR,45,NR,NR,44
+Gao 2022,placebo,pain_intensity,third_party,under_2h,FLACC,NR,NR,45,NR,NR,44
+Gao 2022,placebo,opioid_consumption,,overall,fentanyl doses,NR,NR,45,NR,NR,44
+Kashefi 2009,paracetamol,pain_intensity,third_party,under_2h,Agitation scale (0-3),1.36,NR,25,1.4,NR,25
+Kashefi 2009,placebo,pain_intensity,third_party,under_2h,Agitation scale (0-3),1.36,NR,25,2.56,NR,25
+Kashefi 2009,paracetamol,pain_intensity,third_party,2h_to_24h,Oucher's scale,1.36,NR,25,1.52,NR,25
+Kashefi 2009,placebo,pain_intensity,third_party,2h_to_24h,Oucher's scale,1.36,NR,25,1.48,NR,25
+Kashefi 2009,paracetamol,pain_intensity,third_party,24h_to_7d,Oucher's scale,1.36,NR,25,1.52,NR,25
+Kashefi 2009,placebo,pain_intensity,third_party,24h_to_7d,Oucher's scale,1.36,NR,25,1.48,NR,25
+Kashefi 2009,paracetamol,opioid_consumption,,overall,NR,NR,NR,25,NR,NR,25
+Kashefi 2009,placebo,opioid_consumption,,overall,NR,NR,NR,25,NR,NR,25
+Salmassian 2009,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,placebo,pain_intensity,child,2h_to_24h,VAS,3.63,3.01,19,4.07,2.75,20
+Salmassian 2009,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,19,NR,NR,21
+Salmassian 2009,placebo,pain_intensity,child,2h_to_24h,VAS,3.63,3.01,19,4.07,2.75,20
+Salmassian 2009,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,19,NR,NR,21
+Salmassian 2009,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,19,NR,NR,21
+Salmassian 2009,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,19,NR,NR,20
+Salmassian 2009,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,19,NR,NR,20
+Salmassian 2009,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Salmassian 2009,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Troendle 2020,placebo,pain_intensity,child,24h_to_7d,10-point Likert scale,1.1,NR,29,3.1,NR,29
+Tuncer 2014,paracetamol,pain_intensity,child,under_2h,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,paracetamol,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,placebo,pain_intensity,child,under_2h,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Tuncer 2014,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,15,NR,NR,15
+Abdelbaser 2022a,ketorolac,opioid_consumption,,overall,µg/kg/24 h,16.00,5.31,30,14.65,4.61,29
+Abdelbaser 2022a,ketorolac,time_to_rescue,third_party,overall,hours,3.70,1.44,30,3.93,1.48,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,under_2h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,under_2h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,2h_to_24h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,2h_to_24h,mCHEOPS,NR,NR,NR,NR,NR,NR
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,2h_to_24h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,2h_to_24h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,2h_to_24h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,2h_to_24h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,2h_to_24h,mCHEOPS,NR,NR,30,NR,NR,29
+Abdelbaser 2022a,ketorolac,pain_intensity,third_party,24h_to_7d,mCHEOPS,NR,NR,NR,NR,NR,NR
+Alshami 2021,placebo,pain_intensity,child,2h_to_24h,Wong-Baker FACES scale (WBFS),0.4,1.06,28,0.9,1.59,28
+Alshami 2021,placebo,pain_intensity,child,24h_to_7d,Wong-Baker FACES scale (WBFS),0.4,1.06,28,0.9,1.59,28
+Bahrololoomi 2019,paracetamol,pain_intensity,child,under_2h,five-face VAS,0.45,0.82,20,0.73,1.24,19
+Bahrololoomi 2019,placebo,pain_intensity,child,under_2h,five-face VAS,0.45,0.82,20,1.90,1.22,21
+Bennie 1997,placebo,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,6.3,1.3,11
+Bennie 1997,placebo,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,6.3,1.3,11
+Bennie 1997,placebo,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,6.3,1.3,11
+Bennie 1997,placebo,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,6.3,1.3,11
+Bennie 1997,placebo,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,6.3,1.3,11
+Bennie 1997,placebo,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,6.3,1.3,11
+Bennie 1997,placebo,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,6.3,1.3,11
+Bennie 1997,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,7.0,1.7,11
+Bennie 1997,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,7.0,1.7,11
+Bennie 1997,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,7.0,1.7,11
+Bennie 1997,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,7.0,1.7,11
+Bennie 1997,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,5.7,1.7,11,5.7,0.6,11
+Bennie 1997,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,7.0,1.7,11
+Bennie 1997,paracetamol,pain_intensity,third_party,under_2h,CHEOPS,6.2,0.6,11,7.0,1.7,11
+Bogaert 2004,placebo,pain_intensity,child,under_2h,Faces Pain Scale,NR,NR,NR,NR,NR,NR
+Bogaert 2004,placebo,pain_intensity,third_party,under_2h,Faces Pain Scale,NR,NR,28,NR,NR,26
+Bogaert 2004,placebo,pain_intensity,third_party,under_2h,CHEOPS,NR,NR,28,NR,NR,26
+Bogaert 2004,placebo,pain_intensity,child,under_2h,Faces Pain Scale,NR,NR,28,NR,NR,26
+Bogaert 2004,placebo,pain_intensity,third_party,under_2h,Faces Pain Scale,NR,NR,28,NR,NR,26
+Bogaert 2004,placebo,pain_intensity,third_party,under_2h,CHEOPS,NR,NR,28,NR,NR,26
+Bogaert 2004,placebo,pain_intensity,third_party,24h_to_7d,Faces Pain Scale,NR,NR,28,NR,NR,26
+Bogaert 2004,placebo,pain_intensity,third_party,24h_to_7d,Faces Pain Scale,NR,NR,NR,NR,NR,NR
+Peng 2021,placebo,opioid_consumption,,under_2h,ug/kg (fentanyl),0.32,0.44,20,0.95,0.42,20
+Peng 2021,placebo,time_to_rescue,third_party,overall,minutes,16.75,7.25,20,11.37,6.16,20
+Peng 2021,placebo,pain_intensity,third_party,under_2h,CHIPPS,1.90,0.97,20,3.25,1.80,20
+Peng 2021,placebo,pain_intensity,third_party,under_2h,CHIPPS,1.90,0.97,20,3.25,1.80,20
+Peng 2021,placebo,pain_intensity,third_party,under_2h,CHIPPS,NR,NR,20,NR,NR,20
+Peng 2021,placebo,pain_intensity,third_party,under_2h,CHIPPS,1.90,0.97,20,3.25,1.80,20
+Peng 2021,placebo,pain_intensity,third_party,under_2h,CHIPPS,1.90,0.97,20,3.25,1.80,20
+Peng 2021,placebo,pain_intensity,third_party,under_2h,CHIPPS,1.90,0.97,20,3.25,1.80,20
+Peng 2021,placebo,pain_intensity,third_party,under_2h,CHIPPS,NR,NR,20,NR,NR,20
+Bradley 2007,paracetamol,pain_intensity,child,2h_to_24h,VAS,23.4,17.6,77,31.9,18.6,82
+Bradley 2007,paracetamol,pain_intensity,child,24h_to_7d,VAS,22.4,15.1,77,24.7,17.2,82
+Cui 2022,placebo,pain_intensity,third_party,under_2h,FLACC,0.3,NR,45,0.4,NR,45
+Cui 2022,placebo,pain_intensity,third_party,under_2h,FLACC,0.3,NR,45,0.4,NR,45
+Cui 2022,placebo,pain_intensity,third_party,2h_to_24h,FLACC,NR,NR,45,NR,NR,45
+Cui 2022,placebo,opioid_consumption,,overall,μg kg-1 fentanyl,0.07,0.17,45,0.23,0.39,45
+Farzanegan 2012,placebo,pain_intensity,child,under_2h,VAS - chewing,5.10,2.20,10,4.80,3.06,10
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - chewing,NR,NR,NR,NR,NR,NR
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - chewing (bedtime),4.90,2.75,10,6.96,2.13,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - chewing,NR,NR,10,NR,NR,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - chewing (2 days),4.76,3.42,10,6.64,3.11,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - chewing (3 days),3.08,2.69,10,5.04,3.07,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - chewing (7 days),1.93,1.73,10,4.02,2.77,10
+Farzanegan 2012,placebo,pain_intensity,child,under_2h,VAS - biting,3.87,2.57,10,5.11,4.19,10
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - biting,NR,NR,NR,NR,NR,NR
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - biting (bedtime),5.91,1.75,10,7.92,2.25,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - biting,NR,NR,NR,NR,NR,NR
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - biting (2 days),5.80,2.01,10,8.22,2.22,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - biting (3 days),4.39,2.38,10,6.59,2.30,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - biting (7 days),2.11,2.12,10,5.11,3.14,10
+Farzanegan 2012,placebo,pain_intensity,child,under_2h,VAS - fitting front teeth,2.50,2.53,10,4.45,3.18,10
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - fitting front teeth,NR,NR,NR,NR,NR,NR
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - fitting front teeth (bedtime),3.88,2.68,10,5.80,2.48,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting front teeth,NR,NR,10,NR,NR,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting front teeth (2 days),3.02,2.60,10,4.05,2.64,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting front teeth (3 days),2.77,2.76,10,3.59,2.68,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting front teeth (7 days),1.61,1.71,10,2.68,3.14,10
+Farzanegan 2012,placebo,pain_intensity,child,under_2h,VAS - fitting back teeth,4.05,2.40,10,3.87,3.34,10
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - fitting back teeth,NR,NR,10,NR,NR,10
+Farzanegan 2012,placebo,pain_intensity,child,2h_to_24h,VAS - fitting back teeth (bedtime),3.37,2.30,10,5.69,2.33,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting back teeth,NR,NR,NR,NR,NR,NR
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting back teeth (2 days),2.10,1.91,10,3.25,2.49,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting back teeth (3 days),2.37,1.90,10,2.87,2.89,10
+Farzanegan 2012,placebo,pain_intensity,child,24h_to_7d,VAS - fitting back teeth (7 days),1.45,1.42,10,2.27,3.02,10
+Hosseinzadeh 2016,paracetamol,pain_intensity,child,under_2h,VAS,6.34,8.83,29,8.76,14.72,32
+Hosseinzadeh 2016,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Hosseinzadeh 2016,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,29,NR,NR,32
+Hosseinzadeh 2016,paracetamol,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Hosseinzadeh 2016,paracetamol,pain_intensity,child,24h_to_7d,VAS,25.27,17.10,29,22.83,18.73,32
+Hosseinzadeh 2016,placebo,pain_intensity,child,under_2h,VAS,6.34,8.83,29,20.6,16.25,28
+Hosseinzadeh 2016,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,29,NR,NR,28
+Hosseinzadeh 2016,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,29,NR,NR,28
+Hosseinzadeh 2016,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,29,NR,NR,28
+Hosseinzadeh 2016,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,aspirin,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,2h_to_24h,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR
+Ngan 1994,placebo,pain_intensity,child,24h_to_7d,VAS,NR,NR,NR,NR,NR,NR

@@ -1,0 +1,986 @@
+{
+  "packaged_on": "2026-10-19",
+  "evaluation_source_commit": "e7976ad677e175bc3516c508ee04c94da71a3cfa",
+  "code_baseline": "2026-07-11",
+  "note": "Data packaged separately from the July code snapshot. Oral cancer uses aligned_forms.xlsx, not the later corrected aligned_forms_v2.xlsx. No assertion that these artifacts reproduce every published score. Full text and paper PDFs are excluded.",
+  "files": [
+    {
+      "path": "sheets/gt sheets/aligned_forms.xlsx",
+      "kind": "ground_truth_values",
+      "source_sha256": "ed0d74e10b78e26aa6bcf4a14abb1ac304957d08e3881582147a6f9b6e855634",
+      "sha256": "d09577bc075bc27dd42cc4774fa3ebc44f80d9fad121f614174687379a6fa285"
+    },
+    {
+      "path": "sheets/gt sheets/antibiotic_prophylaxis.xlsx",
+      "kind": "ground_truth_values",
+      "source_sha256": "cc43d2856acbbde14f31757e8ed1f5c6c48887ff898e905bfd93e3ef9f9dd266",
+      "sha256": "83897964915f0bd0a06c69bbecb95fb752a1480ba18d2ff81017babb88447bf0"
+    },
+    {
+      "path": "sheets/gt sheets/periodontitis.xlsx",
+      "kind": "ground_truth_values",
+      "source_sha256": "c956cd912d9d018358191ccf9909e4b2b75567984ad19dedc7a67d3fbbc3dea7",
+      "sha256": "93a40b53c773552ba815d3c35eca114def10b29984e75fd8559fd8cea2e18aca"
+    },
+    {
+      "path": "sheets/gt sheets/ibuprofen.xlsx",
+      "kind": "ground_truth_values",
+      "source_sha256": "617eceec78adb55755d9f3caf0fb09533a297b11b2f3eeb073fcbd8ce92eb964",
+      "sha256": "826fa2ab6b64a49f66c4bb86b392742e7a123113d25d7777915fa868d89d863a"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/claude/form_dichotomous_outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "11b334ad16dbde459aeebae1c58d2c7b31633a357d2efc348984fad0f634fb30",
+      "sha256": "11b334ad16dbde459aeebae1c58d2c7b31633a357d2efc348984fad0f634fb30"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/claude/form_intervention_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "4b0a45818717e67835d1766a3ccd92a10bbc28ee66abde5a0b546d003e996878",
+      "sha256": "4b0a45818717e67835d1766a3ccd92a10bbc28ee66abde5a0b546d003e996878"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/claude/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "360049dd3b6d982e6898176f7ef00e340011321fc7b1a86a0365568fafa46cd8",
+      "sha256": "360049dd3b6d982e6898176f7ef00e340011321fc7b1a86a0365568fafa46cd8"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/claude/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "77a833cf089f99dc009a71d2575bb907b328f72d96a5f31e8c287b4be2e79655",
+      "sha256": "77a833cf089f99dc009a71d2575bb907b328f72d96a5f31e8c287b4be2e79655"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gemini/form_dichotomous_outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "3e92081f5af78ca4fa1c1cec5946bbbd37ddb37713a8d7f34b93671bfccfa31d",
+      "sha256": "3e92081f5af78ca4fa1c1cec5946bbbd37ddb37713a8d7f34b93671bfccfa31d"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gemini/form_intervention_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "135abeec6ad3d38362a1ad104a608a770262f608f23397e5ec77dc80cdd6e9f0",
+      "sha256": "135abeec6ad3d38362a1ad104a608a770262f608f23397e5ec77dc80cdd6e9f0"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gemini/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5ceae7aa35e6360be0171c9de71c3790dca650281bf3bb8ed485be295a12abf6",
+      "sha256": "5ceae7aa35e6360be0171c9de71c3790dca650281bf3bb8ed485be295a12abf6"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gemini/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "7cbe8e852cad66a42f9088d403b167c583ce01f3b0de987f155fd03543879367",
+      "sha256": "7cbe8e852cad66a42f9088d403b167c583ce01f3b0de987f155fd03543879367"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gpt/form_Dichotomous_Outcomes_v2_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "23851c479b9bf03856f35d5550deb88d4825d0b7d933f8b098468f82d455ac3a",
+      "sha256": "23851c479b9bf03856f35d5550deb88d4825d0b7d933f8b098468f82d455ac3a"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gpt/form_Intervention_Characteristics_v2_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "38827c14e17713f6e5faa3bef40f2be9a968588cf82e0ef5f2c30cea96956309",
+      "sha256": "38827c14e17713f6e5faa3bef40f2be9a968588cf82e0ef5f2c30cea96956309"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gpt/form_Patient_Population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "160d356bb29af6a62ff635df5b5ba84bd0a7e214b2cbc069633e8fc9c5e44596",
+      "sha256": "160d356bb29af6a62ff635df5b5ba84bd0a7e214b2cbc069633e8fc9c5e44596"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/antibiotic/gpt/form_Study_Characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "66ed912b5920e28fc5aff1aaf8015b2504a4cdb6bf2718059cfaf760a14469a8",
+      "sha256": "66ed912b5920e28fc5aff1aaf8015b2504a4cdb6bf2718059cfaf760a14469a8"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/claude/form_CD015432_\u2014_Continuous_Outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "6f10ad3fd2dd4b2699a631850b7d7bdabc921b0524859a32427136bf0e66334b",
+      "sha256": "6f10ad3fd2dd4b2699a631850b7d7bdabc921b0524859a32427136bf0e66334b"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/claude/form_CD015432_\u2014_Continuous_Outcomes_v2_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b3321d42c04ba2ee9052b41a1dc360994652cf2f41ec0a3227d895209cdd1416",
+      "sha256": "b3321d42c04ba2ee9052b41a1dc360994652cf2f41ec0a3227d895209cdd1416"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/claude/form_CD015432_\u2014_Dichotomous_Outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "385d7002a335075cd51ce74d92b04c071efa183d5b00f420c9a1ab6f8656d0f6",
+      "sha256": "385d7002a335075cd51ce74d92b04c071efa183d5b00f420c9a1ab6f8656d0f6"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/claude/form_CD015432_\u2014_Intervention_Characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ba6faa8a7294618cc6b41de2821b625df4d4fbcc465daf5e62819fabff0d670e",
+      "sha256": "ba6faa8a7294618cc6b41de2821b625df4d4fbcc465daf5e62819fabff0d670e"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/claude/form_CD015432_\u2014_Patient_Population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5057f1740a0b587296d5109706b9228fdb85590192f5632f71dcecaa53580531",
+      "sha256": "5057f1740a0b587296d5109706b9228fdb85590192f5632f71dcecaa53580531"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/claude/form_CD015432_\u2014_Study_Characteristics_v3_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "0f73da0fba8fd3a23e53565cd4c272dd3e1b880354c4114469949063164f1832",
+      "sha256": "0f73da0fba8fd3a23e53565cd4c272dd3e1b880354c4114469949063164f1832"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/claude/form_Study_Characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5a971384537be55884ed3f89f56d32d1b29a920865fbf3b686be426e04afca12",
+      "sha256": "5a971384537be55884ed3f89f56d32d1b29a920865fbf3b686be426e04afca12"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gemini/form_CD015432_\u2014_Continuous_Outcomes_v2_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "fda6dd8aac7568f8c65d28820a009ed17899c60681a096b4618da6d56aa7d37a",
+      "sha256": "fda6dd8aac7568f8c65d28820a009ed17899c60681a096b4618da6d56aa7d37a"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gemini/form_CD015432_\u2014_Dichotomous_Outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "bd4e4c46a13ae2aa552872cef2afa4bf90ec6e4f3330aee4afa2dbf0957e8e5d",
+      "sha256": "bd4e4c46a13ae2aa552872cef2afa4bf90ec6e4f3330aee4afa2dbf0957e8e5d"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gemini/form_CD015432_\u2014_Intervention_Characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "d81789a65a65a55d2ca34c3e6afd0cede2c6af9cacac1c3a7dbd73bbc47d3e53",
+      "sha256": "d81789a65a65a55d2ca34c3e6afd0cede2c6af9cacac1c3a7dbd73bbc47d3e53"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gemini/form_CD015432_\u2014_Patient_Population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "a4447e0796c34912fe2981bbfab7b2750f85433cb17be5f43f1f5c26ab50b503",
+      "sha256": "a4447e0796c34912fe2981bbfab7b2750f85433cb17be5f43f1f5c26ab50b503"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gemini/form_CD015432_\u2014_Study_Characteristics_v3_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "116f2c426888546d1d593e65482112485a65c773cc9b80c8156138479257e7f2",
+      "sha256": "116f2c426888546d1d593e65482112485a65c773cc9b80c8156138479257e7f2"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gpt/form_CD015432_\u2014_Continuous_Outcomes_v2_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "2011bb7525640f330071bca44135998fae8b096ffb6aadc32acb6bc7b531fbc7",
+      "sha256": "2011bb7525640f330071bca44135998fae8b096ffb6aadc32acb6bc7b531fbc7"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gpt/form_CD015432_\u2014_Dichotomous_Outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "1b79495feb0d4cbc3c24be765840c3f17a52d772fd731ad130df2e84d7cc673f",
+      "sha256": "1b79495feb0d4cbc3c24be765840c3f17a52d772fd731ad130df2e84d7cc673f"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gpt/form_CD015432_\u2014_Intervention_Characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "a2a6e4b283cb3ab1288e077d0e016362e1eaee85b06413743f0679b730680013",
+      "sha256": "a2a6e4b283cb3ab1288e077d0e016362e1eaee85b06413743f0679b730680013"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gpt/form_CD015432_\u2014_Patient_Population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "d25d3946c2a20ae93fe57c2820d55a38088ef0ef406b21d24c4f66dc107ee8d7",
+      "sha256": "d25d3946c2a20ae93fe57c2820d55a38088ef0ef406b21d24c4f66dc107ee8d7"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/ibuprofen/gpt/form_CD015432_\u2014_Study_Characteristics_v3_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "99a54d084a3e39c58d80f521501e7090c9b148ffe649a03ca88d0bcc92cc9a1c",
+      "sha256": "99a54d084a3e39c58d80f521501e7090c9b148ffe649a03ca88d0bcc92cc9a1c"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/claude/form_index_test_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "cce3168a9e6e98833b4e29627a8a4f2cd49fd2a657108d61807bc965676d3d37",
+      "sha256": "cce3168a9e6e98833b4e29627a8a4f2cd49fd2a657108d61807bc965676d3d37"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/claude/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "6451e4e736f91af4f10fd5f39d45946ddd043b37a74b2e0c6120e67d4519b9b1",
+      "sha256": "6451e4e736f91af4f10fd5f39d45946ddd043b37a74b2e0c6120e67d4519b9b1"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/claude/form_reference_standard_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "75724f43d6d17e9fb6e0bacac9d7146735cfadb1bf2cf7c5c39175bbb5fb527e",
+      "sha256": "75724f43d6d17e9fb6e0bacac9d7146735cfadb1bf2cf7c5c39175bbb5fb527e"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/claude/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "7009714f90813c3fbcb5bd33e39dd98903359873f52467b36bc768026712f2fc",
+      "sha256": "7009714f90813c3fbcb5bd33e39dd98903359873f52467b36bc768026712f2fc"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gemini/form_index_test_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "199ed7fb9cd759dc509cf645a2eef7cae09fc82498e9eaf7ceb65f27bfa63697",
+      "sha256": "199ed7fb9cd759dc509cf645a2eef7cae09fc82498e9eaf7ceb65f27bfa63697"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gemini/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5dfe5f7e6d3ea35c81ddfc0006f68a0d6652bf594b925de93c5b1a3edc814c36",
+      "sha256": "5dfe5f7e6d3ea35c81ddfc0006f68a0d6652bf594b925de93c5b1a3edc814c36"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gemini/form_reference_standard_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ef7f106d23717ac7b08a53f34f985830f8799d312a0d2e60fe4520650bcb8c08",
+      "sha256": "ef7f106d23717ac7b08a53f34f985830f8799d312a0d2e60fe4520650bcb8c08"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gemini/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "9f8fa26b0cc142ac0bb5282ce3c5b49be68b0703a64d79c0ecc326cbab15479f",
+      "sha256": "9f8fa26b0cc142ac0bb5282ce3c5b49be68b0703a64d79c0ecc326cbab15479f"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gpt/form_index_test_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "0d0316b537b2b9ea408317d75b6187499a2bf09a734ec44e7be115230d84b927",
+      "sha256": "0d0316b537b2b9ea408317d75b6187499a2bf09a734ec44e7be115230d84b927"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gpt/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "51afdf052d04c13cae8ce9e3eab272b988cc9934e6ea004e00b7cff30df5a0ec",
+      "sha256": "51afdf052d04c13cae8ce9e3eab272b988cc9934e6ea004e00b7cff30df5a0ec"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gpt/form_reference_standard_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "2ddd9b31e2b9a98c8d913544dd2aa49f86234dabcc2c4ae173c3ec09175bf7aa",
+      "sha256": "2ddd9b31e2b9a98c8d913544dd2aa49f86234dabcc2c4ae173c3ec09175bf7aa"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/oral_cancer/gpt/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "d94ee86efec941a86dcf8c37fa0e071db8475aea61b89e6dc56ccdaf04e85319",
+      "sha256": "d94ee86efec941a86dcf8c37fa0e071db8475aea61b89e6dc56ccdaf04e85319"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/claude/form_continuous_outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5a38ef2c5f7b3f3aaca771779ba57c124b057b0b3efbd6c993bcc33635ef9331",
+      "sha256": "5a38ef2c5f7b3f3aaca771779ba57c124b057b0b3efbd6c993bcc33635ef9331"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/claude/form_intervention_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "34f145b51331c1b758bf0c0d1f89b33ccc6b90313f5f60b3a074359369f59ea3",
+      "sha256": "34f145b51331c1b758bf0c0d1f89b33ccc6b90313f5f60b3a074359369f59ea3"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/claude/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "4ed7fe7d80de6ee1fce695fb71c2bed023725d72f86c0229ae18c8f2d77a8461",
+      "sha256": "4ed7fe7d80de6ee1fce695fb71c2bed023725d72f86c0229ae18c8f2d77a8461"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/claude/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b2c8ca05db10d80f4c35fbfa1354d4209fabdf3162d57351782d8c3aad2fe56f",
+      "sha256": "b2c8ca05db10d80f4c35fbfa1354d4209fabdf3162d57351782d8c3aad2fe56f"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gemini/form_continuous_outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "42ebb733c6f00d3c823d8825d4ff5c559eb89357ce9e79fcdc8681f1793f50ad",
+      "sha256": "42ebb733c6f00d3c823d8825d4ff5c559eb89357ce9e79fcdc8681f1793f50ad"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gemini/form_intervention_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b0e11d479c3e32866760a8ae35eb89930add37924aaecd8d97381de2d7f8f781",
+      "sha256": "b0e11d479c3e32866760a8ae35eb89930add37924aaecd8d97381de2d7f8f781"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gemini/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "7cad3966da997c6ff45bfa745c2ee05a52bddb499de164d955a07e314ea3cd73",
+      "sha256": "7cad3966da997c6ff45bfa745c2ee05a52bddb499de164d955a07e314ea3cd73"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gemini/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "fc95c7f43797136b7e43f1af070699a3bc52cc4a2e4e0fea7b0f2c57a631ee5a",
+      "sha256": "fc95c7f43797136b7e43f1af070699a3bc52cc4a2e4e0fea7b0f2c57a631ee5a"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gpt/form_Continuous_Outcomes_v2_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b999503dbb8ff180b2d94a584f81ca0cc38c10a80b8c20a7148ce07e1085e9d3",
+      "sha256": "b999503dbb8ff180b2d94a584f81ca0cc38c10a80b8c20a7148ce07e1085e9d3"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gpt/form_Intervention_Characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c79550f7e2ad7713a93b0958745f56015dbf42dd2f9c5e2848d9e59304d2a81f",
+      "sha256": "c79550f7e2ad7713a93b0958745f56015dbf42dd2f9c5e2848d9e59304d2a81f"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gpt/form_Patient_Population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "a7881bb37fce0612df9d4901ca28c390523f1b423d8e80b964ea918b6e769026",
+      "sha256": "a7881bb37fce0612df9d4901ca28c390523f1b423d8e80b964ea918b6e769026"
+    },
+    {
+      "path": "sheets/ai sheets/full_studies/periodontitis/gpt/form_Study_Characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "755294720be62fca64746b21c3e2026a3bb47870a3aaee9e3e1db00fc151277e",
+      "sha256": "755294720be62fca64746b21c3e2026a3bb47870a3aaee9e3e1db00fc151277e"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/claude/form_dichotomous_outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "bfcc6bd90093d37958f6d469c46b4361a1ef33a82f967f8e06d4e5fb9b88805e",
+      "sha256": "bfcc6bd90093d37958f6d469c46b4361a1ef33a82f967f8e06d4e5fb9b88805e"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/claude/form_intervention_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "02f9219dfbb4851ec1537a7679037580de4c3ef967bd94c45fc824596b09d5b4",
+      "sha256": "02f9219dfbb4851ec1537a7679037580de4c3ef967bd94c45fc824596b09d5b4"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/claude/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "031d4167fde95b00500ac70a96162edbdf68a17d734e4c7f612aa7285b499721",
+      "sha256": "031d4167fde95b00500ac70a96162edbdf68a17d734e4c7f612aa7285b499721"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/claude/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c36e5bd85f3cbca60e6f7030f4fb98fd17c7ec53b8d3a70497f4f87f19cc20e8",
+      "sha256": "c36e5bd85f3cbca60e6f7030f4fb98fd17c7ec53b8d3a70497f4f87f19cc20e8"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gemini/form_Dichotomous_Outcomes_v2_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "0986f10ffe5657ef88c9087903b45fb2622c9615d8fb81905a3ce4203aaac7a3",
+      "sha256": "0986f10ffe5657ef88c9087903b45fb2622c9615d8fb81905a3ce4203aaac7a3"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gemini/form_Intervention_Characteristics_v2_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "f07ca84d237d6d45a0226ee56ca2381ee6244304ff05e311ce340b0d2cfca72d",
+      "sha256": "f07ca84d237d6d45a0226ee56ca2381ee6244304ff05e311ce340b0d2cfca72d"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gemini/form_Patient_Population_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b1a72a92063cc39b57f5e69721f1fc7057e3c9afa0b227fef65c528a30f43dae",
+      "sha256": "b1a72a92063cc39b57f5e69721f1fc7057e3c9afa0b227fef65c528a30f43dae"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gemini/form_Study_Characteristics_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "29205428f289bc3ac8ecd38fdec3aa1cb3c92e3fbaeeffdf958169381c95ddf5",
+      "sha256": "29205428f289bc3ac8ecd38fdec3aa1cb3c92e3fbaeeffdf958169381c95ddf5"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gpt/form_Dichotomous_Outcomes_v2_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "348faa595fcc82cbb2681de877fa71cc708ed3921472f25703c8f6d1ad5487af",
+      "sha256": "348faa595fcc82cbb2681de877fa71cc708ed3921472f25703c8f6d1ad5487af"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gpt/form_Intervention_Characteristics_v2_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "247aa6fb418b1915ace9d5a0bdf64a15be51803b451b4d7f72220b2bb688fe98",
+      "sha256": "247aa6fb418b1915ace9d5a0bdf64a15be51803b451b4d7f72220b2bb688fe98"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gpt/form_Patient_Population_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "37e99aa86673a12a7e549d9a005d534a1a2e943b78040da16b6e448d27394b99",
+      "sha256": "37e99aa86673a12a7e549d9a005d534a1a2e943b78040da16b6e448d27394b99"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/antibiotic/gpt/form_Study_Characteristics_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b1c07b06516b2667dbc1b1f7996a61d519e97a197f236e82e858a3ba44ba0ca6",
+      "sha256": "b1c07b06516b2667dbc1b1f7996a61d519e97a197f236e82e858a3ba44ba0ca6"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/claude/form_CD015432_\u2014_Continuous_Outcomes_v2_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "3d49474b122bbac4fda5aec291d8d270877f64f457d53c518f5e58d184d2d3a9",
+      "sha256": "3d49474b122bbac4fda5aec291d8d270877f64f457d53c518f5e58d184d2d3a9"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/claude/form_CD015432_\u2014_Dichotomous_Outcomes_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "0527950c150cce3f0796dfd4d90dfcf94854225712f9463fb1e3f6971929028c",
+      "sha256": "0527950c150cce3f0796dfd4d90dfcf94854225712f9463fb1e3f6971929028c"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/claude/form_CD015432_\u2014_Intervention_Characteristics_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "a1e142ee5f9eb42bf58a9330c666aa7683632e48d6fb9ad85aaf2ce60e2f71a0",
+      "sha256": "a1e142ee5f9eb42bf58a9330c666aa7683632e48d6fb9ad85aaf2ce60e2f71a0"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/claude/form_CD015432_\u2014_Patient_Population_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "cfa8ade23bcb630e1d10ac6c44f60645c3739383de6acada8148f95d72f930f5",
+      "sha256": "cfa8ade23bcb630e1d10ac6c44f60645c3739383de6acada8148f95d72f930f5"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/claude/form_CD015432_\u2014_Study_Characteristics_v3_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "bc277583ea2e8043c063727938187d4fca3690c7dc2aaee63843bb1027a8e018",
+      "sha256": "bc277583ea2e8043c063727938187d4fca3690c7dc2aaee63843bb1027a8e018"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gemini/form_CD015432_\u2014_Continuous_Outcomes_v2_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ebd4d44616c90ff73c8b936092e225c8cc409c5833d22b4b9f5d977bf3d69df5",
+      "sha256": "ebd4d44616c90ff73c8b936092e225c8cc409c5833d22b4b9f5d977bf3d69df5"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gemini/form_CD015432_\u2014_Dichotomous_Outcomes_(Desc_only)_long (3).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ced5a7375dfeaeec990e3bf26ff0774def5efc41ec7b8a8985fdf05ec013eecc",
+      "sha256": "ced5a7375dfeaeec990e3bf26ff0774def5efc41ec7b8a8985fdf05ec013eecc"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gemini/form_CD015432_\u2014_Intervention_Characteristics_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "dda94b9da8242b8d612e443d93ee2620234d635f0e65553f2d8685aa64f38e97",
+      "sha256": "dda94b9da8242b8d612e443d93ee2620234d635f0e65553f2d8685aa64f38e97"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gemini/form_CD015432_\u2014_Patient_Population_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "0ff3fff4740efe7cca997501b6799a31fb22bab42415d17020611a2fc03ec5f1",
+      "sha256": "0ff3fff4740efe7cca997501b6799a31fb22bab42415d17020611a2fc03ec5f1"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gemini/form_CD015432_\u2014_Study_Characteristics_v3_(Desc_only)_long (3).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "53519d9d9b325924d4e84940f82c38ec0bdc22ebc6ea87cc9ed031b6405cc3e9",
+      "sha256": "53519d9d9b325924d4e84940f82c38ec0bdc22ebc6ea87cc9ed031b6405cc3e9"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gpt/form_CD015432_\u2014_Continuous_Outcomes_v2_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "8b92be52fd98cf5cca531e4243d3bbc5681e0846dd00b098478b714a36fe3ae3",
+      "sha256": "8b92be52fd98cf5cca531e4243d3bbc5681e0846dd00b098478b714a36fe3ae3"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gpt/form_CD015432_\u2014_Dichotomous_Outcomes_(Desc_only)_long (3).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "88ba599642f0a825bd393855f900288c232e9bb76b0d1609f288d0b068c3f66b",
+      "sha256": "88ba599642f0a825bd393855f900288c232e9bb76b0d1609f288d0b068c3f66b"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gpt/form_CD015432_\u2014_Intervention_Characteristics_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "7452fe14a24461d172297ffc298a6b729afac20f6ea96e116ec1016ff0cb4c25",
+      "sha256": "7452fe14a24461d172297ffc298a6b729afac20f6ea96e116ec1016ff0cb4c25"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gpt/form_CD015432_\u2014_Patient_Population_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "93c03875073df062d75dbd97018a2bc75b5204846f80363d0fa9559e869a5441",
+      "sha256": "93c03875073df062d75dbd97018a2bc75b5204846f80363d0fa9559e869a5441"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/ibuprofen/gpt/form_CD015432_\u2014_Study_Characteristics_v3_(Desc_only)_long (3).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "77740170d510b56cfaab7214d40afbc1f38ee2506c78d5b3f77ea74c7023abf5",
+      "sha256": "77740170d510b56cfaab7214d40afbc1f38ee2506c78d5b3f77ea74c7023abf5"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/claude/form_Oral_Cancer_-_Index_Test_v2_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ac4998dae73ab72d258688b8c20eb7ac96ec7aec573748bfae853460513c2673",
+      "sha256": "ac4998dae73ab72d258688b8c20eb7ac96ec7aec573748bfae853460513c2673"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/claude/form_Oral_Cancer_\u2014_Patient_Population_Characteristics_v3_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "baa6abf19dc5d0337b4ba23e0bf6d8abd61f930b191b85c36d90562a610f8023",
+      "sha256": "baa6abf19dc5d0337b4ba23e0bf6d8abd61f930b191b85c36d90562a610f8023"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/claude/form_Oral_Cancer_\u2014_Reference_Standard_v2_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5bc2097763a01565a57a953aec3eaf2acaa0cc06fcd47bce8fe2e0f629370d5e",
+      "sha256": "5bc2097763a01565a57a953aec3eaf2acaa0cc06fcd47bce8fe2e0f629370d5e"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/claude/form_Oral_Cancer_\u2014_Study_Characteristics_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "4c9dbfed356a2da96ad91feb81889eac007b893ee08617f08dbf7c7a38b24398",
+      "sha256": "4c9dbfed356a2da96ad91feb81889eac007b893ee08617f08dbf7c7a38b24398"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gemini/form_Oral_Cancer_-_Index_Test_v2_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "f66e38c4613aabe86a538319cc6865cbab89bb235d2be89166a9bb6923a077f5",
+      "sha256": "f66e38c4613aabe86a538319cc6865cbab89bb235d2be89166a9bb6923a077f5"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gemini/form_Oral_Cancer_\u2014_Patient_Population_Characteristics_v3_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "0075b7f48828b9115fe7da03d0638da8b976f8ffeb301f8ff5d338a7df97ae78",
+      "sha256": "0075b7f48828b9115fe7da03d0638da8b976f8ffeb301f8ff5d338a7df97ae78"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gemini/form_Oral_Cancer_\u2014_Reference_Standard_v2_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "1d8fc1700cbe8282db493ab0053308cbf3b7c4036b781d40c0046250a747302b",
+      "sha256": "1d8fc1700cbe8282db493ab0053308cbf3b7c4036b781d40c0046250a747302b"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gemini/form_Oral_Cancer_\u2014_Study_Characteristics_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b10f79da67aac083f78d10d4783083fb5f74ab2cfedf0845167dd06455584dcb",
+      "sha256": "b10f79da67aac083f78d10d4783083fb5f74ab2cfedf0845167dd06455584dcb"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gpt/form_Oral_Cancer_-_Index_Test_v2_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c36b3b9c5f82e5ad14c380e599c1fa2f8723de97aa3ae6234f277d82fa176184",
+      "sha256": "c36b3b9c5f82e5ad14c380e599c1fa2f8723de97aa3ae6234f277d82fa176184"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gpt/form_Oral_Cancer_\u2014_Patient_Population_Characteristics_v3_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5a7a76c5df8cebb43f3ab38fe7d30d233ec44d279e2478e28a166cbbc9b95885",
+      "sha256": "5a7a76c5df8cebb43f3ab38fe7d30d233ec44d279e2478e28a166cbbc9b95885"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gpt/form_Oral_Cancer_\u2014_Reference_Standard_v2_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "8d4fd505cb7c5cd0b33def72196aafe4427d69d65a671aaf1d91a400f5d5d950",
+      "sha256": "8d4fd505cb7c5cd0b33def72196aafe4427d69d65a671aaf1d91a400f5d5d950"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/oral_cancer/gpt/form_Oral_Cancer_\u2014_Study_Characteristics_(Desc_only)_long (1).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "d477758962a534a06e0ea4d1d10e570abc55a2ead05f6b2d01704749849d2a1f",
+      "sha256": "d477758962a534a06e0ea4d1d10e570abc55a2ead05f6b2d01704749849d2a1f"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/claude/form_continuous_outcomes_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "efc8b82950c86c690268f002864de4d7cbd62e5e03ccb779b3a6fc27c36a9314",
+      "sha256": "efc8b82950c86c690268f002864de4d7cbd62e5e03ccb779b3a6fc27c36a9314"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/claude/form_intervention_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "bc3297fa0b24c3263d00aca5cd73533cb21a0e0aa64675c74d93937a57dc78fe",
+      "sha256": "bc3297fa0b24c3263d00aca5cd73533cb21a0e0aa64675c74d93937a57dc78fe"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/claude/form_patient_population_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "e393b76e952210afd0a19e1a92c6feefbce5570bbb4ab9a28a363447b578e028",
+      "sha256": "e393b76e952210afd0a19e1a92c6feefbce5570bbb4ab9a28a363447b578e028"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/claude/form_study_characteristics_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "a330a97ecf9d3125811cad2c3e6e4aceb930bd341575f59385717f1fd3ccab35",
+      "sha256": "a330a97ecf9d3125811cad2c3e6e4aceb930bd341575f59385717f1fd3ccab35"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gemini/form_Continuous_Outcomes_v2_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "d20c305105c468aef55b4050fc881aab8eadec517557f7f06fe5ab2afef9a2cb",
+      "sha256": "d20c305105c468aef55b4050fc881aab8eadec517557f7f06fe5ab2afef9a2cb"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gemini/form_Intervention_Characteristics_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "373cd6c7679956b14f6b56291fa8646a2ace6c1cd43832963a83a2b64d34e2b8",
+      "sha256": "373cd6c7679956b14f6b56291fa8646a2ace6c1cd43832963a83a2b64d34e2b8"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gemini/form_Patient_Population_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "faef5c6c4c16ebf4c7072526cc9d766825200f827279fdbf00fe6c522a806992",
+      "sha256": "faef5c6c4c16ebf4c7072526cc9d766825200f827279fdbf00fe6c522a806992"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gemini/form_Study_Characteristics_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "914eb0a92fb4b6d73e2200b3fb1e9ff6c04f9247a2dcddf917bca15648bc5b34",
+      "sha256": "914eb0a92fb4b6d73e2200b3fb1e9ff6c04f9247a2dcddf917bca15648bc5b34"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gpt/form_Continuous_Outcomes_v2_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "8ed89efb7b3da46e7b3847a89a16d5fb10c849249dcb1cc21deb66a3f585de51",
+      "sha256": "8ed89efb7b3da46e7b3847a89a16d5fb10c849249dcb1cc21deb66a3f585de51"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gpt/form_Intervention_Characteristics_(Desc_only)_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "4633f2015cdc565a3897ba91bc8c6939c4a7baabe9b1cb1ca3d38efe59573c61",
+      "sha256": "4633f2015cdc565a3897ba91bc8c6939c4a7baabe9b1cb1ca3d38efe59573c61"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gpt/form_Patient_Population_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "59272226dc174fe77b9978767c01b2b3b633c9007af3bc2736071df555748c98",
+      "sha256": "59272226dc174fe77b9978767c01b2b3b633c9007af3bc2736071df555748c98"
+    },
+    {
+      "path": "sheets/ai sheets/desc_only/periodontitis/gpt/form_Study_Characteristics_(Desc_only)_long (2).csv",
+      "kind": "saved_predictions",
+      "source_sha256": "30411071bf455af4fad99520522f5161a0724fb4f973c0d1554b54be9d36a55e",
+      "sha256": "30411071bf455af4fad99520522f5161a0724fb4f973c0d1554b54be9d36a55e"
+    },
+    {
+      "path": "sheets/ai sheets/staged/antibiotic/claude/abx_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ddbad5bb86fb441e01847e9323d45add171868c615271a19d8ad99f3b6e9f9d4",
+      "sha256": "ddbad5bb86fb441e01847e9323d45add171868c615271a19d8ad99f3b6e9f9d4"
+    },
+    {
+      "path": "sheets/ai sheets/staged/antibiotic/claude/abx_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "e374359d261292246a05e34bf1cefc7e8e105cb9bc094aae90ef595aecf515a2",
+      "sha256": "e374359d261292246a05e34bf1cefc7e8e105cb9bc094aae90ef595aecf515a2"
+    },
+    {
+      "path": "sheets/ai sheets/staged/antibiotic/gemini/abx_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "9835ece5b3b6861b398d1e166b01f77730e9e3ff96513ad3920a8728a4769d7d",
+      "sha256": "9835ece5b3b6861b398d1e166b01f77730e9e3ff96513ad3920a8728a4769d7d"
+    },
+    {
+      "path": "sheets/ai sheets/staged/antibiotic/gemini/abx_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "016284dcbde28cf967264b049208c74de84b5527cff45c53d4db626261bbc4fd",
+      "sha256": "016284dcbde28cf967264b049208c74de84b5527cff45c53d4db626261bbc4fd"
+    },
+    {
+      "path": "sheets/ai sheets/staged/antibiotic/gpt/abx_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c8f2a54a7ea8bec3803e59ec80321be61bf98d9d4402b5c052888f9fab2602f1",
+      "sha256": "c8f2a54a7ea8bec3803e59ec80321be61bf98d9d4402b5c052888f9fab2602f1"
+    },
+    {
+      "path": "sheets/ai sheets/staged/antibiotic/gpt/abx_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b6d311751a8f70dda6ebac4c88fe44953bea3948d311d7bff942da61a3848c74",
+      "sha256": "b6d311751a8f70dda6ebac4c88fe44953bea3948d311d7bff942da61a3848c74"
+    },
+    {
+      "path": "sheets/ai sheets/staged/ibuprofen/claude/ibu_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "203cf638049058f1edd7be189985db73d0bbed90371161cc2c3c6860aaf92dae",
+      "sha256": "203cf638049058f1edd7be189985db73d0bbed90371161cc2c3c6860aaf92dae"
+    },
+    {
+      "path": "sheets/ai sheets/staged/ibuprofen/claude/ibu_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ac19620ed81c301e08e7ed50907b58a51b30eb47aba33226efdeaa0f8f1ce578",
+      "sha256": "ac19620ed81c301e08e7ed50907b58a51b30eb47aba33226efdeaa0f8f1ce578"
+    },
+    {
+      "path": "sheets/ai sheets/staged/ibuprofen/gemini/ibu_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "4976d42731440b16be4a00baccd71b993a293329cdd444db8f01b1970ff63425",
+      "sha256": "4976d42731440b16be4a00baccd71b993a293329cdd444db8f01b1970ff63425"
+    },
+    {
+      "path": "sheets/ai sheets/staged/ibuprofen/gemini/ibu_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "931f2d47333b2a1df3998a77ba85441f6b63f776fa985554facc2ab918310682",
+      "sha256": "931f2d47333b2a1df3998a77ba85441f6b63f776fa985554facc2ab918310682"
+    },
+    {
+      "path": "sheets/ai sheets/staged/ibuprofen/gpt/ibu_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "70e2049b285fe21ec019d56c175debcb2ed99a76ef9269f34f2b55ce005cf091",
+      "sha256": "70e2049b285fe21ec019d56c175debcb2ed99a76ef9269f34f2b55ce005cf091"
+    },
+    {
+      "path": "sheets/ai sheets/staged/ibuprofen/gpt/ibu_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "44eb0b1ed312f51faa989f41ccd460453ea2a6cb6d4f77579e480e08c6f3bd6b",
+      "sha256": "44eb0b1ed312f51faa989f41ccd460453ea2a6cb6d4f77579e480e08c6f3bd6b"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/claude/oc_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "db9482dc66fd361bdb3b21ca6ce4b28b682db3e9706466cbe52709d051a7934b",
+      "sha256": "db9482dc66fd361bdb3b21ca6ce4b28b682db3e9706466cbe52709d051a7934b"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/claude/oc_reference_standard_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "16ac83e6cc5b63b7fd59eff46da8428d7ce844eb6ddadf083b0a090d7236172c",
+      "sha256": "16ac83e6cc5b63b7fd59eff46da8428d7ce844eb6ddadf083b0a090d7236172c"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/claude/oc_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "7e905d91bb91731c58e878e4a18ae33464715af3475d1e8fc79890e3ceb1e28f",
+      "sha256": "7e905d91bb91731c58e878e4a18ae33464715af3475d1e8fc79890e3ceb1e28f"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/gemini/oc_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "17c7c4e94b37cf89071eab354a8d2aa2c9280da24dcdd5bb9aa619016ea097b8",
+      "sha256": "17c7c4e94b37cf89071eab354a8d2aa2c9280da24dcdd5bb9aa619016ea097b8"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/gemini/oc_reference_standard_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "25736957aa64fc8c161330e7fbd5ec0c1c04dd00bc2c94d2d6fa949f682f7507",
+      "sha256": "25736957aa64fc8c161330e7fbd5ec0c1c04dd00bc2c94d2d6fa949f682f7507"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/gemini/oc_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c37badd9de491f01b4de16977e084e84993416af515129a937dae108b7870d74",
+      "sha256": "c37badd9de491f01b4de16977e084e84993416af515129a937dae108b7870d74"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/gpt/oc_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c0d4e6fb8b67fb693224496e6d338a61c37b72b48cef9001473f66801d00fe37",
+      "sha256": "c0d4e6fb8b67fb693224496e6d338a61c37b72b48cef9001473f66801d00fe37"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/gpt/oc_reference_standard_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "d3467eb15bf35bb456dd147a09b7120b4f730acdd5a4be7219ec47457b9cdac3",
+      "sha256": "d3467eb15bf35bb456dd147a09b7120b4f730acdd5a4be7219ec47457b9cdac3"
+    },
+    {
+      "path": "sheets/ai sheets/staged/oral_cancer/gpt/oc_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "42be295b0f6561ded0213d96860fe396f83356493bb36fdffbb4aef63782f80f",
+      "sha256": "42be295b0f6561ded0213d96860fe396f83356493bb36fdffbb4aef63782f80f"
+    },
+    {
+      "path": "sheets/ai sheets/staged/periodontitis/claude/perio_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "303f921ed2d51943efd1c8074cfcf31253c411d66a7c9977c2aacb2c3929e119",
+      "sha256": "303f921ed2d51943efd1c8074cfcf31253c411d66a7c9977c2aacb2c3929e119"
+    },
+    {
+      "path": "sheets/ai sheets/staged/periodontitis/claude/perio_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "eabbce4f6895e246b8e32ffbb91cb8a49ccba1df0b34eb06b129c2607597a546",
+      "sha256": "eabbce4f6895e246b8e32ffbb91cb8a49ccba1df0b34eb06b129c2607597a546"
+    },
+    {
+      "path": "sheets/ai sheets/staged/periodontitis/gemini/perio_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "3ef3a196a93a3e78be005b762cf10f35479d0ed6914c51c5ab4f9030036f2007",
+      "sha256": "3ef3a196a93a3e78be005b762cf10f35479d0ed6914c51c5ab4f9030036f2007"
+    },
+    {
+      "path": "sheets/ai sheets/staged/periodontitis/gemini/perio_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "f5c41818b4367d366ccf6ea23d489a7fb85ba77683d169813a414611c285ec8d",
+      "sha256": "f5c41818b4367d366ccf6ea23d489a7fb85ba77683d169813a414611c285ec8d"
+    },
+    {
+      "path": "sheets/ai sheets/staged/periodontitis/gpt/perio_patient_population_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c70fd20a01d5c77abbb8214b016454d2f208c0e6cacd0781c5c5c044d9670b12",
+      "sha256": "c70fd20a01d5c77abbb8214b016454d2f208c0e6cacd0781c5c5c044d9670b12"
+    },
+    {
+      "path": "sheets/ai sheets/staged/periodontitis/gpt/perio_study_characteristics_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "c7368d2bef305e08307b8ecaf6ebd224048f7e46832c8eeb003c7e757f03b317",
+      "sha256": "c7368d2bef305e08307b8ecaf6ebd224048f7e46832c8eeb003c7e757f03b317"
+    },
+    {
+      "path": "sheets/ai sheets/table/antibiotic/claude/abx_dichotomous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "fdd35afa1deb94860d3038ce368b7fa8fee12caa992f9152338e5e87c8ef05a3",
+      "sha256": "fdd35afa1deb94860d3038ce368b7fa8fee12caa992f9152338e5e87c8ef05a3"
+    },
+    {
+      "path": "sheets/ai sheets/table/antibiotic/claude/abx_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "2a29f393221793f4e144c391a39bb06a5c0af262b18465b61b183216108fa506",
+      "sha256": "2a29f393221793f4e144c391a39bb06a5c0af262b18465b61b183216108fa506"
+    },
+    {
+      "path": "sheets/ai sheets/table/antibiotic/gemini/abx_dichotomous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "4bcbce553660cadd518e43405ddbe2de6dd497a745018dc6d4bcbc5b2ae1a5a2",
+      "sha256": "4bcbce553660cadd518e43405ddbe2de6dd497a745018dc6d4bcbc5b2ae1a5a2"
+    },
+    {
+      "path": "sheets/ai sheets/table/antibiotic/gemini/abx_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "d596deb32f125e96701d672d0f587ff6aa8fab4a0f66ad2d83f182c50953b2f2",
+      "sha256": "d596deb32f125e96701d672d0f587ff6aa8fab4a0f66ad2d83f182c50953b2f2"
+    },
+    {
+      "path": "sheets/ai sheets/table/antibiotic/gpt/abx_dichotomous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "e9619d1c1f447c032ce20b243c162c0c61a14a43a41d83b6ba9286449784c539",
+      "sha256": "e9619d1c1f447c032ce20b243c162c0c61a14a43a41d83b6ba9286449784c539"
+    },
+    {
+      "path": "sheets/ai sheets/table/antibiotic/gpt/abx_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "27afc1833ae57a3e99365eed2f634b54177588843246a60d651ab41a7bb634db",
+      "sha256": "27afc1833ae57a3e99365eed2f634b54177588843246a60d651ab41a7bb634db"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/claude/ibu_continuous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "73efe0d3495fe909ec9cee3ecec32d87806c35223334ccd2042db3c95012dfdf",
+      "sha256": "73efe0d3495fe909ec9cee3ecec32d87806c35223334ccd2042db3c95012dfdf"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/claude/ibu_dichotomous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "db9fd9c9962fb0526ebd5bd3544657b80e9f0372b86b61181bc6ea1c58077730",
+      "sha256": "db9fd9c9962fb0526ebd5bd3544657b80e9f0372b86b61181bc6ea1c58077730"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/claude/ibu_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "42e271b0c1fdaa48da81e53a41fe089a5a5b0fd53a53ae0de7bbafab9892521f",
+      "sha256": "42e271b0c1fdaa48da81e53a41fe089a5a5b0fd53a53ae0de7bbafab9892521f"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/gemini/ibu_continuous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "cd92fab5f8b383f80398536aa37a79706bdf99b91caf9ccbcfc0366f6d562cc5",
+      "sha256": "cd92fab5f8b383f80398536aa37a79706bdf99b91caf9ccbcfc0366f6d562cc5"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/gemini/ibu_dichotomous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b7a953614eda3865fcea55f0a36720f4e24424a30e6c87f172a41a75d00a57c4",
+      "sha256": "b7a953614eda3865fcea55f0a36720f4e24424a30e6c87f172a41a75d00a57c4"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/gemini/ibu_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "72d1c0e0eb7fa0805c9055b31f9085068eae7dcf861af1871bbb406c223bc17f",
+      "sha256": "72d1c0e0eb7fa0805c9055b31f9085068eae7dcf861af1871bbb406c223bc17f"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/gpt/ibu_continuous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "a70cd95525307773081393947abc45f2fb06c9e86c5370ee8aa5a7284bef388d",
+      "sha256": "a70cd95525307773081393947abc45f2fb06c9e86c5370ee8aa5a7284bef388d"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/gpt/ibu_dichotomous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "b4fa073bcae342bb788c20202414dfe8ce5dfaed488ce369f71cc07f039492c4",
+      "sha256": "b4fa073bcae342bb788c20202414dfe8ce5dfaed488ce369f71cc07f039492c4"
+    },
+    {
+      "path": "sheets/ai sheets/table/ibuprofen/gpt/ibu_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "ae4d26aceadc10ea4150f0c78ea3dd48e373316a7c9ad9a125a73a6ba958735a",
+      "sha256": "ae4d26aceadc10ea4150f0c78ea3dd48e373316a7c9ad9a125a73a6ba958735a"
+    },
+    {
+      "path": "sheets/ai sheets/table/oral_cancer/claude/oc_index_test_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "f5803751b7c6751baf4f1ced0e9ef9822d4d14a2434684e146cc765793ea3d3b",
+      "sha256": "f5803751b7c6751baf4f1ced0e9ef9822d4d14a2434684e146cc765793ea3d3b"
+    },
+    {
+      "path": "sheets/ai sheets/table/oral_cancer/gemini/oc_index_test_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "990d4f8e611444d86697272c3bb63511829e6788c33467d4b20cd1cf4ff8c4cd",
+      "sha256": "990d4f8e611444d86697272c3bb63511829e6788c33467d4b20cd1cf4ff8c4cd"
+    },
+    {
+      "path": "sheets/ai sheets/table/oral_cancer/gpt/oc_index_test_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "5c2aff6427e6b12928d6e554c360b1f9907dea26515387e8bf60c271725640fd",
+      "sha256": "5c2aff6427e6b12928d6e554c360b1f9907dea26515387e8bf60c271725640fd"
+    },
+    {
+      "path": "sheets/ai sheets/table/periodontitis/claude/perio_continuous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "f36887dc6e5866be570dd0f9feeaea66f1899601fc2c5dd80e6ce19ce235f7f4",
+      "sha256": "f36887dc6e5866be570dd0f9feeaea66f1899601fc2c5dd80e6ce19ce235f7f4"
+    },
+    {
+      "path": "sheets/ai sheets/table/periodontitis/claude/perio_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "9281845ffb950e23cb93e993f2199a8800f80caf681c8ba63e74f9a1d3b5408f",
+      "sha256": "9281845ffb950e23cb93e993f2199a8800f80caf681c8ba63e74f9a1d3b5408f"
+    },
+    {
+      "path": "sheets/ai sheets/table/periodontitis/gemini/perio_continuous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "968dc700f63e03af8dc9064758b143ef7c1617db24fae28ffb5892a3a0f21a22",
+      "sha256": "968dc700f63e03af8dc9064758b143ef7c1617db24fae28ffb5892a3a0f21a22"
+    },
+    {
+      "path": "sheets/ai sheets/table/periodontitis/gemini/perio_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "e3324fb874ea7eeb443fa8a36e2b06c5f4bde145fcf14782389750ddb3c805c4",
+      "sha256": "e3324fb874ea7eeb443fa8a36e2b06c5f4bde145fcf14782389750ddb3c805c4"
+    },
+    {
+      "path": "sheets/ai sheets/table/periodontitis/gpt/perio_continuous_outcomes_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "742fcf86d1de9f837d57ea666736464bd624ec3def54b99f8cfac7dc73417d50",
+      "sha256": "742fcf86d1de9f837d57ea666736464bd624ec3def54b99f8cfac7dc73417d50"
+    },
+    {
+      "path": "sheets/ai sheets/table/periodontitis/gpt/perio_interventions_prompt_long.csv",
+      "kind": "saved_predictions",
+      "source_sha256": "fe1120b2038d6083fbdc31bac343c8ff13f93ce2174ead0a68ae8cc4ab7c21d6",
+      "sha256": "fe1120b2038d6083fbdc31bac343c8ff13f93ce2174ead0a68ae8cc4ab7c21d6"
+    },
+    {
+      "path": "corpora/oral_cancer/studies.csv",
+      "kind": "study_manifest_without_hosted_identifiers",
+      "source_sha256": "56ab0580fab2a6bc00cd9763b9fd50f064e05efede36822f3e95dec29990cca2",
+      "sha256": "f5c6767e582ef57906b961125ed2957ebd274906a3db2a8086d4357e48e418f1"
+    },
+    {
+      "path": "corpora/antibiotic/studies.csv",
+      "kind": "study_manifest_without_hosted_identifiers",
+      "source_sha256": "d063303ef916f5e90a024eee681ccf14bfb37248f9a133321f26a3234a5d035d",
+      "sha256": "1170179992e045d5caf06aa9c04aa6e287ba32ff5512dbbf899e88037f635264"
+    },
+    {
+      "path": "corpora/periodontitis/studies.csv",
+      "kind": "study_manifest_without_hosted_identifiers",
+      "source_sha256": "e71477a443182245d0bef030065279e018c49f64b07411fbf7069bed5234e7b5",
+      "sha256": "95f53493a1ba43ee353b71fc58e0f841a8bf92d50da8fe978981354a3c94ed1b"
+    },
+    {
+      "path": "corpora/ibuprofen/studies.csv",
+      "kind": "study_manifest_without_hosted_identifiers",
+      "source_sha256": "34ba0abc39acfca10c876eb789f26f76b3dcc37676e87bb3dfb857501ba192cb",
+      "sha256": "9c8f6e976b911bf846c2c2aa5e60944e4d129cafdbd2887b610767b7743688a0"
+    }
+  ]
+}

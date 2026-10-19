@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "task_name": "dynamic_d8db9a91_InterventionCharacteristicsV2",
+  "signatures": [
+    {
+      "docstring": "Extract all antibiotic prophylaxis intervention arms evaluated in the study, including placebo and no-antibiotic control arms, as a structured table with one row per arm.\n\nForm Questions:\n- interventions: \"Extract ALL antibiotic prophylaxis arms (including placebo/no-antibiotic controls) evaluated in the study, with one row per arm.\"\n\nThis signature captures repeating arm-level data from randomised controlled trials of antibiotic prophylaxis. Each arm is described independently; no cross-arm aggregation is performed here. Arms include active antibiotic regimens of any duration as well as placebo or no-treatment controls.",
+      "class_name": "ExtractAllInterventionArms",
+      "input_fields": [
+        {
+          "desc": "Full markdown content of the clinical research paper from which antibiotic prophylaxis arm data will be extracted.",
+          "name": "markdown_content",
+          "type": "str"
+        }
+      ],
+      "output_fields": [
+        {
+          "name": "interventions",
+          "type": "Dict[str, Any]",
+          "hints": [
+            "Look in the Methods section under 'Interventions', 'Study Arms', 'Treatment Groups', or 'Randomisation'",
+            "CONSORT flow diagrams and baseline characteristics tables often list arm sizes",
+            "Dose and regimen details are typically in a dedicated 'Antibiotic Regimen' or 'Prophylaxis Protocol' subsection",
+            "Allergy substitution regimens may appear in footnotes, supplementary material, or a separate paragraph within the methods"
+          ],
+          "rules": [
+            "Extract EVERY arm including placebo and no-antibiotic control arms \u2014 do not omit any arm",
+            "Each arm occupies exactly one row; do not aggregate or merge arms",
+            "Use {\"value\": \"NR\", \"source_text\": \"NR\"} at the whole-field level only if the document contains no intervention arm data at all",
+            "For a missing value within an otherwise-present row, use {\"value\": \"NR\", \"source_text\": \"NR\"} for that cell"
+          ],
+          "description": "All antibiotic prophylaxis arms evaluated in the study, including placebo and no-antibiotic control arms, with one row per arm and per-cell source grounding.",
+          "anchor_columns": [
+            "antibiotic_name",
+            "arm_category",
+            "arm_label",
+            "n_in_arm"
+          ],
+          "subform_fields": [
+            {
+              "hints": [
+                "Construct this label yourself from the arm_category you assign and the antibiotic_name you extract \u2014 it is not usually printed verbatim in the paper",
+                "Scan the methods section, CONSORT flow diagram, and treatment allocation tables to identify all distinct arms before assigning labels",
+                "For multi-drug combination arms, use the principal (first-listed or highest-dose) antibiotic as the main drug in the label",
+                "If the paper uses shorthand arm names (e.g. 'Group A', 'Arm 1'), map these to the structured label format rather than copying the shorthand",
+                "Ensure each arm in the same study has a unique label; if a collision occurs, add a parenthetical distinguishing detail derived from duration, dose, or route"
+              ],
+              "rules": [
+                "Label format must be exactly '<arm_category>, <antibiotic_name>' using the same arm_category value assigned in the arm_category field and the generic (INN) drug name from antibiotic_name",
+                "For placebo or no-antibiotic control arms, the label must be exactly 'placebo' \u2014 no category prefix",
+                "arm_category values to use in the label: 'single preoperative dose', 'short-term', 'long-term', or 'placebo'",
+                "No two arms within the same study may share an identical arm_label; append a parenthetical distinguishing detail if needed",
+                "Use only lowercase for the category and drug name portions of the label",
+                "Do not include dose, route, or frequency in the label unless needed to disambiguate a collision"
+              ],
+              "examples": [
+                {
+                  "value": "long-term, amoxicillin",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "arm_label",
+              "field_type": "text",
+              "extraction_role": "anchor",
+              "field_description": "Build a CONSISTENT label as '<regimen category>, <main antibiotic>', using the arm_category you assign and the principal drug \u2014 e.g. 'long-term, amoxicillin', 'short-term, penicillin G', 'single preoperative dose, clindamycin'. For placebo / no-antibiotic control arms use exactly 'placebo'. If two arms in the same study would get the same category+drug label, append a short distinguishing detail in parentheses (e.g. 'long-term, penicillin (2 days)' vs 'long-term, penicillin (2 days + 5 days oral)')."
+            },
+            {
+              "hints": [
+                "Look in the methods, interventions, or treatment arms section for descriptions of when and how long antibiotics were given",
+                "Check the duration field and dose timing to determine the correct band: a single pre-incision dose \u2192 'single preoperative dose'; total course \u226424 h (but more than one dose or extending into peri-operative period) \u2192 'short-term'; course extending beyond 24 h post-surgery \u2192 'long-term'",
+                "For control arms, check whether participants received placebo tablets/injections or simply no antibiotic \u2014 both map to 'placebo'",
+                "If the paper describes a regimen as 'prophylactic single dose' or 'preoperative antibiotic', classify as 'single preoperative dose' even if the paper does not use that exact phrase",
+                "When duration is ambiguous, use the dose timing and frequency fields to infer the band"
+              ],
+              "rules": [
+                "Must be exactly one of: 'single preoperative dose', 'short-term', 'long-term', 'placebo'",
+                "A single dose given only before incision is always 'single preoperative dose', never 'short-term', even though it is also <24 h",
+                "'short-term' applies only when the regimen extends beyond a single pre-incision dose but the total course is \u226424 h",
+                "'long-term' applies when the course continues >24 h after surgery, regardless of total number of doses",
+                "Both placebo-controlled arms and no-antibiotic control arms must be classified as 'placebo'",
+                "Do not use 'NR' \u2014 every arm must be classifiable from the duration and dose information available; if genuinely ambiguous, choose the closest category and note it in arm_label"
+              ],
+              "options": [
+                "single preoperative dose",
+                "short-term",
+                "long-term",
+                "placebo"
+              ],
+              "examples": [
+                {
+                  "value": "long-term",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "arm_category",
+              "field_type": "select",
+              "extraction_role": "anchor",
+              "field_description": "Regimen-length band you classify yourself from the duration the paper describes for this arm. 'single preoperative dose' = one dose before incision only; 'short-term' = peri-operative course lasting \u226424 h; 'long-term' = course continuing >24 h after surgery; 'placebo' = placebo or no-antibiotic control arm. A single pre-incision dose is its own category even though it is also <24 h."
+            },
+            {
+              "hints": [
+                "Look in the Methods (Interventions) section, drug tables, or arm descriptions for the specific antibiotic name",
+                "Brand names (e.g. Augmentin, Dalacin) must be converted to their INN generic equivalents (e.g. amoxicillin-clavulanate, clindamycin)",
+                "For combination regimens, identify each individual drug and join with ' + ' (e.g. 'ampicillin + sulbactam')",
+                "Control arms labelled 'placebo', 'no treatment', 'no prophylaxis', or 'observation only' should be recorded as 'placebo' or 'no antibiotic' respectively",
+                "If the paper names only a drug class (e.g. 'a cephalosporin') without specifying the drug, use 'NR'",
+                "This field captures the drug name only \u2014 dose, route, frequency, and duration are captured in separate fields"
+              ],
+              "rules": [
+                "Use INN generic names only; never use brand names",
+                "For combination regimens, join drug names with ' + ' (e.g. 'amoxicillin + clavulanate')",
+                "For placebo or no-antibiotic control arms use exactly 'placebo' or 'no antibiotic' as appropriate",
+                "Use 'NR' if only a drug class is mentioned and no specific drug name is given",
+                "Do not include dose, route, frequency, or duration in this field \u2014 those are captured elsewhere"
+              ],
+              "examples": [
+                {
+                  "value": "amoxicillin",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "antibiotic_name",
+              "field_type": "text",
+              "extraction_role": "anchor",
+              "field_description": "Generic name(s) of the antibiotic(s) used in this arm, or 'placebo' / 'no antibiotic' for control arms. Examples: 'amoxicillin', 'penicillin G', 'clindamycin', 'amoxicillin + placebo'. Convert brand names to generic (INN). For combination regimens join names with ' + '. Use 'NR' if only a drug class is reported and no specific name is given."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'Interventions', 'Treatment', or 'Antibiotic regimen' for the arm already identified",
+                "Check dosing tables, regimen description paragraphs, and footnotes for each dose event in sequence",
+                "For multi-stage regimens (pre-op \u2192 intra-op \u2192 post-op), capture all stages in order",
+                "Route information may appear alongside dose; include it here only as part of the dose event string if it disambiguates timing (the route field captures the overall route separately)",
+                "If the paper describes a loading dose followed by maintenance doses, include both with their respective amounts and timing"
+              ],
+              "rules": [
+                "Copy dose amounts and units verbatim from the paper (e.g., '1 g', '500 mg', '2 MU'); do not convert or normalise units",
+                "List dose events in chronological administration order separated by commas: pre-operative \u2192 intra-operative \u2192 post-operative/maintenance",
+                "Include timing qualifiers as stated (e.g., 'at induction', '3 h post-op', 'every 8 h for 5 days')",
+                "Do NOT duplicate information already captured in the `frequency` or `duration` fields unless it is integral to describing a specific dose event",
+                "For placebo arms, record the dose of the placebo formulation if described (e.g., '1 g IV placebo at induction'); use 'placebo' if no dose quantity is given",
+                "Use 'NR' if the dose amount or units are not reported anywhere in the paper"
+              ],
+              "examples": [
+                {
+                  "value": "1 g IV at induction, 500 mg IV at 3 h post-op, 500 mg PO every 8 h",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "dose",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Full dose(s) with units for the regimen, in administration order (pre-op / loading \u2192 intra-op \u2192 post-op / maintenance) exactly as the paper states. Include EVERY dose event and its timing. Example: '1 g IV at induction, 500 mg IV at 3 h post-op, 500 mg PO every 8 h'. Use 'NR' if the dose is not stated."
+            },
+            {
+              "hints": [
+                "Look in the methods/interventions section where the regimen for the identified arm is described",
+                "Route is often stated alongside dose and frequency in the arm description or in a summary table",
+                "If the dose field already contains route abbreviations (e.g. 'IV', 'PO', 'IM'), use those to determine the correct option",
+                "For multi-phase regimens (e.g. IV loading then oral continuation), select the combined option such as 'IV + oral'"
+              ],
+              "rules": [
+                "Must be exactly one of the allowed options: 'IV', 'oral', 'IM', 'IV + oral', 'IM + IV'",
+                "Use 'IV + oral' when the regimen transitions from intravenous to oral administration within the same course",
+                "Use 'IM + IV' only when both intramuscular and intravenous routes are used (not a transition to oral)",
+                "Do not infer route from drug class alone; it must be stated or clearly implied in the source text",
+                "Use 'NR' if the route of administration is not reported anywhere in the paper"
+              ],
+              "options": [
+                "IV",
+                "oral",
+                "IM",
+                "IV + oral",
+                "IM + IV"
+              ],
+              "examples": [
+                {
+                  "value": "IV + oral",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "route",
+              "field_type": "select",
+              "extraction_role": "value",
+              "field_description": "Route of administration. Use 'IV + oral' for a regimen that switches from IV to oral mid-course; 'IM + IV' for a regimen given both intramuscularly and intravenously; 'IM' for intramuscular only."
+            },
+            {
+              "hints": [
+                "Look in the methods section under 'antibiotic regimen', 'dosing schedule', or the intervention arm description for the identified arm",
+                "Frequency is often embedded in the dose description (e.g., '500 mg every 8 h') \u2014 extract only the interval/schedule portion, leaving the dose amount and route to the `dose` field",
+                "For single-dose arms (e.g., single preoperative dose), 'single dose' is the appropriate frequency",
+                "If different frequencies apply to different phases (e.g., intra-operative vs. post-operative), capture both in order separated by 'then'"
+              ],
+              "rules": [
+                "Capture only the dosing interval or schedule \u2014 do NOT repeat the dose amount, units, or route (those belong in the `dose` field)",
+                "Use standard shorthand when the paper uses it (e.g., 'q8h', 'TID', 'every 8 hours') \u2014 transcribe as stated, condensed",
+                "For multi-phase regimens, join phase-specific intervals in administration order with 'then' (e.g., 'q4h intra-op then q6h oral')",
+                "Use 'single dose' for single-dose arms regardless of timing",
+                "Use 'NR' if the dosing interval or schedule is not stated in the paper"
+              ],
+              "examples": [
+                {
+                  "value": "every 8 hours",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "frequency",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Dosing interval / schedule as the paper states it, condensed. Examples: 'every 8 hours', 'q4h intra-op then q6h oral', 'single dose'. Capture only the interval/schedule, not the full dose text. Use 'NR' if not stated."
+            },
+            {
+              "hints": [
+                "Look in the Methods section under 'antibiotic regimen', 'prophylaxis protocol', or 'treatment schedule' for the total course length",
+                "Check the dose field (already extracted) for embedded duration clues, but report only the total span here, not individual dose timings",
+                "For single-dose arms, confirm no post-operative doses are given before recording 'single dose'",
+                "For arms described as 'perioperative' or 'intraoperative only', infer duration as 'single dose' or the stated intraoperative window",
+                "If the paper states a range (e.g., '3\u20135 days'), record the range as given"
+              ],
+              "rules": [
+                "Report the total calendar duration of antibiotic administration for this arm, not the dosing interval or frequency (those belong in the 'frequency' field)",
+                "Use plain English with units: e.g., '5 days', '24 hours', '48 hours', 'single dose'",
+                "For a single pre-incision dose with no further doses, use 'single dose'",
+                "Do not include any post-antibiotic placebo period in the duration unless the paper explicitly bundles it (in that case append in parentheses, e.g., '1 day (placebo after)')",
+                "Use 'NR' if the total duration is not explicitly or inferably stated in the paper"
+              ],
+              "examples": [
+                {
+                  "value": "5 days",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "duration",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Total duration of the regimen. Examples: '5 days', 'single dose', '24 hours', '1 day (placebo after)'. Use 'NR' if not stated."
+            },
+            {
+              "hints": [
+                "Check the CONSORT flow diagram first \u2014 it typically shows the number randomised to each arm as a box labelled 'Allocated to [arm name] (n = X)'",
+                "Look in the baseline characteristics table, which often has a column per arm with the randomised N in the header or first row",
+                "Check the randomisation or participant flow section of the Methods/Results text for phrases like 'X patients were randomised to...' or 'the [arm] group comprised X participants'",
+                "If the paper reports only the total randomised N and the number of arms, do not divide or infer \u2014 use 'NR' unless the per-arm figure is explicitly stated",
+                "This field captures the allocated (randomised) count, not the analysed, per-protocol, or ITT count \u2014 if only the analysed N is given and the allocated N is not stated, use 'NR'"
+              ],
+              "rules": [
+                "Must be a whole number (integer) representing participants allocated at randomisation",
+                "Do NOT use the number analysed at follow-up, the ITT population size, or the per-protocol population size unless the paper explicitly equates these to the randomised allocation count",
+                "Do NOT calculate or infer this value by subtraction or division from other reported figures; only record what is explicitly stated",
+                "Use \"NR\" if the per-arm randomised count is not explicitly reported in the paper"
+              ],
+              "examples": [
+                {
+                  "value": "17",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "n_in_arm",
+              "field_type": "number",
+              "extraction_role": "anchor",
+              "field_description": "Number of participants allocated to THIS arm at randomisation (not the number analysed at follow-up). Look in the CONSORT flow diagram, randomisation table, or baseline characteristics table. Use 'NR' if not explicitly stated."
+            },
+            {
+              "hints": [
+                "Look in the methods section under 'allergy', 'hypersensitivity', 'penicillin allergy', or 'contraindications' subsections",
+                "Check footnotes of intervention tables or protocol descriptions for allergy-related substitution details",
+                "May appear as a parenthetical note alongside the primary regimen description, e.g. 'clindamycin was substituted for penicillin-allergic patients'",
+                "This field is distinct from the primary antibiotic_name, dose, route, frequency, and duration fields \u2014 capture only the allergy-specific substitute regimen here"
+              ],
+              "rules": [
+                "Quote the substitute drug (generic/INN name), dose with units, frequency, and duration in a single string, e.g. 'clindamycin 600 mg IV every 8 h for 5 days'",
+                "Use 'None' if the paper does not describe any allergy substitution for this arm",
+                "Use 'NA' if the arm's primary antibiotic is already a non-beta-lactam (e.g. clindamycin, erythromycin, metronidazole) and an allergy substitution is therefore not applicable",
+                "Use 'NR' only if the paper explicitly mentions that an allergy substitution was used but does not provide the details",
+                "Do not repeat information already captured in antibiotic_name, dose, route, frequency, or duration unless it pertains specifically to the allergy-substitution regimen"
+              ],
+              "examples": [
+                {
+                  "value": "clindamycin 300 mg IV induction, 150 mg IV at 3 h, 150 mg PO every 6 h for 5 days",
+                  "source_text": ""
+                }
+              ],
+              "field_name": "allergy_substitution",
+              "field_type": "text",
+              "extraction_role": "value",
+              "field_description": "Substitute regimen administered to penicillin / beta-lactam-allergic participants in this arm. Quote the drug, dose, frequency, and duration. Use 'None' if no allergy substitution is described, 'NA' if the arm's primary antibiotic is already a non-beta-lactam (e.g. clindamycin)."
+            }
+          ],
+          "source_grounded": true,
+          "extraction_strategy": "row_then_columns"
+        }
+      ]
+    }
+  ],
+  "schema_name": "dynamic_d8db9a91_InterventionCharacteristicsV2",
+  "pipeline_stages": [
+    {
+      "stage": 1,
+      "execution": "parallel",
+      "signatures": [
+        "ExtractAllInterventionArms"
+      ],
+      "provides_fields": [
+        "interventions"
+      ],
+      "requires_fields": []
+    }
+  ],
+  "fallback_structures": {
+    "ExtractAllInterventionArms": {
+      "interventions": []
+    }
+  },
+  "field_to_signature_map": {
+    "interventions": "ExtractAllInterventionArms"
+  },
+  "_pulled_from": "project b6328d50-55c5-41f4-b44c-6eed4857b51b \u00b7 form Intervention Characteristics v2 (d8db9a91-9e4c-4720-b674-28f89a299f31) \u00b7 slug antibiotic \u00b7 form_label interventions"
+}

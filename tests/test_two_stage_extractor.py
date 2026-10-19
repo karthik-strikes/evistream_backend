@@ -157,7 +157,7 @@ class TestTwoStageExecution:
                 extractor = ExtractorCls()
                 return await extractor("paper text here")
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         rows = result["results"]["value"]
 
         assert len(rows) == 2
@@ -178,7 +178,7 @@ class TestTwoStageExecution:
             with patch("dspy_components.runtime_builders.async_dspy_forward", side_effect=mock_forward):
                 return await ExtractorCls()("paper")
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result["results"]["value"] == "NR"
         assert result["results"]["status"] == "not_reported"
 
@@ -193,7 +193,7 @@ class TestTwoStageExecution:
                 return await ExtractorCls()("paper")
 
         with pytest.raises(RuntimeError, match="LLM timeout"):
-            asyncio.get_event_loop().run_until_complete(run())
+            asyncio.run(run())
 
     def test_stage2_row_failure_is_marked_as_error(self):
         """A failed row remains distinguishable from truly unreported values."""
@@ -210,7 +210,7 @@ class TestTwoStageExecution:
             with patch("dspy_components.runtime_builders.async_dspy_forward", side_effect=mock_forward):
                 return await ExtractorCls()("paper")
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         rows = result["results"]["value"]
         assert len(rows) == 1
         for col in ["variability_sd", "central_value"]:
@@ -240,7 +240,7 @@ class TestTwoStageExecution:
             with patch("dspy_components.runtime_builders.async_dspy_forward", side_effect=mock_forward):
                 return await ExtractorCls()("paper")
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         rows = result["results"]["value"]
         assert len(rows) == 2
         assert rows[0]["variability_sd"]["value"] == "5"

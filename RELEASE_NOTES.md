@@ -1,5 +1,21 @@
 # Public research release — 19 October 2026
 
+## Review fixes
+
+The follow-up release repairs clean installation by replacing the full server
+environment freeze with dependencies resolved in an isolated Python 3.11
+environment. Unused OCR/GPU and unrelated application packages were removed.
+
+Project creation now accepts owner memberships. A repeatable upgrade adds
+password-reset fields, restricts service policies to the service role, and closes
+direct anon/authenticated access to all 24 application tables. API authorization
+runs before serving cached summaries; entity history is scoped to its authorized
+project. Blinding and adjudication queries use document-level assignments.
+
+Regression coverage includes permission revocation with a warm cache, foreign
+entity history, both reviewers and adjudicators, password-reset token consumption,
+fresh database setup, upgrade preservation, and database role permissions.
+
 ## Provenance
 
 Application source: 11 July 2026, `7530ee53fbf9e6d60c454744364b551c62607b50`.

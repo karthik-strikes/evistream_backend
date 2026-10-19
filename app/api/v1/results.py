@@ -697,13 +697,12 @@ async def get_consensus_summary(
     extractions exist, plus agreement percentage where both AI and manual exist.
     """
     try:
-        # Check cache first
+        # Authorization must run on cache hits too (including revoked memberships).
+        await check_project_access(project_id, user_id, "can_view_results")
         cache_key = f"consensus_summary:{project_id}:{form_id}"
         cached = cache_service.get(cache_key)
         if cached:
             return cached
-
-        await check_project_access(project_id, user_id, "can_view_results")
 
         # Get all documents in project
         docs_result = supabase.table("documents")\

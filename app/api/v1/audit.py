@@ -44,5 +44,5 @@ async def get_entity_history(
 ):
     """Get full audit history for an entity. Requires project access."""
     await check_project_access(project_id, user_id, "can_view_results")
-    result = await audit_service.get_entity_history(entity_type, entity_id)
+    result = await audit_service.get_entity_history(entity_type, entity_id, project_id)
     return [AuditTrailEntryResponse(**r) for r in result]

@@ -69,13 +69,14 @@ async def get_audit_trail(
     return result.data or []
 
 
-async def get_entity_history(entity_type: str, entity_id: UUID) -> list:
-    """Get full audit history for a specific entity."""
+async def get_entity_history(entity_type: str, entity_id: UUID, project_id: UUID) -> list:
+    """Get entity history within the project authorized by the caller."""
     supabase = get_supabase()
     result = supabase.table("audit_trail")\
         .select("*")\
         .eq("entity_type", entity_type)\
         .eq("entity_id", str(entity_id))\
+        .eq("project_id", str(project_id))\
         .order("created_at", desc=True)\
         .execute()
     return result.data or []

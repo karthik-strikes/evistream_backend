@@ -19,10 +19,10 @@ class SupabaseClient:
 
         Args:
             url: Supabase project URL (defaults to SUPABASE_URL from config)
-            key: Supabase anon/service key (defaults to SUPABASE_KEY from config)
+            key: Explicit key, otherwise the backend service key (legacy key fallback).
         """
         self.url = url or SUPABASE_URL
-        self.key = key or SUPABASE_KEY
+        self.key = key or os.getenv("SUPABASE_SERVICE_KEY") or SUPABASE_KEY
         self.client: Optional[Client] = None
 
         if self.url and self.key:

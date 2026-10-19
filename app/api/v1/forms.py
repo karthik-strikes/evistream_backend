@@ -2045,7 +2045,10 @@ async def get_review_history(
 
         await check_project_access(UUID(result.data[0]["project_id"]), user_id)
 
-        history = await get_entity_history(entity_type="form", entity_id=form_id)
+        history = await get_entity_history(
+            entity_type="form", entity_id=form_id,
+            project_id=UUID(result.data[0]["project_id"]),
+        )
         return {"form_id": str(form_id), "history": history}
 
     except HTTPException:

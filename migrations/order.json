@@ -26,5 +26,6 @@
   "migrations/phase3_005_blind_review_unique_user_per_doc.sql",
   "migrations/phase3_006_fix_extractions_status_constraint.sql",
   "migrations/phase4_001_replace_ai_extraction_results_rpc.sql",
-  "migrations/enable_rls.sql"
+  "migrations/enable_rls.sql",
+  "migrations/20261019_public_release_fixes.sql"
 ]

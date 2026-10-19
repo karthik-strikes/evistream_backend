@@ -23,7 +23,7 @@ same database and configuration. These services are not bundled accounts.
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.lock.txt -r requirements.txt
+pip install -r requirements.lock.txt
 cp .env.example .env
 ```
 
@@ -52,6 +52,19 @@ is disabled in this release; local users sign in with their own accounts.
 
 Model defaults and provider routing are in `config/models.py`. This historical
 configuration is retained; choose models available to your own provider account.
+
+The lock file was regenerated from a clean Python 3.11 installation of the
+release's direct dependencies. It includes pytest for the offline checks:
+
+```bash
+python -m pip check
+PYTHON_DOTENV_DISABLED=1 python -m pytest -q tests
+python scripts/smoke_api.py
+python eval/smoke_test.py
+```
+
+For an existing installation of the initial public snapshot, apply the upgrade
+migration in [database setup](docs/DATABASE.md) before starting the updated API.
 
 ## Source map
 

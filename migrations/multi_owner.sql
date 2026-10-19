@@ -8,6 +8,7 @@
 -- via project_members.role.
 
 -- 1. Allow 'owner' as a valid project_members role
+ALTER TABLE project_members DROP CONSTRAINT IF EXISTS chk_project_member_role;
 ALTER TABLE project_members DROP CONSTRAINT IF EXISTS project_members_role_check;
 ALTER TABLE project_members ADD CONSTRAINT project_members_role_check
     CHECK (role IN ('owner', 'manager', 'member', 'viewer'));

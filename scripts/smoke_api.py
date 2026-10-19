@@ -17,6 +17,7 @@ os.environ.update({
     "SUPABASE_SERVICE_KEY": "offline-test",
     "AWS_ACCESS_KEY_ID": "offline-test",
     "AWS_SECRET_ACCESS_KEY": "offline-test",
+    "DATALAB_API_KEY": "offline-test",
     "S3_BUCKET": "offline-test",
     "REDIS_URL": "redis://127.0.0.1:1/0",
     "REDIS_PORT": "1",
@@ -41,6 +42,8 @@ with patch.object(socket.socket, "connect", deny_network), patch(
 ):
     import httpx
     from app.main import app
+    # Workers have additional lazy imports that API routing alone does not cover.
+    from app.workers import pdf_tasks, generation_tasks, extraction_tasks, watchdog_tasks
 
     # No lifespan: Redis is deliberately unavailable. Test HTTP routing/auth only.
     async def check():

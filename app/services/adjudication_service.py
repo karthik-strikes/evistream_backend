@@ -314,7 +314,6 @@ async def get_adjudication_summary(
     r1_done = supabase.table("review_assignments")\
         .select("document_id")\
         .eq("project_id", str(project_id))\
-        .eq("form_id", str(form_id))\
         .eq("reviewer_role", "reviewer_1")\
         .eq("status", "completed")\
         .execute()
@@ -323,7 +322,6 @@ async def get_adjudication_summary(
     r2_done = supabase.table("review_assignments")\
         .select("document_id")\
         .eq("project_id", str(project_id))\
-        .eq("form_id", str(form_id))\
         .eq("reviewer_role", "reviewer_2")\
         .eq("status", "completed")\
         .execute()

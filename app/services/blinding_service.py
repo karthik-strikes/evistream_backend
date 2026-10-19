@@ -37,15 +37,13 @@ async def get_form_review_settings(form_id: UUID) -> Dict[str, Any]:
 async def get_user_assignment(
     user_id: UUID,
     document_id: UUID,
-    form_id: UUID,
 ) -> Optional[Dict[str, Any]]:
-    """Get user's assignment for a specific document+form."""
+    """Assignments cover a document across all of its project's forms."""
     supabase = get_supabase()
     result = supabase.table("review_assignments")\
         .select("*")\
         .eq("reviewer_user_id", str(user_id))\
         .eq("document_id", str(document_id))\
-        .eq("form_id", str(form_id))\
         .limit(1)\
         .execute()
 
@@ -76,27 +74,15 @@ async def filter_results_for_user(
         return results
 
     # Check if user has an assignment (is a reviewer)
-    assignment = await get_user_assignment(user_id, document_id, form_id)
+    assignment = await get_user_assignment(user_id, document_id)
 
     if not assignment:
-        # User has no assignment — might be an owner/adjudicator
-        # Check if they're the adjudicator
-        adj_assignment = get_supabase().table("review_assignments")\
-            .select("reviewer_role")\
-            .eq("reviewer_user_id", str(user_id))\
-            .eq("document_id", str(document_id))\
-            .eq("form_id", str(form_id))\
-            .eq("reviewer_role", "adjudicator")\
-            .limit(1)\
-            .execute()
-
-        if adj_assignment.data:
-            # Adjudicator can see all reviewer results
-            return results
-        # Non-assigned user (owner etc.) sees everything
+        # Project access is checked by the calling endpoint.
         return results
 
     reviewer_role = assignment["reviewer_role"]
+    if reviewer_role == "adjudicator":
+        return results
 
     filtered = []
     for r in results:
@@ -137,7 +123,7 @@ async def can_view_adjudication(
         .select("id")\
         .eq("reviewer_user_id", str(user_id))\
         .eq("document_id", str(document_id))\
-        .eq("form_id", str(form_id))\
+        .eq("project_id", str(project_id))\
         .eq("reviewer_role", "adjudicator")\
         .limit(1)\
         .execute()
@@ -145,7 +131,18 @@ async def can_view_adjudication(
     if assignment.data:
         return True
 
-    # Check if user is project owner
+    # Check membership ownership, including additional owners.
+    owner = supabase.table("project_members")\
+        .select("id")\
+        .eq("project_id", str(project_id))\
+        .eq("user_id", str(user_id))\
+        .eq("role", "owner")\
+        .limit(1)\
+        .execute()
+    if owner.data:
+        return True
+
+    # Legacy creator fallback, matching check_project_access.
     project = supabase.table("projects")\
         .select("user_id")\
         .eq("id", str(project_id))\
